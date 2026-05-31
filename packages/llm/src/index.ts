@@ -8,22 +8,25 @@ import type {
 import { buildMessages, buildRepairMessage } from './prompt.js';
 import { parseAndValidate } from './validate.js';
 import { anthropicProvider } from './provider-anthropic.js';
+import { openaiProvider } from './provider-openai.js';
+import { kimiProvider } from './provider-kimi.js';
 
 export * from './types.js';
 export { buildMessages } from './prompt.js';
 export { parseAndValidate, extractJson } from './validate.js';
 
-// Anbieter-Registry. Phase 2: nur Anthropic. ChatGPT und Kimi folgen in Phase 5
-// (TASKS.md 5.1, 5.2) und werden hier einfach ergaenzt.
+// Anbieter-Registry. Phase 5: alle drei Adapter verfuegbar.
 const PROVIDERS: Partial<Record<ProviderId, Provider>> = {
   anthropic: anthropicProvider,
+  openai: openaiProvider,
+  kimi: kimiProvider,
 };
 
 export function getProvider(id: ProviderId): Provider {
   const p = PROVIDERS[id];
   if (!p) {
     throw new Error(
-      `Anbieter '${id}' ist noch nicht implementiert. In Phase 2 ist nur 'anthropic' verfuegbar.`,
+      `Anbieter '${id}' ist noch nicht implementiert. Verfuegbare Anbieter: anthropic, openai, kimi.`,
     );
   }
   return p;
@@ -44,7 +47,7 @@ export async function generateDocument(
 
   let rohText = '';
   for (let versuch = 1; versuch <= 2; versuch++) {
-    rohText = await provider.complete(messages, cfg);
+    rohText = await provider.complete(messages, cfg, input);
     const validiert = parseAndValidate(rohText);
 
     if (validiert.ok && validiert.document) {

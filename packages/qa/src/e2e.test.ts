@@ -48,7 +48,22 @@ const mockLlmOutput = DocumentSchema.parse({
 });
 
 describe('Glue: runPipeline (mock)', () => {
-  it('gibt Fehler zurueck, wenn Provider nicht implementiert ist', async () => {
+  it('gibt Fehler zurueck, wenn Provider nicht existiert', async () => {
+    const result = await runPipeline(
+      {
+        meta: mockLlmOutput.meta,
+        quelltexte: mockLlmOutput.quelltexte,
+        bloecke: [{ typ: 'lueckentext', punkte: 8, anzahlLuecken: 3, wortbank: false, distraktoren: 0 }],
+      },
+      { provider: 'unbekannt' as any },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.fehler).toContain('noch nicht implementiert');
+    }
+  });
+
+  it('gibt Fehler zurueck, wenn API-Key fehlt', async () => {
     const result = await runPipeline(
       {
         meta: mockLlmOutput.meta,
@@ -59,7 +74,7 @@ describe('Glue: runPipeline (mock)', () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.fehler).toContain('noch nicht implementiert');
+      expect(result.fehler).toContain('API_KEY fehlt');
     }
   });
 });

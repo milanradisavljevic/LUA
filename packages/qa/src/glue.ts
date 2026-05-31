@@ -1,6 +1,7 @@
 import type { DocumentV1, Meta, QuellText } from '@lehrunterlagen/schema';
-import { renderDocument } from '@lehrunterlagen/renderer';
+import { renderDocument, renderRaster } from '@lehrunterlagen/renderer';
 import { generateDocument, type BlockRequest, type ProviderConfig } from '@lehrunterlagen/llm';
+import { buildRaster } from './korrekturraster/builder';
 
 export interface GlueInput {
   meta: Meta;
@@ -12,6 +13,7 @@ export interface GlueOk {
   ok: true;
   schueler: Buffer;
   loesung: Buffer;
+  raster: Buffer;
   document: DocumentV1;
   versuche: number;
 }
@@ -25,7 +27,7 @@ export interface GlueError {
 export type GlueResult = GlueOk | GlueError;
 
 /**
- * End-to-end-Pipeline: Quelltexte + Baukasten-Vorgaben -> LLM -> Validierung -> 2x .docx
+ * End-to-end-Pipeline: Quelltexte + Baukasten-Vorgaben -> LLM -> Validierung -> 3x .docx
  */
 export async function runPipeline(
   input: GlueInput,
@@ -42,12 +44,17 @@ export async function runPipeline(
     return { ok: false, fehler: gen.fehler, versuche: gen.versuche };
   }
 
-  const { schueler, loesung } = await renderDocument(gen.document);
+  const rasterData = buildRaster(gen.document);
+  const [docResult, rasterBuf] = await Promise.all([
+    renderDocument(gen.document),
+    renderRaster(rasterData),
+  ]);
 
   return {
     ok: true,
-    schueler,
-    loesung,
+    schueler: docResult.schueler,
+    loesung: docResult.loesung,
+    raster: rasterBuf,
     document: gen.document,
     versuche: gen.versuche,
   };

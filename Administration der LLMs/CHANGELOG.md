@@ -24,3 +24,6 @@ Format orientiert an Keep a Changelog. Versionierung nach Phasen (0.x = Phase x)
 - LLM-Adapter: Anbieter-Schnittstelle, Claude-Adapter, Prompt-Bau, Zod-Validierung (Architekt/OpenCode #1).
 - txt-Parser (Kimi Code).
 - Glue-Modul: runPipeline fuer End-to-end-Lauf Quelltext -> 2 .docx (OpenCode #3).
+
+### Phase 5
+- Korrekturraster: Builder, Kriterienkataloge (5 Typen), Notenschluessel, renderRaster() fuer 3. .docx (OpenCode #3).

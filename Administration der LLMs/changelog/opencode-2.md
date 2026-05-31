@@ -11,3 +11,4 @@ Nur dieser Agent schreibt in diese Datei.
 - [2026-05-31] Task 4.3 (Rev): ConfigPanel mit Inline-Validierung — Matching items<optionen, Lückentext distraktoren>=1 bei wortbank, Schreibaufgabe min<=max. Entfernen-Buttons für Arrays. (Phase 4)
 - [2026-05-31] Task 4.5: Zweispaltige editierbare Vorschau — BlockPreview-Komponenten für alle 6 Typen mit visuellem HTML-Layout (Lückenlinien, Matching-Tabelle, MC-Checkboxen, Schreiblinien >=9mm, Markierliste). Export via renderDocument() aus @lehrunterlagen/renderer. Schüler links / Lösung rechts. (Phase 4)
 - [2026-05-31] Task 4.6: Vorlagen speichern/laden — localStorage-Persistenz, JSON-Export/Import, Modal-Dialog im App-Header. (Phase 4)
+- [2026-05-31] Task 5.4: Sprach-/Tippbefehl zu Dokument — CommandPalette (Ctrl+K), Regex-basierter Parser für Navigation, Metadaten, Block-Management, Export und Vorlagen. Web Speech API für Spracheingabe (deutsch). Integriert in App-Shell mit Hotkey-Listener. (Phase 5)

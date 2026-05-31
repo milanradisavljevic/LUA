@@ -63,5 +63,5 @@ export interface ChatMessage {
 
 export interface Provider {
   id: ProviderId;
-  complete(messages: ChatMessage[], cfg: ProviderConfig): Promise<string>;
+  complete(messages: ChatMessage[], cfg: ProviderConfig, input?: GenerateInput): Promise<string>;
 }

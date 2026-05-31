@@ -31,6 +31,10 @@ function wizardReducer(state: AppState, action: AppAction): AppState {
       return { ...state, llmProvider: action.provider };
     case 'SET_MODEL_NAME':
       return { ...state, modelName: action.name };
+    case 'SET_KREATIVITAET':
+      return { ...state, kreativitaet: action.value };
+    case 'SET_AUSGABE_SPRACHE':
+      return { ...state, ausgabeSprache: action.value };
     default:
       return state;
   }
@@ -42,7 +46,9 @@ const INITIAL_STATE: AppState = {
   quelltexte: [],
   bloecke: [],
   llmProvider: 'claude',
-  modelName: 'Haiku 4.5',
+  modelName: 'Sonnet 4.6',
+  kreativitaet: 0.4,
+  ausgabeSprache: 'de',
 };
 
 export function useWizard() {

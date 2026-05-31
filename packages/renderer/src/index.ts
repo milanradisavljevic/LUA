@@ -62,6 +62,49 @@ export interface RenderResultBlobs {
   loesung: Blob;
 }
 
+// ---------------------------------------------------------------------------
+// Korrekturraster types (Renderer-seitig, kein Import aus qa)
+// ---------------------------------------------------------------------------
+
+export interface RasterKriterium {
+  kriterium: string;
+  beschreibung: string;
+  maxPunkte: number;
+  erreichtePunkte: number | null;
+  anmerkung: string;
+}
+
+export interface RasterBlock {
+  blockId: string;
+  blockNr: number;
+  typ: string;
+  aufgabeLabel: string;
+  kriterien: RasterKriterium[];
+  maxPunkte: number;
+}
+
+export interface RasterNote {
+  note: 1 | 2 | 3 | 4 | 5;
+  bezeichnung: string;
+  minProzent: number;
+  maxProzent: number;
+  minPunkte: number;
+  maxPunkte: number;
+}
+
+export interface RasterInput {
+  meta: {
+    fach: string;
+    stufe: string;
+    thema: string;
+    datum: string;
+    klasse: string;
+  };
+  blloecke: RasterBlock[];
+  gesamtPunkte: number;
+  notenschluessel: RasterNote[];
+}
+
 export async function renderDocument(doc: DocumentV1): Promise<RenderResult> {
   const [schueler, loesung] = await Promise.all([
     buildDocxPacked(Packer.toBuffer.bind(Packer), doc, 'schueler'),
@@ -77,6 +120,225 @@ export async function renderDocumentToBlobs(doc: DocumentV1): Promise<RenderResu
     buildDocxPacked(Packer.toBlob.bind(Packer), doc, 'loesung'),
   ]);
   return { schueler, loesung };
+}
+
+// ---------------------------------------------------------------------------
+// Korrekturraster: Drittes Dokument (Lehrerinstrument)
+// ---------------------------------------------------------------------------
+
+export async function renderRaster(raster: RasterInput): Promise<Buffer> {
+  const children: (Paragraph | Table)[] = [
+    ...buildRasterHeader(raster),
+    ...raster.blloecke.flatMap((block) => buildRasterBlock(block)),
+    buildGesamtzeile(raster.gesamtPunkte),
+    buildNotenschluessel(raster.notenschluessel),
+    ...buildFreitextfeld(),
+  ];
+
+  const document = new Document({
+    sections: [
+      {
+        properties: { page: { margin: MARGIN } },
+        headers: { default: buildPageHeader() },
+        footers: { default: buildPageFooter() },
+        children,
+      },
+    ],
+  });
+
+  return Packer.toBuffer(document);
+}
+
+function buildRasterHeader(raster: RasterInput): (Paragraph | Table)[] {
+  const fachLabel = raster.meta.fach.charAt(0).toUpperCase() + raster.meta.fach.slice(1);
+  const stufeLabel = raster.meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe';
+
+  return [
+    new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [
+        run(`Korrekturraster — ${fachLabel} — ${raster.meta.thema}`, {
+          font: FONT, size: SZ.h1, bold: true,
+        }),
+      ],
+    }),
+    new Paragraph({
+      children: [
+        run(
+          `${stufeLabel} · Klasse ${raster.meta.klasse} · ${formatDatum(raster.meta.datum)}`,
+          { font: FONT, size: SZ.body, color: COLOR.gray },
+        ),
+      ],
+      spacing: { after: 200 },
+    }),
+    // Kopfzeile: Klasse / Name / Datum
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+              width: { size: 33, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('Klasse: _______', { font: FONT, size: SZ.body })] })],
+            }),
+            new TableCell({
+              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+              width: { size: 40, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('Name: _______________________', { font: FONT, size: SZ.body })] })],
+            }),
+            new TableCell({
+              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+              width: { size: 27, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('Datum: _______', { font: FONT, size: SZ.body })] })],
+            }),
+          ],
+        }),
+      ],
+    }),
+    new Paragraph({ spacing: { after: 200 }, children: [] }),
+  ];
+}
+
+function buildRasterBlock(block: RasterBlock): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [];
+
+  result.push(
+    new Paragraph({
+      heading: HeadingLevel.HEADING_2,
+      children: [
+        run(`${block.aufgabeLabel}  (${block.maxPunkte} ${block.maxPunkte === 1 ? 'Punkt' : 'Punkte'})`, {
+          font: FONT, size: SZ.h2, bold: true,
+        }),
+      ],
+      spacing: { before: 240, after: 100 },
+    }),
+  );
+
+  // Kriterien-Tabelle
+  const headerRow = new TableRow({
+    children: ['Kriterium', 'Beschreibung', 'Max.', 'Erreicht', 'Anmerkung'].map(
+      (text, i) =>
+        new TableCell({
+          borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+          width: { size: [30, 40, 12, 10, 8][i] ?? 30, type: WidthType.PERCENTAGE },
+          children: [
+            new Paragraph({
+              children: [run(text, { font: FONT, size: SZ.body, bold: true })],
+            }),
+          ],
+        }),
+    ),
+  });
+
+  const dataRows = block.kriterien.map(
+    (k) =>
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            width: { size: 30, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [run(k.kriterium, { font: FONT, size: SZ.body })] })],
+          }),
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [run(k.beschreibung, { font: FONT, size: SZ.body })] })],
+          }),
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            width: { size: 12, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [run(String(k.maxPunkte), { font: FONT, size: SZ.body })] })],
+          }),
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            width: { size: 10, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [run('', { font: FONT, size: SZ.body })] })],
+          }),
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            width: { size: 8, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [run('', { font: FONT, size: SZ.body })] })],
+          }),
+        ],
+      }),
+  );
+
+  result.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [headerRow, ...dataRows],
+    }),
+  );
+
+  return result;
+}
+
+function buildGesamtzeile(gesamtPunkte: number): Paragraph {
+  return new Paragraph({
+    children: [
+      run(`Gesamt:  _____ / ${gesamtPunkte} Punkte`, { font: FONT, size: SZ.body, bold: true }),
+    ],
+    spacing: { before: 200, after: 200 },
+    border: { top: { style: BorderStyle.SINGLE, size: 8, color: COLOR.black } },
+  });
+}
+
+function buildNotenschluessel(noten: RasterNote[]): Table {
+  const headerRow = new TableRow({
+    children: ['Note', 'Bezeichnung', 'Punktebereich'].map(
+      (text) =>
+        new TableCell({
+          borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [run(text, { font: FONT, size: SZ.body, bold: true })],
+            }),
+          ],
+        }),
+    ),
+  });
+
+  const dataRows = noten.map(
+    (n) =>
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [run(String(n.note), { font: FONT, size: SZ.body })] })],
+          }),
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            children: [new Paragraph({ children: [run(n.bezeichnung, { font: FONT, size: SZ.body })] })],
+          }),
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [run(`${n.minPunkte}–${n.maxPunkte}`, { font: FONT, size: SZ.body })] })],
+          }),
+        ],
+      }),
+  );
+
+  return new Table({
+    width: { size: 60, type: WidthType.PERCENTAGE },
+    rows: [headerRow, ...dataRows],
+  });
+}
+
+function buildFreitextfeld(): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [
+    new Paragraph({
+      children: [run('Allgemeine Anmerkungen:', { font: FONT, size: SZ.body, bold: true })],
+      spacing: { before: 240, after: 80 },
+    }),
+  ];
+
+  for (let i = 0; i < 4; i++) {
+    result.push(writingLine(i < 3));
+  }
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------

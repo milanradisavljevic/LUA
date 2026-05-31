@@ -11,6 +11,8 @@ export interface AppState {
   bloecke: Block[];
   llmProvider: LlmProvider | null;
   modelName: string;
+  kreativitaet: number;
+  ausgabeSprache: string;
 }
 
 export const STEPS: { id: StepId; label: string }[] = [
@@ -30,4 +32,6 @@ export type AppAction =
   | { type: 'REMOVE_BLOCK'; id: string }
   | { type: 'REORDER_BLOCKS'; bloecke: Block[] }
   | { type: 'SET_LLM_PROVIDER'; provider: LlmProvider | null }
-  | { type: 'SET_MODEL_NAME'; name: string };
+  | { type: 'SET_MODEL_NAME'; name: string }
+  | { type: 'SET_KREATIVITAET'; value: number }
+  | { type: 'SET_AUSGABE_SPRACHE'; value: string };

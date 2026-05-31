@@ -70,8 +70,8 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 | 5.1 | ChatGPT-Adapter                                    | OpenCode #1 | offen  |
 | 5.2 | Kimi-Adapter (mit Datenschutz-Schranke)            | OpenCode #1 | offen  |
 | 5.3 | Drive-Anbindung, private Bibliothek                | Kimi Code   | offen  |
-| 5.4 | Sprach-/Tippbefehl zu Dokument (ueber Renderer)    | OpenCode #2 | offen  |
-| 5.5 | Korrekturraster-Anbindung                          | OpenCode #3 | offen  |
+| 5.4 | Sprach-/Tippbefehl zu Dokument (ueber Renderer)    | OpenCode #2 | fertig |
+| 5.5 | Korrekturraster-Anbindung                          | OpenCode #3 | fertig |
 
 ---
 
