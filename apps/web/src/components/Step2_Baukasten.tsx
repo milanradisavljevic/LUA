@@ -26,17 +26,18 @@ interface Props {
 
 export function Step2_Baukasten({ state, dispatch }: Props) {
   const { addBlock, reorderBlocks } = useBlocks(dispatch);
-  const [selectedType, setSelectedType] = useState<Block['typ'] | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
   const allowedTypes = STUFE_RULES[state.meta.stufe].allowedBlockTypes;
+  const availableBlocks = BLOCK_TYPE_DEFS.filter((bt) =>
+    (allowedTypes as readonly string[]).includes(bt.id),
+  );
 
-  const handleAddBlock = () => {
-    if (!selectedType) return;
-    const block = createDefaultBlock(selectedType, state.meta);
+  const handleAddBlock = (typ: Block['typ']) => {
+    const block = createDefaultBlock(typ, state.meta);
     addBlock(block);
   };
 
@@ -60,23 +61,37 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
     <div>
       <h2 style={{ marginBottom: '1.25rem' }}>Aufgabenblöcke zusammenstellen</h2>
 
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', alignItems: 'flex-end' }}>
-        <div style={{ flex: 1 }}>
-          <label>Blocktyp hinzufügen</label>
-          <select
-            value={selectedType ?? ''}
-            onChange={(e) => setSelectedType(e.target.value as Block['typ'] | null)}
-          >
-            <option value="">— Bitte wählen —</option>
-            {BLOCK_TYPE_DEFS.filter((bt) => (allowedTypes as readonly string[]).includes(bt.id)).map((bt) => (
-              <option key={bt.id} value={bt.id}>{bt.label}</option>
-            ))}
-          </select>
+      {/* Kartengalerie */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <label style={{ marginBottom: '0.75rem', display: 'block' }}>Blocktyp hinzufügen</label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem' }}>
+          {availableBlocks.map((bt) => (
+            <button
+              key={bt.id}
+              onClick={() => handleAddBlock(bt.id)}
+              className="btn-secondary"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '1rem',
+                textAlign: 'center',
+                borderLeft: `4px solid ${bt.color}`,
+                background: 'white',
+              }}
+            >
+              <span style={{ fontSize: '1.5rem' }}>{bt.icon}</span>
+              <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{bt.label}</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)' }}>{bt.description}</span>
+              {bt.id === 'lueckentext' && !STUFE_RULES[state.meta.stufe].wortbankAllowed && (
+                <span style={{ fontSize: '0.6875rem', color: 'var(--color-gray-1)' }}>
+                  (Wortbank nur Unterstufe)
+                </span>
+              )}
+            </button>
+          ))}
         </div>
-        <button className="btn-primary" onClick={handleAddBlock} disabled={!selectedType}
-          style={{ height: 36 }}>
-          + Hinzufügen
-        </button>
       </div>
 
       <PointSummary totalPoints={totalPoints} blockCount={state.bloecke.length} />
@@ -89,10 +104,14 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={state.bloecke.map((b) => b.id)} strategy={verticalListSortingStrategy}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {state.bloecke.map((block) => (
-                <BlockCard key={block.id} block={block}
+              {state.bloecke.map((block, index) => (
+                <BlockCard
+                  key={block.id}
+                  block={block}
                   dispatch={dispatch}
-                  stufe={state.meta.stufe} />
+                  stufe={state.meta.stufe}
+                  index={index + 1}
+                />
               ))}
             </div>
           </SortableContext>

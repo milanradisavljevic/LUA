@@ -1,12 +1,12 @@
 import type { Meta } from '@lehrunterlagen/schema';
 
 export const BLOCK_TYPE_DEFS = [
-  { id: 'lueckentext' as const, label: 'Lückentext', description: 'Lücken im Text ergänzen' },
-  { id: 'matching' as const, label: 'Matching', description: 'Begriffe richtig zuordnen' },
-  { id: 'multipleChoice' as const, label: 'Multiple Choice', description: 'Richtige Antwort ankreuzen' },
-  { id: 'offeneVerstaendnisfrage' as const, label: 'Verständnisfrage', description: 'Fragen zum Text beantworten' },
-  { id: 'offeneSchreibaufgabe' as const, label: 'Schreibaufgabe', description: 'Aufsatz oder Kommentar verfassen' },
-  { id: 'markieraufgabe' as const, label: 'Markieraufgabe', description: 'Textstellen markieren' },
+  { id: 'lueckentext' as const, label: 'Lückentext', description: 'Lücken im Text ergänzen', icon: '✏️', color: '#e57373' },
+  { id: 'matching' as const, label: 'Matching', description: 'Begriffe richtig zuordnen', icon: '⇄', color: '#64b5f6' },
+  { id: 'multipleChoice' as const, label: 'Multiple Choice', description: 'Richtige Antwort ankreuzen', icon: '◉', color: '#81c784' },
+  { id: 'offeneVerstaendnisfrage' as const, label: 'Verständnisfrage', description: 'Fragen zum Text beantworten', icon: '?', color: '#ffb74d' },
+  { id: 'offeneSchreibaufgabe' as const, label: 'Schreibaufgabe', description: 'Aufsatz oder Kommentar verfassen', icon: '📝', color: '#ba68c8' },
+  { id: 'markieraufgabe' as const, label: 'Markieraufgabe', description: 'Textstellen markieren', icon: '✦', color: '#4db6ac' },
 ];
 
 export const STUFE_RULES = {

@@ -3,15 +3,18 @@ import { CSS } from '@dnd-kit/utilities';
 import type { Block, Meta } from '@lehrunterlagen/schema';
 import type { AppAction } from '../lib/types';
 import { getBlockLabel } from '../lib/blockDefaults';
+import { BLOCK_TYPE_DEFS } from '../lib/constants';
 import { BlockConfigPanel } from './BlockConfigPanel';
 
 interface Props {
   block: Block;
   dispatch: React.Dispatch<AppAction>;
   stufe: Meta['stufe'];
+  index?: number;
 }
 
-export function BlockCard({ block, dispatch, stufe }: Props) {
+export function BlockCard({ block, dispatch, stufe, index }: Props) {
+  const typeDef = BLOCK_TYPE_DEFS.find((bt) => bt.id === block.typ);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
 
   const style = {
@@ -45,6 +48,17 @@ export function BlockCard({ block, dispatch, stufe }: Props) {
           title="Verschieben">
           ⠿
         </button>
+        {index !== undefined && (
+          <span style={{
+            background: typeDef?.color ?? 'var(--color-accent)',
+            color: 'white',
+            padding: '0.125rem 0.5rem', borderRadius: '3px',
+            fontSize: '0.75rem', fontWeight: 600,
+            minWidth: 24, textAlign: 'center',
+          }}>
+            {index}
+          </span>
+        )}
         <span style={{
           background: '#e8f0fe', color: 'var(--color-accent)',
           padding: '0.125rem 0.5rem', borderRadius: '3px',
