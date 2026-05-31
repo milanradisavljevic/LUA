@@ -20,11 +20,11 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 
 | ID  | Aufgabe                                            | Owner       | Status |
 |-----|----------------------------------------------------|-------------|--------|
-| 1.1 | Renderer-Grundgeruest, Hausstil verdrahten         | Claude Code | in Arbeit |
-| 1.2 | Schuelerfassung: Loesungsfelder leer                | Claude Code | in Arbeit |
-| 1.3 | Loesungsfassung: Loesungen kursiv, eingerueckt       | Claude Code | in Arbeit |
-| 1.4 | Linien fuer Luecken und Schreibflaechen (>=9mm)     | Claude Code | in Arbeit |
-| 1.5 | Kopf-/Fusszeile, kein Aufgaben-Umbruch              | Claude Code | in Arbeit |
+| 1.1 | Renderer-Grundgeruest, Hausstil verdrahten         | Claude Code | fertig    |
+| 1.2 | Schuelerfassung: Loesungsfelder leer                | Claude Code | fertig    |
+| 1.3 | Loesungsfassung: Loesungen kursiv, eingerueckt       | Claude Code | fertig    |
+| 1.4 | Linien fuer Luecken und Schreibflaechen (>=9mm)     | Claude Code | fertig    |
+| 1.5 | Kopf-/Fusszeile, kein Aufgaben-Umbruch              | Claude Code | fertig    |
 | 1.6 | Integrationstest: Fixture -> 2 gueltige .docx        | OpenCode #3 | offen  |
 
 ## Phase 2 — Ein LLM end-to-end (Gate: Natascha)
