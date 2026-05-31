@@ -25,26 +25,32 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 | 1.3 | Loesungsfassung: Loesungen kursiv, eingerueckt       | Claude Code | fertig    |
 | 1.4 | Linien fuer Luecken und Schreibflaechen (>=9mm)     | Claude Code | fertig    |
 | 1.5 | Kopf-/Fusszeile, kein Aufgaben-Umbruch              | Claude Code | fertig    |
-| 1.6 | Integrationstest: Fixture -> 2 gueltige .docx        | OpenCode #3 | offen  |
+| 1.6 | Integrationstest: Fixture -> 2 gueltige .docx        | OpenCode #3 | fertig |
 
 ## Phase 2 — Ein LLM end-to-end (Gate: Natascha)
 
 | ID  | Aufgabe                                            | Owner       | Status |
 |-----|----------------------------------------------------|-------------|--------|
-| 2.1 | Anbieter-Schnittstelle + Claude-Adapter            | OpenCode #1 | offen  |
-| 2.2 | JSON erzwingen + Zod-Validierung der Antwort       | OpenCode #1 | offen  |
-| 2.3 | Prompt-Bau aus Bloecken + Quelltext                | OpenCode #1 | offen  |
+| 2.1 | Anbieter-Schnittstelle + Claude-Adapter            | OpenCode #1 | fertig (Architekt) |
+| 2.2 | JSON erzwingen + Zod-Validierung der Antwort       | OpenCode #1 | fertig (Architekt) |
+| 2.3 | Prompt-Bau aus Bloecken + Quelltext                | OpenCode #1 | fertig (Architekt) |
 | 2.4 | txt-Parser fuer ersten echten Quelltext             | Kimi Code   | fertig  |
-| 2.5 | End-to-end-Test: Quelltext -> 2 .docx                | OpenCode #3 | offen  |
+| 2.5 | End-to-end-Test: Quelltext -> 2 .docx                | OpenCode #3 | fertig |
+
+> Hinweis: 2.1 bis 2.3 wurden vom Architekten als Fundament in `packages/llm`
+> angelegt (Anbieter-Registry, Anthropic-Adapter, Prompt-Bau, Zod-Validierung mit
+> einer Korrekturrunde, netzunabhaengiger Test fuer die Validierung). OpenCode #1
+> uebernimmt das Modul und ergaenzt in Phase 5 die Adapter fuer ChatGPT (5.1) und
+> Kimi (5.2). Vor 2.5 fehlt nur noch die Verdrahtung llm -> renderer.
 
 ## Phase 3 — Input-Flexibilitaet (Gate: optional)
 
 | ID  | Aufgabe                                            | Owner       | Status |
 |-----|----------------------------------------------------|-------------|--------|
 | 3.1 | docx- und pdf-Parser                                | Kimi Code   | fertig  |
-| 3.2 | html-Upload zu sauberem Text                       | Kimi Code   | offen  |
-| 3.3 | url-Abruf mit Block-/Login-Fehlerbehandlung        | Kimi Code   | offen  |
-| 3.4 | Quelltext-Aufbereitung (kuerzen auf Lesetempo)     | Kimi Code   | offen  |
+| 3.2 | html-Upload zu sauberem Text                       | Kimi Code   | in Arbeit  |
+| 3.3 | url-Abruf mit Block-/Login-Fehlerbehandlung        | Kimi Code   | in Arbeit  |
+| 3.4 | Quelltext-Aufbereitung (kuerzen auf Lesetempo)     | Kimi Code   | in Arbeit  |
 
 ## Phase 4 — Baukasten-UI + Vorschau (Gate: Natascha, kritisch)
 
@@ -54,8 +60,8 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 | 4.2 | Baukasten: Drag and Drop, Punkte, Gesamtpunkte     | OpenCode #2 | fertig |
 | 4.3 | Block-Konfigurationspanel pro Blocktyp             | OpenCode #2 | fertig |
 | 4.4 | Stufenabhaengige Optionen deaktivieren             | OpenCode #2 | fertig |
-| 4.5 | Zweispaltige editierbare Vorschau vor Export       | OpenCode #2 | offen  |
-| 4.6 | Vorlagen speichern und laden                       | OpenCode #2 | offen  |
+| 4.5 | Zweispaltige editierbare Vorschau vor Export       | OpenCode #2 | fertig |
+| 4.6 | Vorlagen speichern und laden                       | OpenCode #2 | fertig |
 
 ## Phase 5 — Ausbau (Gate: Natascha, final)
 
