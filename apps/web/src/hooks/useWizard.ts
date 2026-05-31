@@ -41,8 +41,8 @@ const INITIAL_STATE: AppState = {
   meta: getDefaultMeta(),
   quelltexte: [],
   bloecke: [],
-  llmProvider: null,
-  modelName: '',
+  llmProvider: 'claude',
+  modelName: 'Haiku 4.5',
 };
 
 export function useWizard() {

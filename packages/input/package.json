@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@lehrunterlagen/schema": "workspace:*",
+    "linkedom": "^0.18.12",
     "mammoth": "^1.12.0",
     "pdf2json": "^4.0.3"
   },

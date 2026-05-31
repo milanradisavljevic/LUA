@@ -48,9 +48,9 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 | ID  | Aufgabe                                            | Owner       | Status |
 |-----|----------------------------------------------------|-------------|--------|
 | 3.1 | docx- und pdf-Parser                                | Kimi Code   | fertig  |
-| 3.2 | html-Upload zu sauberem Text                       | Kimi Code   | in Arbeit  |
-| 3.3 | url-Abruf mit Block-/Login-Fehlerbehandlung        | Kimi Code   | in Arbeit  |
-| 3.4 | Quelltext-Aufbereitung (kuerzen auf Lesetempo)     | Kimi Code   | in Arbeit  |
+| 3.2 | html-Upload zu sauberem Text                       | Kimi Code   | fertig  |
+| 3.3 | url-Abruf mit Block-/Login-Fehlerbehandlung        | Kimi Code   | fertig  |
+| 3.4 | Quelltext-Aufbereitung (kuerzen auf Lesetempo)     | Kimi Code   | fertig  |
 
 ## Phase 4 — Baukasten-UI + Vorschau (Gate: Natascha, kritisch)
 

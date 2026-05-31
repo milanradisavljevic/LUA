@@ -8,11 +8,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lehrunterlagen/schema": "workspace:*",
-    "@lehrunterlagen/renderer": "workspace:*"
+    "@lehrunterlagen/llm": "workspace:*",
+    "@lehrunterlagen/renderer": "workspace:*",
+    "@lehrunterlagen/schema": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "dotenv": "^17.4.2",
     "typescript": "^5.4.0",
     "vitest": "^2.0.0"
   }
