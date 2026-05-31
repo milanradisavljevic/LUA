@@ -14,17 +14,17 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 | 0.1 | Monorepo scaffolden (pnpm, TS, Vitest)             | Claude Code | fertig    |
 | 0.2 | Zod-Schema: meta, quelltexte, 6 Blocktypen         | Claude Code | fertig    |
 | 0.3 | TS-Typen exportieren, in allen Modulen importierbar| Claude Code | fertig    |
-| 0.4 | Beispiel-JSON pro Blocktyp als Fixture             | OpenCode #3 | offen  |
+| 0.4 | Beispiel-JSON pro Blocktyp als Fixture             | OpenCode #3 | fertig |
 
 ## Phase 1 — Renderer (Gate: Natascha, kritisch)
 
 | ID  | Aufgabe                                            | Owner       | Status |
 |-----|----------------------------------------------------|-------------|--------|
-| 1.1 | Renderer-Grundgeruest, Hausstil verdrahten         | Claude Code | offen  |
-| 1.2 | Schuelerfassung: Loesungsfelder leer                | Claude Code | offen  |
-| 1.3 | Loesungsfassung: Loesungen kursiv, eingerueckt       | Claude Code | offen  |
-| 1.4 | Linien fuer Luecken und Schreibflaechen (>=9mm)     | Claude Code | offen  |
-| 1.5 | Kopf-/Fusszeile, kein Aufgaben-Umbruch              | Claude Code | offen  |
+| 1.1 | Renderer-Grundgeruest, Hausstil verdrahten         | Claude Code | in Arbeit |
+| 1.2 | Schuelerfassung: Loesungsfelder leer                | Claude Code | in Arbeit |
+| 1.3 | Loesungsfassung: Loesungen kursiv, eingerueckt       | Claude Code | in Arbeit |
+| 1.4 | Linien fuer Luecken und Schreibflaechen (>=9mm)     | Claude Code | in Arbeit |
+| 1.5 | Kopf-/Fusszeile, kein Aufgaben-Umbruch              | Claude Code | in Arbeit |
 | 1.6 | Integrationstest: Fixture -> 2 gueltige .docx        | OpenCode #3 | offen  |
 
 ## Phase 2 — Ein LLM end-to-end (Gate: Natascha)
