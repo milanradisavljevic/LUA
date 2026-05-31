@@ -11,9 +11,9 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 
 | ID  | Aufgabe                                            | Owner       | Status |
 |-----|----------------------------------------------------|-------------|--------|
-| 0.1 | Monorepo scaffolden (pnpm, TS, Vitest)             | Claude Code | in Arbeit |
-| 0.2 | Zod-Schema: meta, quelltexte, 6 Blocktypen         | Claude Code | in Arbeit |
-| 0.3 | TS-Typen exportieren, in allen Modulen importierbar| Claude Code | in Arbeit |
+| 0.1 | Monorepo scaffolden (pnpm, TS, Vitest)             | Claude Code | fertig    |
+| 0.2 | Zod-Schema: meta, quelltexte, 6 Blocktypen         | Claude Code | fertig    |
+| 0.3 | TS-Typen exportieren, in allen Modulen importierbar| Claude Code | fertig    |
 | 0.4 | Beispiel-JSON pro Blocktyp als Fixture             | OpenCode #3 | offen  |
 
 ## Phase 1 — Renderer (Gate: Natascha, kritisch)
