@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderDocument } from './index.js';
+import { renderDocument, renderDocumentToBlobs } from './index.js';
 import type { DocumentV1 } from '@lehrunterlagen/schema';
 
 // ZIP magic bytes — every .docx starts with PK\x03\x04
@@ -237,5 +237,41 @@ describe('renderDocument: Metadaten', () => {
       }],
     };
     await expect(renderDocument(doc)).resolves.toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// renderDocumentToBlobs — browser-native Blob output
+// ---------------------------------------------------------------------------
+
+describe('renderDocumentToBlobs', () => {
+  const simpleDoc = makeDoc([{
+    id: 'b1', typ: 'lueckentext', punkte: 4, arbeitsanweisung: 'Setze ein.',
+    config: { anzahlLuecken: 2, wortbank: false, distraktoren: 0 },
+    loesung: { luecken: [{ nr: 1, wort: 'Antwort' }, { nr: 2, wort: 'Zwei' }] },
+  }]);
+
+  it('gibt schueler und loesung als Blob zurück', async () => {
+    const { schueler, loesung } = await renderDocumentToBlobs(simpleDoc);
+    expect(schueler).toBeInstanceOf(Blob);
+    expect(loesung).toBeInstanceOf(Blob);
+  });
+
+  it('Blob-MIME-Type ist korrekt (docx)', async () => {
+    const { schueler, loesung } = await renderDocumentToBlobs(simpleDoc);
+    const docxMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    expect(schueler.type).toBe(docxMime);
+    expect(loesung.type).toBe(docxMime);
+  });
+
+  it('Blobs sind nicht leer (> 1 kB)', async () => {
+    const { schueler, loesung } = await renderDocumentToBlobs(simpleDoc);
+    expect(schueler.size).toBeGreaterThan(1000);
+    expect(loesung.size).toBeGreaterThan(1000);
+  });
+
+  it('schueler !== loesung (unterschiedlicher Inhalt)', async () => {
+    const { schueler, loesung } = await renderDocumentToBlobs(simpleDoc);
+    expect(schueler.size).not.toBe(loesung.size);
   });
 });

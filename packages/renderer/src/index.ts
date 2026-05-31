@@ -57,10 +57,24 @@ export interface RenderResult {
   loesung: Buffer;
 }
 
+export interface RenderResultBlobs {
+  schueler: Blob;
+  loesung: Blob;
+}
+
 export async function renderDocument(doc: DocumentV1): Promise<RenderResult> {
   const [schueler, loesung] = await Promise.all([
-    buildDocx(doc, 'schueler'),
-    buildDocx(doc, 'loesung'),
+    buildDocxPacked(Packer.toBuffer.bind(Packer), doc, 'schueler'),
+    buildDocxPacked(Packer.toBuffer.bind(Packer), doc, 'loesung'),
+  ]);
+  return { schueler, loesung };
+}
+
+/** Browser-native export — returns Blobs suitable for URL.createObjectURL(). */
+export async function renderDocumentToBlobs(doc: DocumentV1): Promise<RenderResultBlobs> {
+  const [schueler, loesung] = await Promise.all([
+    buildDocxPacked(Packer.toBlob.bind(Packer), doc, 'schueler'),
+    buildDocxPacked(Packer.toBlob.bind(Packer), doc, 'loesung'),
   ]);
   return { schueler, loesung };
 }
@@ -71,7 +85,11 @@ export async function renderDocument(doc: DocumentV1): Promise<RenderResult> {
 
 type Mode = 'schueler' | 'loesung';
 
-async function buildDocx(doc: DocumentV1, mode: Mode): Promise<Buffer> {
+async function buildDocxPacked<T>(
+  packer: (doc: Document) => Promise<T>,
+  doc: DocumentV1,
+  mode: Mode,
+): Promise<T> {
   const quelltextMap = new Map<string, QuellText>(
     doc.quelltexte.map((q) => [q.id, q]),
   );
@@ -95,7 +113,7 @@ async function buildDocx(doc: DocumentV1, mode: Mode): Promise<Buffer> {
     ],
   });
 
-  return Packer.toBuffer(document);
+  return packer(document);
 }
 
 // ---------------------------------------------------------------------------
