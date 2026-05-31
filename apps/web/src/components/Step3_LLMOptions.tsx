@@ -14,37 +14,42 @@ export function Step3_LLMOptions({ state, dispatch }: Props) {
     <div>
       <h2 style={{ marginBottom: '1.25rem' }}>KI-Modell auswählen</h2>
 
-      <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        {LLM_PROVIDERS.map((provider) => (
-          <label key={provider.id} style={{
-            display: 'flex', alignItems: 'center', gap: '0.75rem',
-            padding: '1rem',
-            border: `2px solid ${state.llmProvider === provider.id ? 'var(--color-accent)' : 'var(--color-gray-2)'}`,
-            borderRadius: 'var(--radius)',
-            cursor: 'pointer',
-            background: state.llmProvider === provider.id ? '#e8f0fe' : 'white',
-          }}>
-            <input type="radio" name="llmProvider"
-              checked={state.llmProvider === provider.id}
-              onChange={() => {
+      {/* Anbieter-Karten nebeneinander */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        {LLM_PROVIDERS.map((provider) => {
+          const isSelected = state.llmProvider === provider.id;
+          return (
+            <div
+              key={provider.id}
+              onClick={() => {
                 dispatch({ type: 'SET_LLM_PROVIDER', provider: provider.id });
                 if (!provider.models.includes(state.modelName)) {
                   dispatch({ type: 'SET_MODEL_NAME', name: provider.models[0] ?? '' });
                 }
               }}
-              style={{ width: 'auto' }} />
-            <div>
-              <strong>{provider.label}</strong>
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginTop: '0.125rem' }}>
-                Modelle: {provider.models.join(', ')}
-              </p>
+              style={{
+                padding: '1rem',
+                border: `2px solid ${isSelected ? 'var(--color-accent)' : 'var(--color-gray-2)'}`,
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                background: isSelected ? 'rgba(91,91,214,0.08)' : 'white',
+                transition: 'all 0.15s',
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>
+                {provider.label}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)' }}>
+                {provider.models.join(', ')}
+              </div>
             </div>
-          </label>
-        ))}
+          );
+        })}
       </div>
 
+      {/* Modell-Auswahl */}
       {state.llmProvider && (
-        <div>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label htmlFor="model">Modell</label>
           <select id="model" value={state.modelName}
             onChange={(e) => dispatch({ type: 'SET_MODEL_NAME', name: e.target.value })}>
@@ -55,7 +60,42 @@ export function Step3_LLMOptions({ state, dispatch }: Props) {
         </div>
       )}
 
-      <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--color-gray-3)', borderRadius: 'var(--radius)', fontSize: '0.8125rem' }}>
+      {/* Kreativitaetsregler */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <label htmlFor="kreativitaet">
+          Kreativität: {Math.round(state.kreativitaet * 100)}%
+        </label>
+        <input
+          id="kreativitaet"
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={state.kreativitaet}
+          onChange={(e) => dispatch({ type: 'SET_KREATIVITAET', value: parseFloat(e.target.value) })}
+          style={{ width: '100%', marginTop: '0.5rem' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--color-gray-1)', marginTop: '0.25rem' }}>
+          <span>Präzise</span>
+          <span>Kreativ</span>
+        </div>
+      </div>
+
+      {/* Ausgabesprache */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <label htmlFor="ausgabeSprache">Ausgabesprache</label>
+        <select
+          id="ausgabeSprache"
+          value={state.ausgabeSprache}
+          onChange={(e) => dispatch({ type: 'SET_AUSGABE_SPRACHE', value: e.target.value })}
+        >
+          <option value="de">Deutsch</option>
+          <option value="en">Englisch</option>
+        </select>
+      </div>
+
+      {/* Datenschutz-Hinweis */}
+      <div style={{ padding: '1rem', background: 'var(--color-gray-3)', borderRadius: 'var(--radius)', fontSize: '0.8125rem' }}>
         <p style={{ color: 'var(--color-gray-1)' }}>
           <strong>Datenschutz-Hinweis:</strong> Die eingegebenen Quelltexte werden an den
           ausgewählten Anbieter übertragen. Kimi (Moonshot) ist ein chinesischer Anbieter –

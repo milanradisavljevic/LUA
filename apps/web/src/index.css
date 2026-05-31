@@ -13,7 +13,7 @@
   --color-gray-2: #BFBFBF;
   --color-gray-3: #F0F0F0;
   --color-bg: #FFFFFF;
-  --color-accent: #1a73e8;
+  --color-accent: #5b5bd6;
   --color-error: #d93025;
   --color-success: #188038;
   --radius: 6px;
@@ -50,7 +50,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  box-shadow: 0 0 0 2px rgba(91,91,214,0.15);
 }
 
 textarea {
