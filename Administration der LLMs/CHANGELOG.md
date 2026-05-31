@@ -12,3 +12,6 @@ Format orientiert an Keep a Changelog. Versionierung nach Phasen (0.x = Phase x)
 
 ### Phase 0
 - Projekt-Geruest und Designdokument angelegt.
+- Monorepo scaffold: pnpm workspaces, TypeScript, Vitest (Claude Code).
+- Zod-Schema fuer alle 6 Blocktypen + TS-Typen exportiert (Claude Code).
+- 6 Fixture-JSONs pro Blocktyp + Validierungstests (OpenCode #3).

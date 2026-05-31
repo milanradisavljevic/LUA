@@ -7,6 +7,9 @@ welche Rolle sie hat (1, 2 oder 3).
 Lies zuerst `AGENTS.md`, dann `DESIGN.md`, dann den fuer dich passenden Abschnitt hier.
 
 ## OpenCode #1 — LLM-Adapter
+
+**Hinweis: OpenCode #1 hat eine eigene Datei `OPENCODE-1.md`. Lies diese statt dieses Abschnitts.**
+
 Besitzt `packages/llm`. Branch: `agent/opencode-1`. Changelog: `changelog/opencode-1.md`.
 Aufgabe: gemeinsame Anbieter-Schnittstelle plus Adapter fuer Claude (Anthropic),
 ChatGPT (OpenAI), Kimi. Jeder Adapter zwingt das Modell zu JSON, das exakt dem

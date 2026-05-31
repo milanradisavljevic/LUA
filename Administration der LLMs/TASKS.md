@@ -34,14 +34,14 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 | 2.1 | Anbieter-Schnittstelle + Claude-Adapter            | OpenCode #1 | offen  |
 | 2.2 | JSON erzwingen + Zod-Validierung der Antwort       | OpenCode #1 | offen  |
 | 2.3 | Prompt-Bau aus Bloecken + Quelltext                | OpenCode #1 | offen  |
-| 2.4 | txt-Parser fuer ersten echten Quelltext             | Kimi Code   | in Arbeit  |
+| 2.4 | txt-Parser fuer ersten echten Quelltext             | Kimi Code   | fertig  |
 | 2.5 | End-to-end-Test: Quelltext -> 2 .docx                | OpenCode #3 | offen  |
 
 ## Phase 3 — Input-Flexibilitaet (Gate: optional)
 
 | ID  | Aufgabe                                            | Owner       | Status |
 |-----|----------------------------------------------------|-------------|--------|
-| 3.1 | docx- und pdf-Parser                                | Kimi Code   | in Arbeit  |
+| 3.1 | docx- und pdf-Parser                                | Kimi Code   | fertig  |
 | 3.2 | html-Upload zu sauberem Text                       | Kimi Code   | offen  |
 | 3.3 | url-Abruf mit Block-/Login-Fehlerbehandlung        | Kimi Code   | offen  |
 | 3.4 | Quelltext-Aufbereitung (kuerzen auf Lesetempo)     | Kimi Code   | offen  |
