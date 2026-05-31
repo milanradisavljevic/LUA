@@ -9,6 +9,8 @@ export interface AppState {
   meta: Meta;
   quelltexte: QuellText[];
   bloecke: Block[];
+  /** Vom LLM befülltes Dokument — null bis "Generieren" geklickt wurde. */
+  generiertesDokument: DocumentV1 | null;
   llmProvider: LlmProvider | null;
   modelName: string;
   kreativitaet: number;
@@ -34,4 +36,6 @@ export type AppAction =
   | { type: 'SET_LLM_PROVIDER'; provider: LlmProvider | null }
   | { type: 'SET_MODEL_NAME'; name: string }
   | { type: 'SET_KREATIVITAET'; value: number }
-  | { type: 'SET_AUSGABE_SPRACHE'; value: string };
+  | { type: 'SET_AUSGABE_SPRACHE'; value: string }
+  | { type: 'SET_GENERIERTES_DOKUMENT'; dokument: DocumentV1 | null }
+  | { type: 'UPDATE_GENERIERTER_BLOCK'; id: string; block: Partial<Block> };

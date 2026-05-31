@@ -74,7 +74,7 @@ function skaliereKatalog(katalog: KriterienKatalog[], zielPunkte: number): Raste
 // ---------------------------------------------------------------------------
 
 export function buildRaster(doc: DocumentV1): KorrekturrasterDokument {
-  const blloecke: RasterBlock[] = doc.bloecke.map((block, i) => {
+  const bloecke: RasterBlock[] = doc.bloecke.map((block, i) => {
     const katalog = waehleKatalog(block, doc.meta.fach);
     const kriterien = skaliereKatalog(katalog, block.punkte);
 
@@ -88,7 +88,7 @@ export function buildRaster(doc: DocumentV1): KorrekturrasterDokument {
     };
   });
 
-  const gesamtPunkte = blloecke.reduce((s, b) => s + b.maxPunkte, 0);
+  const gesamtPunkte = bloecke.reduce((s, b) => s + b.maxPunkte, 0);
   const notenschluessel = berechneNotenschluessel(gesamtPunkte);
 
   return {
@@ -99,7 +99,7 @@ export function buildRaster(doc: DocumentV1): KorrekturrasterDokument {
       datum: doc.meta.datum,
       klasse: doc.meta.klasse,
     },
-    blloecke,
+    bloecke,
     gesamtPunkte,
     notenschluessel,
   };

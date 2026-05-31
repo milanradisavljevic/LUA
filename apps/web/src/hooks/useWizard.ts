@@ -7,7 +7,13 @@ const STEPS_ORDER: StepId[] = ['input', 'baukasten', 'llm', 'generate'];
 function wizardReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'SET_STEP':
-      return { ...state, step: action.step };
+      // Zurück zu Schritt 2 → generiertes Dokument verwerfen
+      return {
+        ...state,
+        step: action.step,
+        generiertesDokument:
+          action.step === 'baukasten' ? null : state.generiertesDokument,
+      };
     case 'SET_META':
       return { ...state, meta: { ...state.meta, ...action.meta } };
     case 'ADD_QUELLTEXT':
@@ -35,6 +41,19 @@ function wizardReducer(state: AppState, action: AppAction): AppState {
       return { ...state, kreativitaet: action.value };
     case 'SET_AUSGABE_SPRACHE':
       return { ...state, ausgabeSprache: action.value };
+    case 'SET_GENERIERTES_DOKUMENT':
+      return { ...state, generiertesDokument: action.dokument };
+    case 'UPDATE_GENERIERTER_BLOCK':
+      if (!state.generiertesDokument) return state;
+      return {
+        ...state,
+        generiertesDokument: {
+          ...state.generiertesDokument,
+          bloecke: state.generiertesDokument.bloecke.map((b) =>
+            b.id === action.id ? { ...b, ...action.block } as typeof b : b,
+          ),
+        },
+      };
     default:
       return state;
   }
@@ -45,6 +64,7 @@ const INITIAL_STATE: AppState = {
   meta: getDefaultMeta(),
   quelltexte: [],
   bloecke: [],
+  generiertesDokument: null,
   llmProvider: 'claude',
   modelName: 'Sonnet 4.6',
   kreativitaet: 0.4,

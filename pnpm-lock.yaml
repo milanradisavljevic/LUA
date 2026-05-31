@@ -28,6 +28,9 @@ importers:
       '@lehrunterlagen/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      mammoth:
+        specifier: ^1.8.0
+        version: 1.12.0
       react:
         specifier: ^18.0.0
         version: 18.3.1

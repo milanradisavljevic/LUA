@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { AppState, AppAction } from '../lib/types';
 
 interface Props {
@@ -5,9 +6,46 @@ interface Props {
   dispatch: React.Dispatch<AppAction>;
 }
 
+async function readFileAsText(file: File): Promise<string> {
+  if (file.name.endsWith('.docx')) {
+    // mammoth browser build — convert docx to plain text
+    const mammoth = await import('mammoth');
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  }
+  // txt / html / fallback
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve((e.target?.result as string) ?? '');
+    reader.onerror = () => reject(new Error('Datei konnte nicht gelesen werden'));
+    reader.readAsText(file, 'utf-8');
+  });
+}
+
 export function Step1_Input({ state, dispatch }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleMetaChange = (field: string, value: string) => {
     dispatch({ type: 'SET_META', meta: { [field]: value } });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const inhalt = await readFileAsText(file);
+      const titel = file.name.replace(/\.[^.]+$/, '');
+      const id = `q${Date.now()}`;
+      dispatch({
+        type: 'ADD_QUELLTEXT',
+        quelltext: { id, titel, inhalt, herkunft: { typ: 'upload', ref: file.name } },
+      });
+    } catch {
+      alert('Datei konnte nicht gelesen werden. Bitte .txt, .docx oder .html hochladen.');
+    }
+    // Input zurücksetzen damit dieselbe Datei nochmal hochgeladen werden kann
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const addPlaceholderText = () => {
@@ -106,10 +144,25 @@ export function Step1_Input({ state, dispatch }: Props) {
         </div>
       ))}
 
-      <button className="btn-secondary" onClick={addPlaceholderText}
-        style={{ marginTop: '0.5rem' }}>
-        + Quelltext hinzufügen
-      </button>
+      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+        <button className="btn-secondary" onClick={addPlaceholderText}>
+          + Quelltext manuell eingeben
+        </button>
+        <button className="btn-secondary" onClick={() => fileInputRef.current?.click()}>
+          📂 Datei hochladen (.txt, .docx, .html)
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.docx,.html,.htm"
+          style={{ display: 'none' }}
+          onChange={handleFileUpload}
+        />
+      </div>
+      <p style={{ fontSize: '0.7rem', color: 'var(--color-gray-1)', marginTop: '0.375rem' }}>
+        PDF: Bitte in Word oder LibreOffice als .docx oder .txt speichern.
+        URL: Seite als HTML speichern und hochladen.
+      </p>
     </div>
   );
 }

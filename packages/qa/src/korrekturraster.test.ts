@@ -46,10 +46,10 @@ describe('Builder: Geschlossene Blocks', () => {
       loesung: { luecken: [{ nr: 1, wort: 'A' }, { nr: 2, wort: 'B' }, { nr: 3, wort: 'C' }, { nr: 4, wort: 'D' }] },
     }]);
     const raster = buildRaster(doc);
-    expect(raster.blloecke).toHaveLength(1);
-    expect(raster.blloecke[0].kriterien).toHaveLength(1);
-    expect(raster.blloecke[0].kriterien[0].kriterium).toBe('Richtig/Falsch');
-    expect(raster.blloecke[0].maxPunkte).toBe(8);
+    expect(raster.bloecke).toHaveLength(1);
+    expect(raster.bloecke[0].kriterien).toHaveLength(1);
+    expect(raster.bloecke[0].kriterien[0].kriterium).toBe('Richtig/Falsch');
+    expect(raster.bloecke[0].maxPunkte).toBe(8);
   });
 
   it('matching bekommt eine Zeile "Richtig/Falsch"', () => {
@@ -62,8 +62,8 @@ describe('Builder: Geschlossene Blocks', () => {
       loesung: { zuordnung: { '1': 'X', '2': 'Z' } },
     }]);
     const raster = buildRaster(doc);
-    expect(raster.blloecke[0].kriterien).toHaveLength(1);
-    expect(raster.blloecke[0].kriterien[0].maxPunkte).toBe(6);
+    expect(raster.bloecke[0].kriterien).toHaveLength(1);
+    expect(raster.bloecke[0].kriterien[0].maxPunkte).toBe(6);
   });
 
   it('multipleChoice bekommt eine Zeile "Richtig/Falsch"', () => {
@@ -73,7 +73,7 @@ describe('Builder: Geschlossene Blocks', () => {
       loesung: { antworten: { '1': ['A'] } },
     }]);
     const raster = buildRaster(doc);
-    expect(raster.blloecke[0].kriterien[0].maxPunkte).toBe(4);
+    expect(raster.bloecke[0].kriterien[0].maxPunkte).toBe(4);
   });
 });
 
@@ -90,8 +90,8 @@ describe('Builder: Offene Verstaendnisfragen', () => {
     }]);
     const raster = buildRaster(doc);
     // 2 Fragen * 2 Kriterien = 4 Kriterien
-    expect(raster.blloecke[0].kriterien).toHaveLength(4);
-    expect(raster.blloecke[0].maxPunkte).toBe(10);
+    expect(raster.bloecke[0].kriterien).toHaveLength(4);
+    expect(raster.bloecke[0].maxPunkte).toBe(10);
   });
 });
 
@@ -115,10 +115,10 @@ describe('Builder: Schreibaufgabe', () => {
       },
     }]);
     const raster = buildRaster(doc);
-    expect(raster.blloecke[0].kriterien.length).toBeGreaterThanOrEqual(5);
-    expect(raster.blloecke[0].maxPunkte).toBe(40);
+    expect(raster.bloecke[0].kriterien.length).toBeGreaterThanOrEqual(5);
+    expect(raster.bloecke[0].maxPunkte).toBe(40);
     // Punkte muessen summiert werden
-    const summe = raster.blloecke[0].kriterien.reduce((s, k) => s + k.maxPunkte, 0);
+    const summe = raster.bloecke[0].kriterien.reduce((s, k) => s + k.maxPunkte, 0);
     expect(summe).toBe(40);
   });
 
@@ -137,8 +137,8 @@ describe('Builder: Schreibaufgabe', () => {
       },
     }], 'englisch');
     const raster = buildRaster(doc);
-    expect(raster.blloecke[0].kriterien).toHaveLength(4);
-    const summe = raster.blloecke[0].kriterien.reduce((s, k) => s + k.maxPunkte, 0);
+    expect(raster.bloecke[0].kriterien).toHaveLength(4);
+    const summe = raster.bloecke[0].kriterien.reduce((s, k) => s + k.maxPunkte, 0);
     expect(summe).toBe(34);
   });
 });

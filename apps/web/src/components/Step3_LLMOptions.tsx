@@ -73,7 +73,7 @@ export function Step3_LLMOptions({ state, dispatch }: Props) {
           step={0.05}
           value={state.kreativitaet}
           onChange={(e) => dispatch({ type: 'SET_KREATIVITAET', value: parseFloat(e.target.value) })}
-          style={{ width: '100%', marginTop: '0.5rem' }}
+          style={{ width: '100%', marginTop: '0.5rem', accentColor: 'var(--color-accent)' }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--color-gray-1)', marginTop: '0.25rem' }}>
           <span>Präzise</span>

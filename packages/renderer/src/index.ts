@@ -62,8 +62,10 @@ export interface RenderResultBlobs {
   loesung: Blob;
 }
 
+
 // ---------------------------------------------------------------------------
-// Korrekturraster types (Renderer-seitig, kein Import aus qa)
+// Korrekturraster types (lokal, spiegelt packages/qa/src/korrekturraster/types.ts)
+// Kein Import aus qa — qa → renderer-Abhaengigkeit wuerde Kreis erzeugen.
 // ---------------------------------------------------------------------------
 
 export interface RasterKriterium {
@@ -83,7 +85,7 @@ export interface RasterBlock {
   maxPunkte: number;
 }
 
-export interface RasterNote {
+export interface Notenstufe {
   note: 1 | 2 | 3 | 4 | 5;
   bezeichnung: string;
   minProzent: number;
@@ -92,17 +94,11 @@ export interface RasterNote {
   maxPunkte: number;
 }
 
-export interface RasterInput {
-  meta: {
-    fach: string;
-    stufe: string;
-    thema: string;
-    datum: string;
-    klasse: string;
-  };
-  blloecke: RasterBlock[];
+export interface KorrekturrasterDokument {
+  meta: { fach: string; stufe: string; thema: string; datum: string; klasse: string };
+  bloecke: RasterBlock[];
   gesamtPunkte: number;
-  notenschluessel: RasterNote[];
+  notenschluessel: Notenstufe[];
 }
 
 export async function renderDocument(doc: DocumentV1): Promise<RenderResult> {
@@ -126,10 +122,10 @@ export async function renderDocumentToBlobs(doc: DocumentV1): Promise<RenderResu
 // Korrekturraster: Drittes Dokument (Lehrerinstrument)
 // ---------------------------------------------------------------------------
 
-export async function renderRaster(raster: RasterInput): Promise<Buffer> {
+export async function renderRaster(raster: KorrekturrasterDokument): Promise<Buffer> {
   const children: (Paragraph | Table)[] = [
     ...buildRasterHeader(raster),
-    ...raster.blloecke.flatMap((block) => buildRasterBlock(block)),
+    ...raster.bloecke.flatMap((block) => buildRasterBlock(block)),
     buildGesamtzeile(raster.gesamtPunkte),
     buildNotenschluessel(raster.notenschluessel),
     ...buildFreitextfeld(),
@@ -149,7 +145,7 @@ export async function renderRaster(raster: RasterInput): Promise<Buffer> {
   return Packer.toBuffer(document);
 }
 
-function buildRasterHeader(raster: RasterInput): (Paragraph | Table)[] {
+function buildRasterHeader(raster: Pick<KorrekturrasterDokument, 'meta'>): (Paragraph | Table)[] {
   const fachLabel = raster.meta.fach.charAt(0).toUpperCase() + raster.meta.fach.slice(1);
   const stufeLabel = raster.meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe';
 
@@ -284,7 +280,7 @@ function buildGesamtzeile(gesamtPunkte: number): Paragraph {
   });
 }
 
-function buildNotenschluessel(noten: RasterNote[]): Table {
+function buildNotenschluessel(noten: Notenstufe[]): Table {
   const headerRow = new TableRow({
     children: ['Note', 'Bezeichnung', 'Punktebereich'].map(
       (text) =>

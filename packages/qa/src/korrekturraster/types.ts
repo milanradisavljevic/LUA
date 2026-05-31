@@ -34,7 +34,7 @@ export interface KorrekturrasterDokument {
     datum: string;
     klasse: string;
   };
-  blloecke: RasterBlock[];
+  bloecke: RasterBlock[];
   gesamtPunkte: number;
   notenschluessel: Notenstufe[];
 }
