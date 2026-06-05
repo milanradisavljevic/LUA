@@ -91,17 +91,17 @@ Reihenfolge & Timing dort. Feldnamen sind fix. Kimi liefert pro Typ ZUERST Schem
 | 6.1d| Schema: tabelle (Tabellen-Lückentext)                       | Kimi     | fertig (Konsolidierung Minimax 2026-06-04) |
 | 6.1e| Schema: stiluebung                                          | Kimi     | fertig (Konsolidierung Minimax 2026-06-04) |
 | 6.1f| Schema: songanalyse                                         | Kimi     | fertig (Konsolidierung Minimax 2026-06-04) |
-| 6.2 | Web (Preview+ConfigPanel+constants+defaults) je Typ        | Kimi     | teilweise — ConfigPanel für kategorisierung/tabelle/songanalyse noch read-only |
+| 6.2 | Web (Preview+ConfigPanel+constants+defaults) je Typ        | Kimi     | fertig (2026-06-05, ConfigPanel = R5) |
 | 6.3 | LLM-Vertrag (prompt/normalize/transform/quality) je Typ    | Claude   | fertig (2026-06-05) |
 | 6.4 | Renderer (`build<Typ>`+Dispatch+Labels) je Typ             | Claude   | fertig (Determinismus-Fix Claude 2026-06-05) |
 | 6.5 | Korrekturraster + Fixtures + Tests je Typ                   | Minimax  | fertig (2026-06-04) |
 | 6.6 | E2E reaktivieren (Mock-Provider, ≥1 Lauf/Typ)              | Minimax  | fertig (2026-06-04) |
-| 6.7 | Streaming + Provider-Fallback (`src-tauri`)                | Qwen     | offen  |
-| 6.8 | Prompt-Injection-Sanitisierung (Input-Schicht)            | Qwen     | offen  |
+| 6.7 | Streaming + Provider-Fallback (`src-tauri`)                | Qwen     | offen (Frontend-Fallback via R-CB erledigt; echtes Rust-Streaming offen) |
+| 6.8 | Prompt-Injection-Sanitisierung                             | Claude   | fertig (2026-06-05, = R4) |
 | 6.9 | `convert_pdf` für tabellen-/gitterlastige DOCX härten      | Qwen     | offen  |
-| 6.10| Lernziel-Coverage-Ansicht (Audit K3)                       | Kimi     | offen  |
-| 6.11| Schema-Versionierung + Migration (Audit T-3)              | Kimi     | offen  |
-| 6.12| Markieraufgabe-Semantik dokumentieren (Audit D-7)         | Minimax  | offen  |
+| 6.10| Lernziel-Coverage-Ansicht (Audit K3)                       | Claude+Kimi | fertig (2026-06-05, = R-CA/R3/R6) |
+| 6.11| Schema-Versionierung + Migration (Audit T-3)              | Claude   | fertig (2026-06-05, = R8) |
+| 6.12| Markieraufgabe-Semantik dokumentieren (Audit D-7)         | Claude   | fertig (2026-06-05, = R9c) |
 | 6.P2| Phase 2: Kreuzworträtsel + Wortgitter (`grids.ts` + Render)| Claude   | offen  |
 
 ---
