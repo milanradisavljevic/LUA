@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-06 — Claude (Wortgitter-Typ + UI-Picker-Fix für beide Phase-2-Typen)
+
+- **UI-Bug behoben:** Neue Aufgabentypen tauchten nicht im Baukasten-Picker auf, weil `STUFE_RULES.allowedBlockTypes` (`apps/web/src/lib/constants.ts`) sie nicht enthielt. `kreuzwortraetsel` **und** `wortgitter` jetzt für Ober- und Unterstufe freigeschaltet.
+- **Neuer Aufgabentyp `wortgitter` (Wortsuchrätsel)** über alle Schichten, gleiches Leitprinzip (LLM liefert nur die Wortliste, Code baut das Gitter):
+  - `grids.ts`: `baueWortgitter(woerter)` — deterministischer, seed-stabiler Generator (Wörter in 3 Richtungen waagrecht/senkrecht/diagonal, Überlappungen erlaubt, Füllbuchstaben deterministisch; Gitter wächst bei Bedarf, damit kein Wort verloren geht). Tests +6.
+  - Schema `WortgitterBlockSchema` (config.woerter, kein loesung) + Union/Enum/buildSkelett; LLM BlockRequest+Prompt+Beispiel+`normalizeWortgitter`; Renderer `buildWortgitter` (Buchstabengitter; Lösung hebt die versteckten Wörter grau/fett hervor + Wortliste); Web-Vorschau + ConfigPanel (Wortliste editierbar); QA-Fixture + Korrekturraster (geschlossen).
+- **Verifikation:** 352 Tests grün (Schema 103, Renderer 28, LLM 93, Input 17, QA 96, Web 15), `pnpm -r build` EXIT 0. **Echter DeepSeek-Lauf:** alle 6 Block­typen inkl. kreuzwortraetsel + wortgitter in 1 Versuch generiert + gerendert (`pnpm smoke`).
+
+---
+
+
 Stand: 2026-06-01. Regel: Jeder Agent trägt hier ein, was er geändert hat. Kein Merge ohne Eintrag. Bei Konflikten hilft Git-History, dieses Dokument sagt was und warum.
 
 ---

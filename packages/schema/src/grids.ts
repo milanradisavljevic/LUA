@@ -172,3 +172,120 @@ export function baueKreuzwortgitter(eintraege: KreuzwortEintrag[]): Kreuzwortgit
 
   return { zeilen, spalten, belegung, nummern, platzierungen };
 }
+
+// ===========================================================================
+// Wortgitter (Wortsuchrätsel)
+// ===========================================================================
+
+export type WortgitterRichtung = 'waagrecht' | 'senkrecht' | 'diagonal';
+
+export interface WortgitterPlatzierung {
+  wort: string;
+  richtung: WortgitterRichtung;
+  zeile: number;
+  spalte: number;
+}
+
+export interface Wortgitter {
+  zeilen: number;
+  spalten: number;
+  /** belegung[r][c] = Großbuchstabe (immer gefüllt — auch Füllbuchstaben). */
+  belegung: string[][];
+  /** Zu suchende Wörter (normalisiert). */
+  woerter: string[];
+  platzierungen: WortgitterPlatzierung[];
+}
+
+// Kleiner seed-stabiler PRNG (lokal, kein Import aus index → kein Zyklus).
+function rngFromSeed(seed: string): () => number {
+  let a = 0;
+  for (let i = 0; i < seed.length; i++) a = (a + seed.charCodeAt(i)) | 0;
+  a = a >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) | 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const WG_DIRS: { dr: number; dc: number; richtung: WortgitterRichtung }[] = [
+  { dr: 0, dc: 1, richtung: 'waagrecht' },
+  { dr: 1, dc: 0, richtung: 'senkrecht' },
+  { dr: 1, dc: 1, richtung: 'diagonal' },
+];
+const FUELL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+export function baueWortgitter(woerterRoh: string[]): Wortgitter {
+  // 1. normalisieren, zu kurze entfernen, Dubletten raus
+  const seen = new Set<string>();
+  const woerter: string[] = [];
+  for (const w of woerterRoh) {
+    const n = normalisiereWort(w);
+    if (n.length < 2 || seen.has(n)) continue;
+    seen.add(n);
+    woerter.push(n);
+  }
+  if (woerter.length === 0) {
+    return { zeilen: 0, spalten: 0, belegung: [], woerter: [], platzierungen: [] };
+  }
+  // längste zuerst (deterministisch), dann alphabetisch
+  woerter.sort((a, b) => b.length - a.length || (a < b ? -1 : a > b ? 1 : 0));
+
+  const seed = woerter.join('|');
+  const longest = woerter[0]!.length;
+  const sumLen = woerter.reduce((s, w) => s + w.length, 0);
+  const startSize = Math.max(longest, Math.ceil(Math.sqrt(sumLen) * 1.5));
+
+  // Bei Misserfolg Gitter vergrößern (bis Obergrenze), damit kein Wort verloren geht.
+  for (let size = startSize; size <= longest * 2 + 6; size++) {
+    const ergebnis = versuchePlatzierung(woerter, size, seed);
+    if (ergebnis) return ergebnis;
+  }
+  // Fallback (sollte praktisch nie eintreten): größtmögliches Gitter.
+  return versuchePlatzierung(woerter, longest * 2 + 6, seed)
+    ?? { zeilen: 0, spalten: 0, belegung: [], woerter, platzierungen: [] };
+}
+
+function versuchePlatzierung(woerter: string[], size: number, seed: string): Wortgitter | null {
+  const rng = rngFromSeed(`${seed}#${size}`);
+  const grid: (string | null)[][] = Array.from({ length: size }, () => Array<string | null>(size).fill(null));
+  const platzierungen: WortgitterPlatzierung[] = [];
+
+  for (const wort of woerter) {
+    // alle gültigen (dir, r, c) sammeln, deterministisch mischen, erste passende nehmen
+    const kandidaten: { dr: number; dc: number; richtung: WortgitterRichtung; r: number; c: number }[] = [];
+    for (const d of WG_DIRS) {
+      const maxR = d.dr === 0 ? size - 1 : size - wort.length;
+      const maxC = d.dc === 0 ? size - 1 : size - wort.length;
+      for (let r = 0; r <= maxR; r++) {
+        for (let c = 0; c <= maxC; c++) kandidaten.push({ ...d, r, c });
+      }
+    }
+    // Fisher-Yates mit seed-RNG
+    for (let i = kandidaten.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const tmp = kandidaten[i]!; kandidaten[i] = kandidaten[j]!; kandidaten[j] = tmp;
+    }
+    let platziert = false;
+    for (const k of kandidaten) {
+      let ok = true;
+      for (let n = 0; n < wort.length; n++) {
+        const cur = grid[k.r + k.dr * n]![k.c + k.dc * n];
+        if (cur !== null && cur !== wort[n]) { ok = false; break; }
+      }
+      if (!ok) continue;
+      for (let n = 0; n < wort.length; n++) grid[k.r + k.dr * n]![k.c + k.dc * n] = wort[n]!;
+      platzierungen.push({ wort, richtung: k.richtung, zeile: k.r, spalte: k.c });
+      platziert = true;
+      break;
+    }
+    if (!platziert) return null; // Gitter zu klein → Aufrufer vergrößert
+  }
+
+  // Leere Zellen mit Füllbuchstaben füllen (deterministisch).
+  const belegung: string[][] = grid.map((row) =>
+    row.map((cell) => cell ?? FUELL_ALPHABET[Math.floor(rng() * FUELL_ALPHABET.length)]!),
+  );
+  return { zeilen: size, spalten: size, belegung, woerter, platzierungen };
+}

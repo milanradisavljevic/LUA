@@ -105,6 +105,10 @@ kreuzwortraetsel (Kreuzwortraetsel):
 - hinweis = eine kurze Definition/Frage, die das Wort NICHT selbst enthaelt (sonst ist das Raetsel trivial).
 - KEIN "loesung"-Objekt — die Woerter in config.eintraege SIND die Loesung. Das Gitter baut die App selbst.
 
+wortgitter (Wortsuchraetsel / Buchstabengitter):
+- config.woerter = Array von EINZELNEN Woertern (Strings, keine Leerzeichen, mind. 2 Buchstaben) mit GENAU anzahlWoerter Eintraegen, thematisch aus dem Quelltext.
+- KEIN "loesung"-Objekt und KEINE Hinweise — die App versteckt die Woerter selbst im Gitter.
+
 Ausgabe-Vertrag (ein einziges JSON-Array):
 
 BEISPIEL fuer multipleChoice:
@@ -336,6 +340,18 @@ BEISPIEL fuer kreuzwortraetsel (KEIN loesung-Objekt — die Woerter sind die Loe
         { "wort": "Chlorophyll", "hinweis": "Gruener Farbstoff in den Blaettern" }
       ]
     }
+  }
+]
+
+BEISPIEL fuer wortgitter (nur die zu suchenden Woerter — KEIN Gitter, KEIN loesung):
+[
+  {
+    "id": "b1",
+    "typ": "wortgitter",
+    "punkte": 5,
+    "quelleId": "q1",
+    "arbeitsanweisung": "Finde die versteckten Woerter im Buchstabengitter und markiere sie.",
+    "config": { "woerter": ["Sauerstoff", "Chlorophyll", "Blatt", "Wurzel", "Sonne"] }
   }
 ]
 

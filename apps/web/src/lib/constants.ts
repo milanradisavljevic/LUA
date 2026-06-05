@@ -13,6 +13,7 @@ export const BLOCK_TYPE_DEFS = [
   { id: 'stiluebung' as const, label: 'Stilübung', description: 'Text in einem anderen Stil umformulieren', icon: '✒️', color: '#f06292' },
   { id: 'songanalyse' as const, label: 'Songanalyse', description: 'Songtext interpretieren', icon: '🎵', color: '#4dd0e1' },
   { id: 'kreuzwortraetsel' as const, label: 'Kreuzworträtsel', description: 'Wörter über Hinweise ins Gitter eintragen', icon: '🧩', color: '#a1887f' },
+  { id: 'wortgitter' as const, label: 'Wortgitter', description: 'Versteckte Wörter im Buchstabengitter finden', icon: '🔠', color: '#90a4ae' },
 ];
 
 export const STUFE_RULES = {
@@ -21,6 +22,7 @@ export const STUFE_RULES = {
       'lueckentext', 'matching', 'multipleChoice',
       'offeneVerstaendnisfrage', 'offeneSchreibaufgabe', 'markieraufgabe',
       'wordScramble', 'kategorisierung', 'tabelle', 'stiluebung', 'songanalyse',
+      'kreuzwortraetsel', 'wortgitter',
     ] as const,
     wortbankAllowed: false,
   },
@@ -29,6 +31,7 @@ export const STUFE_RULES = {
       'lueckentext', 'matching', 'multipleChoice',
       'offeneVerstaendnisfrage', 'markieraufgabe',
       'wordScramble', 'kategorisierung', 'tabelle',
+      'kreuzwortraetsel', 'wortgitter',
     ] as const,
     wortbankAllowed: true,
   },

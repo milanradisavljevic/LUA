@@ -154,6 +154,13 @@ export function createDefaultBlock(typ: Block['typ'], meta?: Meta): Block {
           ],
         },
       } as Block;
+    case 'wortgitter':
+      return {
+        ...base,
+        typ: 'wortgitter',
+        punkte: 5,
+        config: { woerter: ['HAUS', 'GARTEN', 'BAUM', 'BLUME'] },
+      } as Block;
   }
 }
 
@@ -170,6 +177,7 @@ export const BLOCK_ARBEITSANWEISUNG_PLACEHOLDER: Record<Block['typ'], string> = 
   stiluebung: 'Formuliere den Text im geforderten Stilniveau um.',
   songanalyse: 'Analysiere den Songtext.',
   kreuzwortraetsel: 'Löse das Kreuzworträtsel mithilfe der Hinweise.',
+  wortgitter: 'Finde die versteckten Wörter im Buchstabengitter und markiere sie.',
 };
 
 const BLOCK_LABELS: Record<Block['typ'], string> = {
@@ -185,6 +193,7 @@ const BLOCK_LABELS: Record<Block['typ'], string> = {
   stiluebung: 'Stilübung',
   songanalyse: 'Songanalyse',
   kreuzwortraetsel: 'Kreuzworträtsel',
+  wortgitter: 'Wortgitter',
 };
 
 export function getBlockLabel(typ: Block['typ']): string {

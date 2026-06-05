@@ -22,7 +22,7 @@ import {
   convertMillimetersToTwip,
 } from 'docx';
 import type { DocumentV1, Block, QuellText } from '@lehrunterlagen/schema';
-import { baueWortbank, shuffle, baueKreuzwortgitter } from '@lehrunterlagen/schema';
+import { baueWortbank, shuffle, baueKreuzwortgitter, baueWortgitter } from '@lehrunterlagen/schema';
 
 // ---------------------------------------------------------------------------
 // House style constants (DESIGN.md §7, non-negotiable)
@@ -709,6 +709,7 @@ const BLOCK_LABELS: Record<Block['typ'], string> = {
   stiluebung: 'Stilübung',
   songanalyse: 'Songanalyse',
   kreuzwortraetsel: 'Kreuzworträtsel',
+  wortgitter: 'Wortgitter',
 };
 
 function buildBlock(
@@ -793,6 +794,9 @@ function buildBlock(
       break;
     case 'kreuzwortraetsel':
       result.push(...buildKreuzwortraetsel(block, mode));
+      break;
+    case 'wortgitter':
+      result.push(...buildWortgitter(block, mode));
       break;
   }
 
@@ -1709,6 +1713,67 @@ function buildKreuzwortraetsel(
   };
   hinweisListe('Waagrecht:', waag);
   hinweisListe('Senkrecht:', senk);
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Block: wortgitter
+// ---------------------------------------------------------------------------
+
+function buildWortgitter(
+  block: Extract<Block, { typ: 'wortgitter' }>,
+  mode: Mode,
+): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [];
+  const gitter = baueWortgitter(block.config.woerter);
+  if (gitter.zeilen === 0) return result;
+
+  // Zellen, die zu einem versteckten Wort gehören (für die Lösungs-Hervorhebung).
+  const loesungsZellen = new Set<string>();
+  const delta: Record<string, [number, number]> = { waagrecht: [0, 1], senkrecht: [1, 0], diagonal: [1, 1] };
+  for (const p of gitter.platzierungen) {
+    const [dr, dc] = delta[p.richtung]!;
+    for (let n = 0; n < p.wort.length; n++) loesungsZellen.add(`${p.zeile + dr * n},${p.spalte + dc * n}`);
+  }
+
+  const CELL = 420;
+  const cellBorder = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER };
+  const rows: TableRow[] = [];
+  for (let r = 0; r < gitter.zeilen; r++) {
+    const cells: TableCell[] = [];
+    for (let c = 0; c < gitter.spalten; c++) {
+      const letter = gitter.belegung[r]?.[c] ?? '';
+      const istLoesung = mode === 'loesung' && loesungsZellen.has(`${r},${c}`);
+      cells.push(new TableCell({
+        width: { size: CELL, type: WidthType.DXA },
+        borders: cellBorder,
+        ...(istLoesung ? { shading: { fill: 'D9D9D9' } } : {}),
+        margins: { top: 20, bottom: 20, left: 20, right: 20 },
+        children: [new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [run(letter, { font: FONT, size: SZ.body, bold: istLoesung })],
+        })],
+      }));
+    }
+    rows.push(new TableRow({ height: { value: CELL, rule: HeightRule.ATLEAST }, children: cells }));
+  }
+  result.push(new Table({
+    rows,
+    columnWidths: Array<number>(gitter.spalten).fill(CELL),
+    layout: TableLayoutType.FIXED,
+  }));
+
+  // Wortliste zum Suchen.
+  result.push(new Paragraph({
+    keepNext: true,
+    children: [run('Finde diese Wörter:', { font: FONT, size: SZ.body, bold: true })],
+    spacing: { before: 120, after: 40 },
+  }));
+  result.push(new Paragraph({
+    children: [run(gitter.woerter.join('   ·   '), { font: FONT, size: SZ.body })],
+    spacing: { after: 40 },
+  }));
 
   return result;
 }

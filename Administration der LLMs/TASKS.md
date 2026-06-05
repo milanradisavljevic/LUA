@@ -102,7 +102,7 @@ Reihenfolge & Timing dort. Feldnamen sind fix. Kimi liefert pro Typ ZUERST Schem
 | 6.10| Lernziel-Coverage-Ansicht (Audit K3)                       | Claude+Kimi | fertig (2026-06-05, = R-CA/R3/R6) |
 | 6.11| Schema-Versionierung + Migration (Audit T-3)              | Claude   | fertig (2026-06-05, = R8) |
 | 6.12| Markieraufgabe-Semantik dokumentieren (Audit D-7)         | Claude   | fertig (2026-06-05, = R9c) |
-| 6.P2| Phase 2: Kreuzworträtsel (`grids.ts` + Render)             | Claude   | fertig (2026-06-05, Kreuzworträtsel; Wortgitter noch offen) |
+| 6.P2| Phase 2: Kreuzworträtsel + Wortgitter (`grids.ts` + Render)| Claude   | fertig (2026-06-06, beide Typen end-to-end + im UI-Picker) |
 
 ---
 

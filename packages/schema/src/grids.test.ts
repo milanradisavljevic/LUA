@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { baueKreuzwortgitter, type KreuzwortEintrag } from './grids.js';
+import { baueKreuzwortgitter, baueWortgitter, type KreuzwortEintrag } from './grids.js';
 
 const eintraege: KreuzwortEintrag[] = [
   { wort: 'HAUS', hinweis: 'Gebäude zum Wohnen' },
@@ -63,5 +63,51 @@ describe('baueKreuzwortgitter', () => {
     const g = baueKreuzwortgitter([]);
     expect(g.zeilen).toBe(0);
     expect(g.platzierungen).toHaveLength(0);
+  });
+});
+
+describe('baueWortgitter', () => {
+  const woerter = ['HAUS', 'GARTEN', 'BAUM', 'BLUME', 'SONNE'];
+
+  it('ist deterministisch', () => {
+    expect(baueWortgitter(woerter)).toEqual(baueWortgitter(woerter));
+  });
+
+  it('platziert alle Wörter und füllt jede Zelle mit einem Buchstaben', () => {
+    const g = baueWortgitter(woerter);
+    const platziert = new Set(g.platzierungen.map((p) => p.wort));
+    for (const w of woerter) expect(platziert.has(w)).toBe(true);
+    for (let r = 0; r < g.zeilen; r++) {
+      for (let c = 0; c < g.spalten; c++) {
+        expect(typeof g.belegung[r]![c]).toBe('string');
+        expect(g.belegung[r]![c]!.length).toBe(1);
+      }
+    }
+  });
+
+  it('jede Platzierung steht buchstabengetreu im Gitter', () => {
+    const g = baueWortgitter(woerter);
+    const delta = { waagrecht: [0, 1], senkrecht: [1, 0], diagonal: [1, 1] } as const;
+    for (const p of g.platzierungen) {
+      const [dr, dc] = delta[p.richtung];
+      for (let n = 0; n < p.wort.length; n++) {
+        expect(g.belegung[p.zeile + dr * n]?.[p.spalte + dc * n]).toBe(p.wort[n]);
+      }
+    }
+  });
+
+  it('Gitter ist groß genug für das längste Wort', () => {
+    const g = baueWortgitter(['AUSSERGEWOEHNLICH', 'KURZ', 'MITTEL']);
+    expect(g.spalten).toBeGreaterThanOrEqual('AUSSERGEWOEHNLICH'.length);
+  });
+
+  it('normalisiert und entfernt Dubletten/zu kurze', () => {
+    const g = baueWortgitter(['haus', 'HAUS', 'ba um', 'x']);
+    expect(new Set(g.woerter)).toEqual(new Set(['HAUS', 'BAUM']));
+  });
+
+  it('leere Eingabe → leeres Gitter', () => {
+    const g = baueWortgitter([]);
+    expect(g.zeilen).toBe(0);
   });
 });

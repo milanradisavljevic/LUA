@@ -515,6 +515,30 @@ function normalizeKreuzwortraetsel(block: AnyObj): AnyObj {
   return { ...block, config };
 }
 
+// ---------------------------------------------------------------------------
+// wortgitter
+// ---------------------------------------------------------------------------
+
+function normalizeWortgitter(block: AnyObj): AnyObj {
+  const config = isObject(block.config) ? { ...block.config } : {};
+  const roh: unknown = config.woerter ?? config.eintraege ?? config.items;
+  if (Array.isArray(roh)) {
+    config.woerter = roh
+      .map((e: unknown) => {
+        if (typeof e === 'string') return e;
+        if (isObject(e)) {
+          if (typeof e.wort === 'string') return e.wort;
+          if (typeof e.begriff === 'string') return e.begriff;
+        }
+        return '';
+      })
+      .filter((w: string) => w.length > 0);
+    delete (config as AnyObj).eintraege;
+    delete (config as AnyObj).items;
+  }
+  return { ...block, config };
+}
+
 export function normalizeDocument(data: unknown): unknown {
   if (!isObject(data)) return data;
 
@@ -550,6 +574,8 @@ export function normalizeDocument(data: unknown): unknown {
         normalized = normalizeSonganalyse(block); break;
       case 'kreuzwortraetsel':
         normalized = normalizeKreuzwortraetsel(block); break;
+      case 'wortgitter':
+        normalized = normalizeWortgitter(block); break;
       default:
         normalized = block;
     }

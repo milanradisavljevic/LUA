@@ -752,5 +752,47 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     );
   }
 
+  if (block.typ === 'wortgitter') {
+    const woerter = (config.woerter as string[] | undefined) ?? [];
+    const setWoerter = (next: string[]) => set('woerter', next);
+
+    return (
+      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+        <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Wortgitter</h3>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginBottom: '0.5rem' }}>
+          Je Zeile ein einzelnes Wort (≥ 2 Buchstaben). Das Buchstabengitter wird automatisch gebaut.
+        </p>
+
+        {woerter.map((w, i) => (
+          <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={w ?? ''}
+              placeholder="Wort"
+              style={{ flex: 1 }}
+              onChange={(ev) => setWoerter(woerter.map((x, idx) => (idx === i ? ev.target.value : x)))}
+            />
+            <button
+              className="btn-danger"
+              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+              aria-label={`Wort ${i + 1} entfernen`}
+              onClick={() => setWoerter(woerter.filter((_, idx) => idx !== i))}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+
+        <button
+          className="btn-secondary"
+          style={{ marginTop: '0.25rem', fontSize: '0.8125rem' }}
+          onClick={() => setWoerter([...woerter, ''])}
+        >
+          + Wort hinzufügen
+        </button>
+      </div>
+    );
+  }
+
   return null;
 }

@@ -369,6 +369,21 @@ export const KreuzwortraetselBlockSchema = BlockBaseSchema.extend({
 export type KreuzwortraetselBlock = z.infer<typeof KreuzwortraetselBlockSchema>;
 
 // ---------------------------------------------------------------------------
+// Block: wortgitter (Wortsuchrätsel)
+// ---------------------------------------------------------------------------
+// LLM liefert nur die zu suchenden Wörter; das Buchstabengitter baut
+// `baueWortgitter` (grids.ts) deterministisch. Keine separate loesung.
+
+export const WortgitterBlockSchema = BlockBaseSchema.extend({
+  typ: z.literal('wortgitter'),
+  config: z.object({
+    woerter: z.array(z.string().min(2)).min(2),
+  }),
+});
+
+export type WortgitterBlock = z.infer<typeof WortgitterBlockSchema>;
+
+// ---------------------------------------------------------------------------
 // Discriminated union of all block types
 // ---------------------------------------------------------------------------
 
@@ -385,6 +400,7 @@ export const BlockSchema = z.discriminatedUnion('typ', [
   StiluebungBlockSchema,
   SonganalyseBlockSchema,
   KreuzwortraetselBlockSchema,
+  WortgitterBlockSchema,
 ]);
 
 export type Block = z.infer<typeof BlockSchema>;
@@ -471,6 +487,7 @@ export const BlockTypSchema = z.enum([
   'stiluebung',
   'songanalyse',
   'kreuzwortraetsel',
+  'wortgitter',
 ]);
 export type BlockTyp = z.infer<typeof BlockTypSchema>;
 
@@ -697,6 +714,12 @@ export function buildSkelett(auftrag: Auftrag): Block[] {
               { wort: '[WORT2]', hinweis: '[Hinweis 2]' },
             ],
           },
+        };
+      case 'wortgitter':
+        return {
+          ...base,
+          typ: 'wortgitter',
+          config: { woerter: ['[WORT1]', '[WORT2]', '[WORT3]'] },
         };
       default:
         throw new Error(`Unbekannter Blocktyp: ${typ}`);

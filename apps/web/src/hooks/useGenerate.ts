@@ -91,6 +91,9 @@ function blockToRequest(block: Block): BlockRequest {
     case 'kreuzwortraetsel':
       return { typ: 'kreuzwortraetsel', punkte: block.punkte, quelleId: block.quelleId,
         anzahlWoerter: block.config.eintraege.length };
+    case 'wortgitter':
+      return { typ: 'wortgitter', punkte: block.punkte, quelleId: block.quelleId,
+        anzahlWoerter: block.config.woerter.length };
   }
 }
 
