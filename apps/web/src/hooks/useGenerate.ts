@@ -88,6 +88,9 @@ function blockToRequest(block: Block): BlockRequest {
     case 'songanalyse':
       return { typ: 'songanalyse', punkte: block.punkte, quelleId: block.quelleId,
         aufgabe: block.config.aufgabe };
+    case 'kreuzwortraetsel':
+      return { typ: 'kreuzwortraetsel', punkte: block.punkte, quelleId: block.quelleId,
+        anzahlWoerter: block.config.eintraege.length };
   }
 }
 

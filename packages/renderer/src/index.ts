@@ -7,12 +7,14 @@ import {
   HeadingLevel,
   LineRuleType,
   PageNumber,
+  HeightRule,
   Packer,
   Paragraph,
   Tab,
   TabStopType,
   Table,
   TableCell,
+  TableLayoutType,
   TableRow,
   TextRun,
   WidthType,
@@ -20,7 +22,7 @@ import {
   convertMillimetersToTwip,
 } from 'docx';
 import type { DocumentV1, Block, QuellText } from '@lehrunterlagen/schema';
-import { baueWortbank, shuffle } from '@lehrunterlagen/schema';
+import { baueWortbank, shuffle, baueKreuzwortgitter } from '@lehrunterlagen/schema';
 
 // ---------------------------------------------------------------------------
 // House style constants (DESIGN.md §7, non-negotiable)
@@ -706,6 +708,7 @@ const BLOCK_LABELS: Record<Block['typ'], string> = {
   tabelle: 'Tabelle',
   stiluebung: 'Stilübung',
   songanalyse: 'Songanalyse',
+  kreuzwortraetsel: 'Kreuzworträtsel',
 };
 
 function buildBlock(
@@ -787,6 +790,9 @@ function buildBlock(
       break;
     case 'songanalyse':
       result.push(...buildSonganalyse(block, mode));
+      break;
+    case 'kreuzwortraetsel':
+      result.push(...buildKreuzwortraetsel(block, mode));
       break;
   }
 
@@ -1623,6 +1629,86 @@ function buildSonganalyse(
       );
     }
   }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Block: kreuzwortraetsel
+// ---------------------------------------------------------------------------
+
+function buildKreuzwortraetsel(
+  block: Extract<Block, { typ: 'kreuzwortraetsel' }>,
+  mode: Mode,
+): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [];
+  const gitter = baueKreuzwortgitter(block.config.eintraege);
+  if (gitter.zeilen === 0) return result;
+
+  const CELL = 460; // twips (~0.8 cm) je Zelle
+  const cellBorder = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER };
+  const leerBorder = { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER };
+
+  const rows: TableRow[] = [];
+  for (let r = 0; r < gitter.zeilen; r++) {
+    const cells: TableCell[] = [];
+    for (let c = 0; c < gitter.spalten; c++) {
+      const letter = gitter.belegung[r]?.[c] ?? null;
+      const num = gitter.nummern[r]?.[c] ?? null;
+      if (letter === null) {
+        cells.push(new TableCell({
+          width: { size: CELL, type: WidthType.DXA },
+          borders: leerBorder,
+          children: [new Paragraph({ children: [] })],
+        }));
+        continue;
+      }
+      const kinder: TextRun[] = [];
+      if (num !== null) {
+        kinder.push(new TextRun({ text: String(num), font: FONT, size: 12, superScript: true }));
+      }
+      // Schülerfassung: Feld leer (nur Nummer). Lösungsfassung: Buchstabe sichtbar.
+      if (mode === 'loesung') {
+        if (num !== null) kinder.push(new TextRun({ text: ' ', font: FONT, size: SZ.body }));
+        kinder.push(run(letter, { font: FONT, size: SZ.body, bold: true }));
+      }
+      cells.push(new TableCell({
+        width: { size: CELL, type: WidthType.DXA },
+        borders: cellBorder,
+        margins: { top: 20, bottom: 20, left: 40, right: 40 },
+        children: [new Paragraph({ children: kinder })],
+      }));
+    }
+    rows.push(new TableRow({ height: { value: CELL, rule: HeightRule.ATLEAST }, children: cells }));
+  }
+
+  result.push(new Table({
+    rows,
+    columnWidths: Array<number>(gitter.spalten).fill(CELL),
+    layout: TableLayoutType.FIXED,
+  }));
+
+  // Hinweis-Listen unter dem Gitter.
+  const waag = gitter.platzierungen.filter((p) => p.richtung === 'waagrecht');
+  const senk = gitter.platzierungen.filter((p) => p.richtung === 'senkrecht');
+
+  const hinweisListe = (titel: string, eintraege: typeof gitter.platzierungen) => {
+    if (eintraege.length === 0) return;
+    result.push(new Paragraph({
+      keepNext: true,
+      children: [run(titel, { font: FONT, size: SZ.body, bold: true })],
+      spacing: { before: 120, after: 40 },
+    }));
+    for (const p of eintraege) {
+      result.push(new Paragraph({
+        indent: { left: 240 },
+        children: [run(`${p.nr}. ${p.hinweis}`, { font: FONT, size: SZ.body })],
+        spacing: { after: 20 },
+      }));
+    }
+  };
+  hinweisListe('Waagrecht:', waag);
+  hinweisListe('Senkrecht:', senk);
 
   return result;
 }

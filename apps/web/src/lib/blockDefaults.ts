@@ -143,6 +143,17 @@ export function createDefaultBlock(typ: Block['typ'], meta?: Meta): Block {
         },
         loesung: { ergebnis: '', zitate: [], analysepunkte: [] },
       } as Block;
+    case 'kreuzwortraetsel':
+      return {
+        ...base,
+        typ: 'kreuzwortraetsel',
+        config: {
+          eintraege: [
+            { wort: 'HAUS', hinweis: 'Gebäude zum Wohnen' },
+            { wort: 'BAUM', hinweis: 'Pflanze mit Stamm und Krone' },
+          ],
+        },
+      } as Block;
   }
 }
 
@@ -158,6 +169,7 @@ export const BLOCK_ARBEITSANWEISUNG_PLACEHOLDER: Record<Block['typ'], string> = 
   tabelle: 'Fülle die Tabelle aus.',
   stiluebung: 'Formuliere den Text im geforderten Stilniveau um.',
   songanalyse: 'Analysiere den Songtext.',
+  kreuzwortraetsel: 'Löse das Kreuzworträtsel mithilfe der Hinweise.',
 };
 
 const BLOCK_LABELS: Record<Block['typ'], string> = {
@@ -172,6 +184,7 @@ const BLOCK_LABELS: Record<Block['typ'], string> = {
   tabelle: 'Tabelle',
   stiluebung: 'Stilübung',
   songanalyse: 'Songanalyse',
+  kreuzwortraetsel: 'Kreuzworträtsel',
 };
 
 export function getBlockLabel(typ: Block['typ']): string {

@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+// Deterministischer Gitter-Generator (Kreuzworträtsel) — von Renderer + Web genutzt.
+export * from './grids.js';
+
 // ---------------------------------------------------------------------------
 // Meta
 // ---------------------------------------------------------------------------
@@ -345,6 +348,27 @@ export const SonganalyseBlockSchema = BlockBaseSchema.extend({
 export type SonganalyseBlock = z.infer<typeof SonganalyseBlockSchema>;
 
 // ---------------------------------------------------------------------------
+// Block: kreuzwortraetsel
+// ---------------------------------------------------------------------------
+// LLM liefert nur Wort+Hinweis; das Gitter baut `baueKreuzwortgitter` (grids.ts)
+// deterministisch. Keine separate loesung — die Wörter in config.eintraege SIND
+// die Lösung (Renderer zeigt sie nur in der Lösungsfassung).
+
+export const KreuzwortraetselBlockSchema = BlockBaseSchema.extend({
+  typ: z.literal('kreuzwortraetsel'),
+  config: z.object({
+    eintraege: z.array(
+      z.object({
+        wort: z.string().min(2),   // ein einzelnes Wort, mind. 2 Buchstaben
+        hinweis: z.string().min(1), // Definition/Frage, ohne das Wort zu nennen
+      }),
+    ).min(2),
+  }),
+});
+
+export type KreuzwortraetselBlock = z.infer<typeof KreuzwortraetselBlockSchema>;
+
+// ---------------------------------------------------------------------------
 // Discriminated union of all block types
 // ---------------------------------------------------------------------------
 
@@ -360,6 +384,7 @@ export const BlockSchema = z.discriminatedUnion('typ', [
   TabelleBlockSchema,
   StiluebungBlockSchema,
   SonganalyseBlockSchema,
+  KreuzwortraetselBlockSchema,
 ]);
 
 export type Block = z.infer<typeof BlockSchema>;
@@ -445,6 +470,7 @@ export const BlockTypSchema = z.enum([
   'tabelle',
   'stiluebung',
   'songanalyse',
+  'kreuzwortraetsel',
 ]);
 export type BlockTyp = z.infer<typeof BlockTypSchema>;
 
@@ -660,6 +686,17 @@ export function buildSkelett(auftrag: Auftrag): Block[] {
           typ: 'songanalyse',
           config: { interpret: '[Interpret]', titel: '[Titel]', medium: 'song', lyrics: '[Lyrics]', aufgabe: 'inhaltsangabe' },
           loesung: { ergebnis: '[Ergebnis]', zitate: [], analysepunkte: [{ aspekt: '[Aspekt]', befund: '[Befund]' }] },
+        };
+      case 'kreuzwortraetsel':
+        return {
+          ...base,
+          typ: 'kreuzwortraetsel',
+          config: {
+            eintraege: [
+              { wort: '[WORT1]', hinweis: '[Hinweis 1]' },
+              { wort: '[WORT2]', hinweis: '[Hinweis 2]' },
+            ],
+          },
         };
       default:
         throw new Error(`Unbekannter Blocktyp: ${typ}`);

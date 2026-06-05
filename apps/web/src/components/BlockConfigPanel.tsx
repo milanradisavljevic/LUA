@@ -699,5 +699,58 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     );
   }
 
+  if (block.typ === 'kreuzwortraetsel') {
+    const eintraege = (config.eintraege as { wort: string; hinweis: string }[] | undefined) ?? [];
+    const setEintraege = (next: { wort: string; hinweis: string }[]) => set('eintraege', next);
+    const updateEintrag = (i: number, key: 'wort' | 'hinweis', value: string) => {
+      setEintraege(eintraege.map((e, idx) => (idx === i ? { ...e, [key]: value } : e)));
+    };
+
+    return (
+      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+        <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Kreuzworträtsel</h3>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginBottom: '0.5rem' }}>
+          Je Eintrag ein einzelnes Wort (≥ 2 Buchstaben) + ein Hinweis, der das Wort nicht nennt.
+          Das Gitter wird automatisch gebaut.
+        </p>
+
+        {eintraege.map((e, i) => (
+          <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={e.wort ?? ''}
+              placeholder="Wort"
+              style={{ flex: '0 0 30%' }}
+              onChange={(ev) => updateEintrag(i, 'wort', ev.target.value)}
+            />
+            <input
+              type="text"
+              value={e.hinweis ?? ''}
+              placeholder="Hinweis"
+              style={{ flex: 1 }}
+              onChange={(ev) => updateEintrag(i, 'hinweis', ev.target.value)}
+            />
+            <button
+              className="btn-danger"
+              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+              aria-label={`Eintrag ${i + 1} entfernen`}
+              onClick={() => setEintraege(eintraege.filter((_, idx) => idx !== i))}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+
+        <button
+          className="btn-secondary"
+          style={{ marginTop: '0.25rem', fontSize: '0.8125rem' }}
+          onClick={() => setEintraege([...eintraege, { wort: '', hinweis: '' }])}
+        >
+          + Eintrag hinzufügen
+        </button>
+      </div>
+    );
+  }
+
   return null;
 }

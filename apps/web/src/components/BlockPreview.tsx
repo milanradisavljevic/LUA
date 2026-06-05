@@ -10,6 +10,7 @@ import { BlockPreviewKategorisierung } from './BlockPreviewKategorisierung';
 import { BlockPreviewTabelle } from './BlockPreviewTabelle';
 import { BlockPreviewStiluebung } from './BlockPreviewStiluebung';
 import { BlockPreviewSonganalyse } from './BlockPreviewSonganalyse';
+import { BlockPreviewKreuzwortraetsel } from './BlockPreviewKreuzwortraetsel';
 
 interface Props {
   block: Block;
@@ -49,5 +50,7 @@ export function BlockPreview({ block, showSolution, onUpdate }: Props) {
       return pass(BlockPreviewStiluebung);
     case 'songanalyse':
       return pass(BlockPreviewSonganalyse);
+    case 'kreuzwortraetsel':
+      return pass(BlockPreviewKreuzwortraetsel);
   }
 }

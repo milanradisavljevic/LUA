@@ -99,6 +99,12 @@ songanalyse (Songtext analysieren):
 - loesung.ergebnis = zusammenhaengende Musteranalyse; loesung.zitate = Array belegender Textstellen;
   loesung.analysepunkte = Array aus { "aspekt": "...", "befund": "...", "zitat": "..."(optional) } (mind. 1).
 
+kreuzwortraetsel (Kreuzwortraetsel):
+- config.eintraege = Array aus { "wort": "...", "hinweis": "..." } mit GENAU anzahlWoerter Eintraegen.
+- wort = EIN EINZELNES Wort (keine Leerzeichen, keine Bindestriche), mind. 2 Buchstaben, aus dem Quelltext-Themenfeld.
+- hinweis = eine kurze Definition/Frage, die das Wort NICHT selbst enthaelt (sonst ist das Raetsel trivial).
+- KEIN "loesung"-Objekt — die Woerter in config.eintraege SIND die Loesung. Das Gitter baut die App selbst.
+
 Ausgabe-Vertrag (ein einziges JSON-Array):
 
 BEISPIEL fuer multipleChoice:
@@ -311,6 +317,24 @@ BEISPIEL fuer songanalyse:
       "ergebnis": "Der Text thematisiert Vergaenglichkeit mithilfe bildhafter Sprache.",
       "zitate": ["Die erste Zeile des Liedtexts."],
       "analysepunkte": [ { "aspekt": "Bildsprache", "befund": "Metapher fuer Vergaenglichkeit", "zitat": "Die erste Zeile des Liedtexts." } ]
+    }
+  }
+]
+
+BEISPIEL fuer kreuzwortraetsel (KEIN loesung-Objekt — die Woerter sind die Loesung):
+[
+  {
+    "id": "b1",
+    "typ": "kreuzwortraetsel",
+    "punkte": 6,
+    "quelleId": "q1",
+    "arbeitsanweisung": "Loese das Kreuzwortraetsel mithilfe der Hinweise.",
+    "config": {
+      "eintraege": [
+        { "wort": "Photosynthese", "hinweis": "Vorgang, bei dem Pflanzen aus Licht Energie gewinnen" },
+        { "wort": "Sauerstoff", "hinweis": "Gas, das Pflanzen dabei abgeben" },
+        { "wort": "Chlorophyll", "hinweis": "Gruener Farbstoff in den Blaettern" }
+      ]
     }
   }
 ]

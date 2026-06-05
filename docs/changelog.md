@@ -4,6 +4,21 @@ Stand: 2026-06-01. Regel: Jeder Agent trägt hier ein, was er geändert hat. Kei
 
 ---
 
+## 2026-06-05 — Claude (Neuer Aufgabentyp: Kreuzworträtsel, 6.P2)
+
+Vollständiger neuer Aufgabentyp `kreuzwortraetsel` über alle Schichten, nach dem Leitprinzip: LLM liefert nur Wort+Hinweis, deterministischer Code baut das Gitter (identisch in DOCX und Web).
+
+- **`packages/schema/src/grids.ts` (neu):** `baueKreuzwortgitter(eintraege)` — deterministischer Greedy-Generator (längste Wörter zuerst, erste gültige Kreuzung; verbindungslose Wörter werden separat platziert, gehen nicht verloren), Standard-Nummerierung (waagrecht/senkrecht), normalisierte Koordinaten. Rein deterministisch (keine Zufallsquelle) → Renderer und Vorschau zeigen dasselbe Gitter. Tests: `grids.test.ts` (+7).
+- **Schema:** `KreuzwortraetselBlockSchema` (config.eintraege = [{wort≥2, hinweis}], KEIN loesung-Objekt — die Wörter sind die Lösung) + Union/Enum/`buildSkelett`/`grids`-Reexport.
+- **LLM:** `BlockRequest`-Variante (`anzahlWoerter`), Prompt-Regel + BEISPIEL (Wort ohne Leerzeichen, Hinweis nennt das Wort nicht), `normalizeKreuzwortraetsel` (toleriert woerter/items, begriff/frage/definition-Aliase).
+- **Renderer:** `buildKreuzwortraetsel` — DOCX-Gittertabelle (Blockfelder rahmenlos, Buchstabenfelder gerahmt, Startnummern als Hochzahl; Schüler leer, Lösung gefüllt) + Hinweislisten Waagrecht/Senkrecht.
+- **Web:** `BlockPreviewKreuzwortraetsel` (HTML-Gitter, WYSIWYG), ConfigPanel editierbar (Einträge hinzufügen/entfernen), constants/blockDefaults/Dispatch.
+- **QA:** Fixture `kreuzwortraetsel.json` + Korrekturraster-Katalog (geschlossen, Richtig/Falsch).
+- **Verifikation:** 345 Tests grün (Schema 97, LLM 93, Renderer 28, Input 17, QA 95, Web 15), `pnpm -r build` EXIT 0. **Echter DeepSeek-Lauf:** valides Rätsel in 1 Versuch, 2 DOCX gerendert. In `pnpm smoke` aufgenommen.
+- **Offen:** Wortgitter (Wortsuchrätsel) als zweiter Phase-2-Typ.
+
+---
+
 ## 2026-06-05 — Claude (Lehrer-Test-Readiness, Phase 2: Sicherheit/Robustheit + Kimi-Integration)
 
 Kimis Frontend-Hälfte (R1/R3/R5/R6/R7/R9a) integriert + Claudes Backend-Hälfte abgeschlossen. **337 Tests grün**, `pnpm -r build` EXIT 0, echter DeepSeek-Smoke-Lauf 1 Versuch grün.

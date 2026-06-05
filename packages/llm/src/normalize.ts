@@ -485,6 +485,36 @@ function normalizeSonganalyse(block: AnyObj): AnyObj {
 // Hauptfunktion
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// kreuzwortraetsel
+// ---------------------------------------------------------------------------
+
+function normalizeKreuzwortraetsel(block: AnyObj): AnyObj {
+  const config = isObject(block.config) ? { ...block.config } : {};
+
+  // Manche LLMs nennen das Feld anders (woerter/eintraege/items).
+  const roh: unknown = config.eintraege ?? config.woerter ?? config.items;
+  if (Array.isArray(roh)) {
+    config.eintraege = roh.map((e: unknown) => {
+      if (typeof e === 'string') return { wort: e, hinweis: '' };
+      if (isObject(e)) {
+        const wort = typeof e.wort === 'string' ? e.wort
+          : typeof e.begriff === 'string' ? e.begriff
+          : typeof e.loesung === 'string' ? e.loesung : '';
+        const hinweis = typeof e.hinweis === 'string' ? e.hinweis
+          : typeof e.frage === 'string' ? e.frage
+          : typeof e.definition === 'string' ? e.definition : '';
+        return { wort, hinweis };
+      }
+      return { wort: '', hinweis: '' };
+    });
+    delete (config as AnyObj).woerter;
+    delete (config as AnyObj).items;
+  }
+
+  return { ...block, config };
+}
+
 export function normalizeDocument(data: unknown): unknown {
   if (!isObject(data)) return data;
 
@@ -518,6 +548,8 @@ export function normalizeDocument(data: unknown): unknown {
         normalized = normalizeTabelle(block); break;
       case 'songanalyse':
         normalized = normalizeSonganalyse(block); break;
+      case 'kreuzwortraetsel':
+        normalized = normalizeKreuzwortraetsel(block); break;
       default:
         normalized = block;
     }

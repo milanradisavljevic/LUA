@@ -12,6 +12,7 @@ export const BLOCK_TYPE_DEFS = [
   { id: 'tabelle' as const, label: 'Tabelle', description: 'Werte in eine Tabelle eintragen', icon: '⊞', color: '#5c6bc0' },
   { id: 'stiluebung' as const, label: 'Stilübung', description: 'Text in einem anderen Stil umformulieren', icon: '✒️', color: '#f06292' },
   { id: 'songanalyse' as const, label: 'Songanalyse', description: 'Songtext interpretieren', icon: '🎵', color: '#4dd0e1' },
+  { id: 'kreuzwortraetsel' as const, label: 'Kreuzworträtsel', description: 'Wörter über Hinweise ins Gitter eintragen', icon: '🧩', color: '#a1887f' },
 ];
 
 export const STUFE_RULES = {

@@ -60,6 +60,7 @@ const bloecke = [
   { typ: 'matching', punkte: 8, quelleId: 'q1', anzahlItems: 4 },
   { typ: 'offeneSchreibaufgabe', punkte: 20, quelleId: 'q1',
     textsorte: 'Kommentar', umfangWorte: { min: 150, max: 200 }, aspekte: ['Inhaltliche Auseinandersetzung', 'eigene Meinung'] },
+  { typ: 'kreuzwortraetsel', punkte: 6, quelleId: 'q1', anzahlWoerter: 5 },
 ];
 
 console.log(`\n▶ Smoke-Test  provider=${provider}  model=${model ?? '(Anbieter-Default)'}`);
@@ -87,6 +88,7 @@ for (const b of doc.bloecke) {
   else if (b.typ === 'lueckentext') info = `${b.loesung.luecken.length} Lücken, wortbank=${b.config.wortbank}`;
   else if (b.typ === 'matching') info = `${Object.keys(b.loesung.zuordnung).length} Zuordnungen`;
   else if (b.typ === 'offeneSchreibaufgabe') info = `Musterlösung ${b.loesung.musterloesung.length} Zeichen`;
+  else if (b.typ === 'kreuzwortraetsel') info = `${b.config.eintraege.length} Wörter`;
   console.log(`    • ${b.typ.padEnd(22)} ${b.punkte}P  ${info}`);
 }
 

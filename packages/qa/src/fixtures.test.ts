@@ -12,6 +12,7 @@ import kategorisierung from './fixtures/kategorisierung.json';
 import tabelle from './fixtures/tabelle.json';
 import stiluebung from './fixtures/stiluebung.json';
 import songanalyse from './fixtures/songanalyse.json';
+import kreuzwortraetsel from './fixtures/kreuzwortraetsel.json';
 
 const fixtures = [
   { name: 'lueckentext', data: lueckentext },
@@ -25,6 +26,7 @@ const fixtures = [
   { name: 'tabelle', data: tabelle },
   { name: 'stiluebung', data: stiluebung },
   { name: 'songanalyse', data: songanalyse },
+  { name: 'kreuzwortraetsel', data: kreuzwortraetsel },
 ];
 
 describe('Fixture-Validierung gegen DocumentSchema', () => {
