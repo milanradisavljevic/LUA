@@ -26,6 +26,7 @@ interface Props {
 
 export function Step2_Baukasten({ state, dispatch }: Props) {
   const { addBlock, reorderBlocks } = useBlocks(dispatch);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -57,6 +58,12 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
 
   const totalPoints = state.bloecke.reduce((sum, b) => sum + b.punkte, 0);
 
+  // Zähle Blöcke pro Typ für die Counter-Badges
+  const countByType = new Map<string, number>();
+  for (const b of state.bloecke) {
+    countByType.set(b.typ, (countByType.get(b.typ) ?? 0) + 1);
+  }
+
   return (
     <div>
       <h2 style={{ marginBottom: '1.25rem' }}>Aufgabenblöcke zusammenstellen</h2>
@@ -65,33 +72,95 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
       <div style={{ marginBottom: '1.5rem' }}>
         <label style={{ marginBottom: '0.75rem', display: 'block' }}>Blocktyp hinzufügen</label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem' }}>
-          {availableBlocks.map((bt) => (
-            <button
-              key={bt.id}
-              onClick={() => handleAddBlock(bt.id)}
-              className="btn-secondary"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '1rem',
-                textAlign: 'center',
-                borderLeft: `4px solid ${bt.color}`,
-                background: 'white',
-              }}
-            >
-              <span style={{ fontSize: '1.5rem' }}>{bt.icon}</span>
-              <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{bt.label}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)' }}>{bt.description}</span>
-              {bt.id === 'lueckentext' && !STUFE_RULES[state.meta.stufe].wortbankAllowed && (
-                <span style={{ fontSize: '0.6875rem', color: 'var(--color-gray-1)' }}>
-                  (Wortbank nur Unterstufe)
-                </span>
-              )}
-            </button>
-          ))}
+          {availableBlocks.map((bt) => {
+            const count = countByType.get(bt.id) ?? 0;
+            const hasAny = count > 0;
+            return (
+              <button
+                key={bt.id}
+                onClick={() => handleAddBlock(bt.id)}
+                className="btn-secondary"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '1rem',
+                  paddingTop: hasAny ? '1.5rem' : '1rem',
+                  textAlign: 'center',
+                  borderLeft: `4px solid ${bt.color}`,
+                  background: hasAny ? `linear-gradient(135deg, white 0%, ${bt.color}12 100%)` : 'white',
+                  borderColor: hasAny ? bt.color : 'var(--color-gray-2)',
+                  borderWidth: hasAny ? '2px' : '1px',
+                  position: 'relative',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+                }}
+              >
+                {/* Counter-Badge */}
+                {hasAny && (
+                  <div style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    background: `linear-gradient(135deg, ${bt.color}, ${bt.color}dd)`,
+                    color: 'white',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    minWidth: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: `0 2px 8px ${bt.color}66`,
+                    border: '2px solid white',
+                    zIndex: 2,
+                    animation: 'badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  }}>
+                    {count}
+                  </div>
+                )}
+
+                <span style={{ fontSize: '1.5rem' }}>{bt.icon}</span>
+                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{bt.label}</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)' }}>{bt.description}</span>
+                {bt.id === 'lueckentext' && !STUFE_RULES[state.meta.stufe].wortbankAllowed && (
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--color-gray-1)' }}>
+                    (Wortbank nur Unterstufe)
+                  </span>
+                )}
+
+                {/* Mini-Hinweis wenn vorhanden */}
+                {hasAny && (
+                  <span style={{
+                    fontSize: '0.6875rem',
+                    color: bt.color,
+                    fontWeight: 600,
+                    marginTop: '0.125rem',
+                  }}>
+                    {count}x im Baukasten
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
+        <style>{`
+          @keyframes badgePop {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+          }
+        `}</style>
       </div>
 
       <PointSummary totalPoints={totalPoints} blockCount={state.bloecke.length} />
@@ -111,6 +180,8 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
                   dispatch={dispatch}
                   stufe={state.meta.stufe}
                   index={index + 1}
+                  isSelected={selectedId === block.id}
+                  onSelect={() => setSelectedId(selectedId === block.id ? null : block.id)}
                 />
               ))}
             </div>
