@@ -481,7 +481,9 @@ function buildDocumentHeader(doc: DocumentV1, mode: Mode): Paragraph[] {
     new Paragraph({
       children: [
         run(
-          `${stufeLabel} · Klasse ${meta.klasse} · ${formatDatum(meta.datum)}` +
+          `${stufeLabel}` +
+            (meta.klasse ? ` · Klasse ${meta.klasse}` : '') +
+            ` · ${formatDatum(meta.datum)}` +
             (meta.notizen ? `  |  ${meta.notizen}` : ''),
           { font: FONT, size: SZ.body, color: COLOR.gray },
         ),
@@ -513,7 +515,8 @@ function buildSchuelerkopf(meta: DocumentV1['meta']): Table {
                   run('Name: ', { font: FONT, size: SZ.body, bold: true }),
                   blankLine(28),
                   run('     Klasse: ', { font: FONT, size: SZ.body, bold: true }),
-                  run(meta.klasse, { font: FONT, size: SZ.body }),
+                  // Leere Klasse → Linie zum Eintragen, sonst der Wert.
+                  meta.klasse ? run(meta.klasse, { font: FONT, size: SZ.body }) : blankLine(8),
                   run('     Datum: ', { font: FONT, size: SZ.body, bold: true }),
                   run(formatDatum(meta.datum), { font: FONT, size: SZ.body }),
                 ],

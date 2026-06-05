@@ -710,8 +710,9 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
       <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Kreuzworträtsel</h3>
         <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginBottom: '0.5rem' }}>
-          Je Eintrag ein einzelnes Wort (≥ 2 Buchstaben) + ein Hinweis, der das Wort nicht nennt.
-          Das Gitter wird automatisch gebaut.
+          Beim Generieren zieht die KI die Wörter + Hinweise automatisch aus dem Quelltext —
+          diese Liste legt nur die <strong>Anzahl</strong> fest und dient als Vorschau.
+          Du kannst die Beispiele stehen lassen. Das Gitter wird automatisch gebaut.
         </p>
 
         {eintraege.map((e, i) => (
@@ -760,7 +761,9 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
       <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Wortgitter</h3>
         <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginBottom: '0.5rem' }}>
-          Je Zeile ein einzelnes Wort (≥ 2 Buchstaben). Das Buchstabengitter wird automatisch gebaut.
+          Beim Generieren zieht die KI die Wörter automatisch aus dem Quelltext —
+          diese Liste legt nur die <strong>Anzahl</strong> fest und dient als Vorschau.
+          Du kannst die Beispiele stehen lassen. Das Buchstabengitter wird automatisch gebaut.
         </p>
 
         {woerter.map((w, i) => (

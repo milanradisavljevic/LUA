@@ -133,6 +133,23 @@ describe('Regression 2026-06-05: DeepSeek liefert volles Dokument-Objekt', () =>
   });
 });
 
+describe('Regression 2026-06-06: leere meta.klasse (Direkteingabe ohne Klasse)', () => {
+  it('akzeptiert ein Dokument mit leerer klasse', async () => {
+    const metaOhneKlasse = { ...meta, klasse: '' };
+    const raw = JSON.stringify([{
+      id: 'b1', typ: 'kreuzwortraetsel', punkte: 6, quelleId: 'q1',
+      arbeitsanweisung: 'Löse das Kreuzworträtsel.',
+      config: { eintraege: [
+        { wort: 'RISIKEN', hinweis: 'Gefahren, die mit KI verbunden sind' },
+        { wort: 'PAUSE', hinweis: 'Temporäre Aussetzung der Entwicklung' },
+      ] },
+    }]);
+    const res = await parseAndValidate(raw, metaOhneKlasse, quelltexte);
+    expect(res.ok).toBe(true);
+    expect(res.document!.meta.klasse).toBe('');
+  });
+});
+
 describe('Regression 2026-06-05: Anthropic wordScramble mit Direkteingabe (leerer titel)', () => {
   it('akzeptiert quelltext mit leerem titel (Direkteingabe)', async () => {
     const eingabeQuelltext = [{

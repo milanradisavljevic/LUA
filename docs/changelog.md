@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-06 — Claude (Bugfix: leere meta.klasse + UX-Klarstellung Rätsel-Wörter)
+
+- **Vierter Direkteingabe-Bug behoben:** `meta.klasse` verlangte `min(1)` → jede Generierung mit leerem Klassenfeld scheiterte (`meta.klasse: String must contain at least 1 character(s)`), unabhängig vom Blocktyp. Fix: `klasse` darf leer sein (`packages/schema`); Renderer zeigt bei leerer Klasse im Titel nichts und im Schülerkopf eine Eintragelinie statt eines leeren Werts. Regressionstest + angepasster Schema-Test.
+- **UX-Klarstellung (Rätsel):** Hinweis in den ConfigPanels von kreuzwortraetsel/wortgitter ergänzt — die Wörter/Hinweise werden beim Generieren automatisch aus dem Quelltext gezogen; die Liste legt nur die Anzahl fest + dient als Vorschau (das war bereits so: `blockToRequest` schickt nur die Anzahl, die KI ersetzt die Platzhalter — siehe Roh­antworten).
+- **Verifikation:** 353 Tests grün (Schema 103, Renderer 28, LLM 94, Input 17, QA 96, Web 15), `pnpm -r build` EXIT 0.
+
+---
+
 ## 2026-06-06 — Claude (Wortgitter-Typ + UI-Picker-Fix für beide Phase-2-Typen)
 
 - **UI-Bug behoben:** Neue Aufgabentypen tauchten nicht im Baukasten-Picker auf, weil `STUFE_RULES.allowedBlockTypes` (`apps/web/src/lib/constants.ts`) sie nicht enthielt. `kreuzwortraetsel` **und** `wortgitter` jetzt für Ober- und Unterstufe freigeschaltet.

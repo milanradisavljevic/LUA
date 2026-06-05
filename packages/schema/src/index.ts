@@ -21,7 +21,8 @@ export const MetaSchema = z.object({
   fach: FachSchema,
   thema: z.string().min(1),
   datum: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Datum muss im Format YYYY-MM-DD sein'),
-  klasse: z.string().min(1),
+  // Klasse ist optional (nicht jedes Arbeitsblatt zielt auf eine bestimmte Klasse) → leer erlaubt.
+  klasse: z.string(),
   notizen: z.string(),
   typ: UnterlagentypSchema.optional(),
   schwierigkeit: z.enum(['leicht', 'mittel', 'schwer']).optional(),

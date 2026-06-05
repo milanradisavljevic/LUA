@@ -145,9 +145,9 @@ describe('MetaSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects empty klasse', () => {
+  it('accepts empty klasse (optional — nicht jedes Arbeitsblatt hat eine Klasse)', () => {
     const result = MetaSchema.safeParse({ stufe: 'oberstufe', fach: 'deutsch', thema: 'Thema', datum: '2026-01-01', klasse: '', notizen: '' });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });
 
