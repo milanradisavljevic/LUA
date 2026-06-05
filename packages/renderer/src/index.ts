@@ -9,6 +9,8 @@ import {
   PageNumber,
   Packer,
   Paragraph,
+  Tab,
+  TabStopType,
   Table,
   TableCell,
   TableRow,
@@ -18,6 +20,7 @@ import {
   convertMillimetersToTwip,
 } from 'docx';
 import type { DocumentV1, Block, QuellText } from '@lehrunterlagen/schema';
+import { baueWortbank, shuffle } from '@lehrunterlagen/schema';
 
 // ---------------------------------------------------------------------------
 // House style constants (DESIGN.md §7, non-negotiable)
@@ -35,6 +38,9 @@ const MARGIN = {
   left:   Math.round(2.2 * 566.93),
   right:  Math.round(2.2 * 566.93),
 };
+
+// Nutzbare Textbreite (A4 = 11906 twips minus Seitenränder) — für rechtsbündige Tab-Stops.
+const CONTENT_WIDTH = 11906 - MARGIN.left - MARGIN.right;
 
 // Colors
 const COLOR = { black: '000000', gray: '595959', lightGray: 'BFBFBF' } as const;
@@ -175,18 +181,33 @@ function buildRasterHeader(raster: Pick<KorrekturrasterDokument, 'meta'>): (Para
           children: [
             new TableCell({
               borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
-              width: { size: 33, type: WidthType.PERCENTAGE },
-              children: [new Paragraph({ children: [run('Klasse: _______', { font: FONT, size: SZ.body })] })],
+              width: { size: 15, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('Klasse:', { font: FONT, size: SZ.body })] })],
             }),
             new TableCell({
-              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
-              width: { size: 40, type: WidthType.PERCENTAGE },
-              children: [new Paragraph({ children: [run('Name: _______________________', { font: FONT, size: SZ.body })] })],
+              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: NO_BORDER, right: THIN_BORDER },
+              width: { size: 25, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('', { font: FONT, size: SZ.body })] })],
             }),
             new TableCell({
-              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
-              width: { size: 27, type: WidthType.PERCENTAGE },
-              children: [new Paragraph({ children: [run('Datum: _______', { font: FONT, size: SZ.body })] })],
+              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: NO_BORDER, right: THIN_BORDER },
+              width: { size: 12, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('Name:', { font: FONT, size: SZ.body })] })],
+            }),
+            new TableCell({
+              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: NO_BORDER, right: THIN_BORDER },
+              width: { size: 30, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('', { font: FONT, size: SZ.body })] })],
+            }),
+            new TableCell({
+              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: NO_BORDER, right: THIN_BORDER },
+              width: { size: 12, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('Datum:', { font: FONT, size: SZ.body })] })],
+            }),
+            new TableCell({
+              borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: NO_BORDER, right: THIN_BORDER },
+              width: { size: 18, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [run('', { font: FONT, size: SZ.body })] })],
             }),
           ],
         }),
@@ -270,13 +291,39 @@ function buildRasterBlock(block: RasterBlock): (Paragraph | Table)[] {
   return result;
 }
 
-function buildGesamtzeile(gesamtPunkte: number): Paragraph {
-  return new Paragraph({
-    children: [
-      run(`Gesamt:  _____ / ${gesamtPunkte} Punkte`, { font: FONT, size: SZ.body, bold: true }),
+function buildGesamtzeile(gesamtPunkte: number): Table {
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER,
+      insideHorizontal: NO_BORDER, insideVertical: NO_BORDER,
+    },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+            width: { size: 12, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [run('Gesamt:', { font: FONT, size: SZ.body, bold: true })] })],
+          }),
+          new TableCell({
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            width: { size: 10, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [run('', { font: FONT, size: SZ.body })] })],
+          }),
+          new TableCell({
+            borders: { top: { style: BorderStyle.NIL, size: 0, color: 'FFFFFF' }, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+            width: { size: 30, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [run(`/ ${gesamtPunkte} Punkte`, { font: FONT, size: SZ.body, bold: true })] })],
+          }),
+          new TableCell({
+            borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+            width: { size: 48, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [] })],
+          }),
+        ],
+      }),
     ],
-    spacing: { before: 200, after: 200 },
-    border: { top: { style: BorderStyle.SINGLE, size: 8, color: COLOR.black } },
   });
 }
 
@@ -354,6 +401,8 @@ async function buildDocxPacked<T>(
 
   const children: (Paragraph | Table)[] = [
     ...buildDocumentHeader(doc, mode),
+    buildSchuelerkopf(doc.meta),
+    ...buildPunkteUebersicht(doc.bloecke),
     ...buildQuelltexte(doc.quelltexte),
     ...doc.bloecke.flatMap((block, i) =>
       buildBlock(block, i + 1, mode, quelltextMap),
@@ -383,10 +432,9 @@ function buildPageHeader(): Header {
     children: [
       new Paragraph({
         children: [
-          run('Klasse ___   Name ___________________________   Datum ___________', {
-            font: FONT, size: SZ.body, color: COLOR.gray,
-          }),
+          run('', { font: FONT, size: SZ.body, color: COLOR.gray }),
         ],
+        spacing: { after: 0 },
       }),
     ],
   });
@@ -442,8 +490,163 @@ function buildDocumentHeader(doc: DocumentV1, mode: Mode): Paragraph[] {
 }
 
 // ---------------------------------------------------------------------------
+// Schülerkopf (Name / Klasse / Datum) — DESIGN.md §7
+// ---------------------------------------------------------------------------
+
+function buildSchuelerkopf(meta: DocumentV1['meta']): Table {
+  const cellBorder = {
+    top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER,
+  };
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: cellBorder,
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: [
+              new Paragraph({
+                children: [
+                  run('Name: ', { font: FONT, size: SZ.body, bold: true }),
+                  blankLine(28),
+                  run('     Klasse: ', { font: FONT, size: SZ.body, bold: true }),
+                  run(meta.klasse, { font: FONT, size: SZ.body }),
+                  run('     Datum: ', { font: FONT, size: SZ.body, bold: true }),
+                  run(formatDatum(meta.datum), { font: FONT, size: SZ.body }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Aufgabenübersicht (Punkte je Aufgabe, Gesamtsumme, Note/Unterschrift)
+// ---------------------------------------------------------------------------
+
+function buildPunkteUebersicht(bloecke: Block[]): (Paragraph | Table)[] {
+  if (bloecke.length === 0) return [];
+
+  const cellBorder = {
+    top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER,
+  };
+  const gesamt = bloecke.reduce((sum, b) => sum + b.punkte, 0);
+
+  const headerCell = (text: string, width: number, align?: typeof AlignmentType[keyof typeof AlignmentType]) =>
+    new TableCell({
+      borders: cellBorder,
+      width: { size: width, type: WidthType.PERCENTAGE },
+      shading: { fill: 'D9D9D9' },
+      margins: { top: 40, bottom: 40, left: 100, right: 100 },
+      children: [new Paragraph({ ...(align ? { alignment: align } : {}), children: [run(text, { font: FONT, size: SZ.body, bold: true })] })],
+    });
+
+  const cell = (children: TextRun[], width: number, align?: typeof AlignmentType[keyof typeof AlignmentType], bold = false) =>
+    new TableCell({
+      borders: cellBorder,
+      width: { size: width, type: WidthType.PERCENTAGE },
+      margins: { top: 40, bottom: 40, left: 100, right: 100 },
+      ...(bold ? { shading: { fill: 'F2F2F2' } } : {}),
+      children: [new Paragraph({ ...(align ? { alignment: align } : {}), children })],
+    });
+
+  const rows: TableRow[] = [
+    new TableRow({
+      tableHeader: true,
+      children: [
+        headerCell('Nr.', 10),
+        headerCell('Aufgabe', 65),
+        headerCell('Punkte', 25, AlignmentType.RIGHT),
+      ],
+    }),
+  ];
+
+  bloecke.forEach((b, i) => {
+    rows.push(
+      new TableRow({
+        children: [
+          cell([run(String(i + 1), { font: FONT, size: SZ.body })], 10),
+          cell([run(BLOCK_LABELS[b.typ], { font: FONT, size: SZ.body })], 65),
+          cell([blankLine(6), run(` / ${b.punkte}`, { font: FONT, size: SZ.body })], 25, AlignmentType.RIGHT),
+        ],
+      }),
+    );
+  });
+
+  rows.push(
+    new TableRow({
+      children: [
+        cell([run('', { font: FONT, size: SZ.body })], 10, undefined, true),
+        cell([run('GESAMT', { font: FONT, size: SZ.body, bold: true })], 65, undefined, true),
+        cell([blankLine(6), run(` / ${gesamt}`, { font: FONT, size: SZ.body, bold: true })], 25, AlignmentType.RIGHT, true),
+      ],
+    }),
+  );
+
+  return [
+    new Paragraph({
+      heading: HeadingLevel.HEADING_3,
+      keepNext: true,
+      children: [run('Aufgabenübersicht', { font: FONT, size: SZ.h3, bold: true })],
+      spacing: { before: 160, after: 80 },
+    }),
+    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }),
+    new Paragraph({
+      children: [
+        run('Note: ', { font: FONT, size: SZ.body, bold: true }),
+        blankLine(20),
+        run('     Unterschrift: ', { font: FONT, size: SZ.body, bold: true }),
+        blankLine(24),
+      ],
+      spacing: { before: 120, after: 80 },
+    }),
+  ];
+}
+
+// ---------------------------------------------------------------------------
 // Quelltexte section
 // ---------------------------------------------------------------------------
+
+// Wandelt einen Quelltext (mit \n-Zeilen und \n\n-Absätzen/Strophen) in echte
+// Absatz-Paragraphen um. docx ignoriert \n innerhalb einer TextRun — Zeilenumbrüche
+// brauchen TextRun({ break: 1 }), Strophen-/Absatzabstand kommt über eigene Paragraphen.
+function quelltextAbsaetze(inhalt: string): Paragraph[] {
+  const absaetze = inhalt
+    .replace(/\r\n/g, '\n')
+    .split(/\n{2,}/)
+    .map((a) => a.replace(/\s+$/g, ''))
+    .filter((a) => a.trim().length > 0);
+
+  // Fallback: kein verwertbarer Inhalt → ein leerer Absatz, damit die Struktur stimmt.
+  if (absaetze.length === 0) {
+    return [new Paragraph({ children: [run('', { font: FONT, size: SZ.body })] })];
+  }
+
+  return absaetze.map((absatz) => {
+    const zeilen = absatz.split('\n');
+    const children = zeilen.map(
+      (zeile, i) =>
+        new TextRun({
+          text: zeile,
+          font: FONT,
+          size: SZ.body,
+          ...(i > 0 ? { break: 1 } : {}),
+        }),
+    );
+    return new Paragraph({
+      children,
+      spacing: { after: 160 },
+      indent: { left: 360 },
+      border: {
+        left: { style: BorderStyle.SINGLE, size: 8, color: COLOR.lightGray },
+      },
+    });
+  });
+}
 
 function buildQuelltexte(quelltexte: QuellText[]): (Paragraph | Table)[] {
   if (quelltexte.length === 0) return [];
@@ -451,7 +654,11 @@ function buildQuelltexte(quelltexte: QuellText[]): (Paragraph | Table)[] {
   const result: (Paragraph | Table)[] = [
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [run('Quelltexte', { font: FONT, size: SZ.h2, bold: true })],
+      children: [
+        run(quelltexte.length === 1 ? 'Quelltext' : 'Quelltexte', {
+          font: FONT, size: SZ.h2, bold: true,
+        }),
+      ],
       spacing: { before: 200, after: 120 },
     }),
   ];
@@ -460,16 +667,24 @@ function buildQuelltexte(quelltexte: QuellText[]): (Paragraph | Table)[] {
     result.push(
       new Paragraph({
         heading: HeadingLevel.HEADING_3,
+        keepNext: true,
         children: [
-          run(`Text ${i + 1}: ${qt.titel}`, { font: FONT, size: SZ.h3, bold: true }),
+          run(`Text ${i + 1}: ${qt.titel || `Quelltext ${i + 1}`}`, { font: FONT, size: SZ.h3, bold: true }),
         ],
-        spacing: { before: 120, after: 80 },
-      }),
-      new Paragraph({
-        children: [run(qt.inhalt, { font: FONT, size: SZ.body })],
-        spacing: { after: 160 },
+        spacing: { before: 120, after: qt.herkunft.ref ? 20 : 80 },
       }),
     );
+    // Quellenangabe nur, wenn es eine echte Referenz gibt (nicht bei Direkteingabe).
+    if (qt.herkunft.ref) {
+      result.push(
+        new Paragraph({
+          keepNext: true,
+          children: [run(`nach: ${qt.herkunft.ref}`, { font: FONT, size: SZ.body, italics: true, color: COLOR.gray })],
+          spacing: { after: 80 },
+        }),
+      );
+    }
+    result.push(...quelltextAbsaetze(qt.inhalt));
   }
 
   return result;
@@ -486,6 +701,11 @@ const BLOCK_LABELS: Record<Block['typ'], string> = {
   offeneVerstaendnisfrage: 'Verständnisfragen',
   offeneSchreibaufgabe: 'Schreibaufgabe',
   markieraufgabe: 'Markieraufgabe',
+  wordScramble: 'Wörter ordnen',
+  kategorisierung: 'Kategorisierung',
+  tabelle: 'Tabelle',
+  stiluebung: 'Stilübung',
+  songanalyse: 'Songanalyse',
 };
 
 function buildBlock(
@@ -496,24 +716,29 @@ function buildBlock(
 ): (Paragraph | Table)[] {
   const label = BLOCK_LABELS[block.typ];
   const result: (Paragraph | Table)[] = [
-    divider(),
+    // Gerahmtes Abschnitts-Banner: Titel links, Punkte-Eintragefeld rechtsbündig (___ / X).
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
       keepNext: true,
+      tabStops: [{ type: TabStopType.RIGHT, position: CONTENT_WIDTH }],
+      border: {
+        top:    { style: BorderStyle.SINGLE, size: 6, color: COLOR.black },
+        bottom: { style: BorderStyle.SINGLE, size: 6, color: COLOR.black },
+      },
+      spacing: { before: 280, after: 120 },
       children: [
         run(`Aufgabe ${index}  –  ${label}`, {
           font: FONT, size: SZ.h2, bold: true,
         }),
-        run(`   (${block.punkte} ${block.punkte === 1 ? 'Punkt' : 'Punkte'})`, {
-          font: FONT, size: SZ.body, color: COLOR.gray,
-        }),
+        new TextRun({ children: [new Tab()], font: FONT, size: SZ.body }),
+        blankLine(5),
+        run(` / ${block.punkte}`, { font: FONT, size: SZ.body }),
       ],
-      spacing: { before: 240, after: 100 },
     }),
     new Paragraph({
       keepNext: true,
       children: [run(block.arbeitsanweisung, { font: FONT, size: SZ.body, bold: true })],
-      spacing: { after: 80 },
+      spacing: { after: 100 },
     }),
   ];
 
@@ -548,6 +773,21 @@ function buildBlock(
     case 'markieraufgabe':
       result.push(...buildMarkieraufgabe(block, mode, quelltextMap));
       break;
+    case 'wordScramble':
+      result.push(...buildWordScramble(block, mode));
+      break;
+    case 'kategorisierung':
+      result.push(...buildKategorisierung(block, mode));
+      break;
+    case 'tabelle':
+      result.push(...buildTabelle(block, mode));
+      break;
+    case 'stiluebung':
+      result.push(...buildStiluebung(block, mode));
+      break;
+    case 'songanalyse':
+      result.push(...buildSonganalyse(block, mode));
+      break;
   }
 
   return result;
@@ -563,8 +803,38 @@ function buildLueckentext(
 ): (Paragraph | Table)[] {
   const result: (Paragraph | Table)[] = [];
 
+  // Wenn der LLM einen Text mit Luecken geliefert hat, zeige diesen an.
+  // Ansonsten Fallback auf nummerierte Luecken.
+  const hasText = block.text && block.text.length > 0;
+
+  if (hasText) {
+    // Text mit Luecken anzeigen — die Luecken sind als (1), (2) im Text
+    const text = block.text!;
+    if (mode === 'schueler') {
+      result.push(
+        new Paragraph({
+          children: [run(text, { font: FONT, size: SZ.body })],
+          spacing: { after: 120 },
+        }),
+      );
+    } else {
+      // Loesungs-Modus: Ersetze (1), (2) durch die tatsaechlichen Woerter
+      let solutionText = text;
+      for (const l of block.loesung.luecken) {
+        solutionText = solutionText.replace(`(${l.nr})`, `(${l.nr}) ${l.wort}`);
+      }
+      result.push(
+        new Paragraph({
+          indent: { left: 360 },
+          children: [run(solutionText, { font: FONT, size: SZ.body, italics: true })],
+          spacing: { after: 120 },
+        }),
+      );
+    }
+  }
+
   if (mode === 'schueler') {
-    // Numbered blanks in rows
+    // Numbered blanks in rows (Fallback wenn kein text vorhanden, oder zusaetzlich)
     const blanks = Array.from({ length: block.config.anzahlLuecken }, (_, i) => i + 1);
     const rows: TableRow[] = chunkArray(blanks, 4).map(
       (rowNums) =>
@@ -599,20 +869,23 @@ function buildLueckentext(
 
     // Word bank for Unterstufe
     if (block.config.wortbank) {
-      const allWords = block.loesung.luecken.map((l) => l.wort);
-      // Add distraktoren placeholders (in real use the LLM fills these)
+      const loesungsWoerter = block.loesung.luecken.map((l) => l.wort);
+      const distraktoren = block.config.distraktorWoerter ?? [];
+      const bank = distraktoren.length > 0
+        ? baueWortbank(loesungsWoerter, distraktoren, block.id)
+        : loesungsWoerter;
       result.push(
         new Paragraph({
           children: [
             run('Wortbank:  ', { font: FONT, size: SZ.body, bold: true }),
-            run(allWords.join('  |  '), { font: FONT, size: SZ.body }),
+            run(bank.join('  |  '), { font: FONT, size: SZ.body }),
           ],
           spacing: { before: 80, after: 80 },
         }),
       );
     }
-  } else {
-    // Solution mode: numbered answers in italics
+  } else if (!hasText) {
+    // Solution mode without text: numbered answers in italics
     const pairs = block.loesung.luecken
       .map((l) => `(${l.nr}) ${l.wort}`)
       .join('     ');
@@ -970,7 +1243,7 @@ function buildMarkieraufgabe(
     result.push(
       new Paragraph({
         keepNext: true,
-        children: [run(quelle.inhalt, { font: FONT, size: SZ.body })],
+        children: mehrzeiligRuns(quelle.inhalt, { font: FONT, size: SZ.body }),
         spacing: { after: 120 },
         border: {
           left: { style: BorderStyle.SINGLE, size: 8, color: COLOR.lightGray },
@@ -1003,6 +1276,358 @@ function buildMarkieraufgabe(
 }
 
 // ---------------------------------------------------------------------------
+// Block: wordScramble
+// ---------------------------------------------------------------------------
+
+function buildWordScramble(
+  block: Extract<Block, { typ: 'wordScramble' }>,
+  mode: Mode,
+): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [];
+  const woerter = block.config.wort.split(/\s+/).filter((w) => w.length > 0);
+
+  if (mode === 'schueler') {
+    // Deterministisch (seed = block.id): Schüler- und Lösungsblatt bleiben konsistent.
+    const gemischt = shuffle(woerter, block.id);
+    result.push(
+      new Paragraph({
+        children: [
+          run('Begriffe (durcheinander):  ', { font: FONT, size: SZ.body, bold: true }),
+          run(gemischt.join('  |  '), { font: FONT, size: SZ.body }),
+        ],
+        spacing: { after: 120 },
+      }),
+    );
+    result.push(
+      new Paragraph({
+        children: [run('Satz (richtige Reihenfolge):', { font: FONT, size: SZ.body, bold: true })],
+        spacing: { after: 60 },
+      }),
+    );
+    for (let i = 0; i < block.config.anzahlWoerter; i++) {
+      result.push(writingLine(true));
+    }
+  } else {
+    result.push(
+      new Paragraph({
+        children: [
+          run('Korrekte Anordnung:  ', { font: FONT, size: SZ.body, bold: true }),
+          run(block.loesung.korrektAnordnung.join(' '), { font: FONT, size: SZ.body, italics: true }),
+        ],
+        spacing: { after: 80 },
+      }),
+    );
+    result.push(
+      new Paragraph({
+        children: [
+          run('Reihenfolge:  ', { font: FONT, size: SZ.body, bold: true }),
+          run(block.config.loesungsreihenfolge.join(' → '), { font: FONT, size: SZ.body, italics: true }),
+        ],
+        spacing: { after: 80 },
+      }),
+    );
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Block: kategorisierung
+// ---------------------------------------------------------------------------
+
+function buildKategorisierung(
+  block: Extract<Block, { typ: 'kategorisierung' }>,
+  mode: Mode,
+): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [];
+
+  const cellBorder = {
+    top: THIN_BORDER, bottom: THIN_BORDER,
+    left: THIN_BORDER, right: THIN_BORDER,
+  };
+
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: [
+      new TableCell({
+        borders: cellBorder,
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        shading: { fill: 'D9D9D9' },
+        children: [new Paragraph({ children: [run('Begriff', { font: FONT, size: SZ.body, bold: true })] })],
+      }),
+      new TableCell({
+        borders: cellBorder,
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        shading: { fill: 'D9D9D9' },
+        children: [new Paragraph({ children: [run('Kategorie', { font: FONT, size: SZ.body, bold: true })] })],
+      }),
+    ],
+  });
+
+  const rows: TableRow[] = [headerRow];
+  for (const item of block.config.items) {
+    const kategorieName = mode === 'loesung' ? (block.loesung.zuordnung[String(item.nr)] ?? []).join(', ') : '';
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: cellBorder,
+            children: [new Paragraph({ children: [run(item.text, { font: FONT, size: SZ.body })] })],
+          }),
+          new TableCell({
+            borders: cellBorder,
+            children: [new Paragraph({ children: [run(kategorieName, { font: FONT, size: SZ.body, italics: mode === 'loesung' })] })],
+          }),
+        ],
+      }),
+    );
+  }
+
+  result.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows,
+    }),
+  );
+
+  if (mode === 'schueler') {
+    result.push(
+      new Paragraph({
+        children: [run('Verfügbare Kategorien:  ' + block.config.kategorien.map((k) => k.name).join(', '), { font: FONT, size: SZ.body, italics: true, color: COLOR.gray })],
+        spacing: { before: 80, after: 40 },
+      }),
+    );
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Block: tabelle
+// ---------------------------------------------------------------------------
+
+function buildTabelle(
+  block: Extract<Block, { typ: 'tabelle' }>,
+  mode: Mode,
+): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [];
+
+  const cellBorder = {
+    top: THIN_BORDER, bottom: THIN_BORDER,
+    left: THIN_BORDER, right: THIN_BORDER,
+  };
+
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: block.config.spalten.map((s) =>
+      new TableCell({
+        borders: cellBorder,
+        width: { size: s.breiteProzent, type: WidthType.PERCENTAGE },
+        shading: { fill: 'D9D9D9' },
+        children: [new Paragraph({ children: [run(s.titel, { font: FONT, size: SZ.body, bold: true })] })],
+      }),
+    ),
+  });
+
+  const rows: TableRow[] = [headerRow];
+  for (const zeile of block.config.zeilen) {
+    rows.push(
+      new TableRow({
+        children: zeile.zellen.map((zelle, spaltenIndex) => {
+          let text = '';
+          let istLuecke = false;
+          if ('text' in zelle) {
+            text = zelle.text;
+          } else {
+            // Lücke: im Schüler leer (Unterstrich-Hinweis), in der Lösung der korrekte Wert.
+            istLuecke = true;
+            text = mode === 'loesung'
+              ? (block.loesung.zellen[`${zeile.nr},${spaltenIndex}`] ?? '')
+              : '__________';
+          }
+          return new TableCell({
+            borders: cellBorder,
+            children: [new Paragraph({ children: [run(text, { font: FONT, size: SZ.body, italics: istLuecke && mode === 'loesung' })] })],
+          });
+        }),
+      }),
+    );
+  }
+
+  result.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows,
+    }),
+  );
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Block: stiluebung
+// ---------------------------------------------------------------------------
+
+function buildStiluebung(
+  block: Extract<Block, { typ: 'stiluebung' }>,
+  mode: Mode,
+): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [];
+
+  result.push(
+    new Paragraph({
+      keepNext: true,
+      children: [
+        run('Ausgangstext:', { font: FONT, size: SZ.body, bold: true }),
+      ],
+      spacing: { before: 80, after: 40 },
+    }),
+  );
+  result.push(
+    new Paragraph({
+      keepNext: true,
+      children: mehrzeiligRuns(block.config.ausgangstext, { font: FONT, size: SZ.body, italics: true, color: COLOR.gray }),
+      border: { left: { style: BorderStyle.SINGLE, size: 8, color: COLOR.lightGray } },
+      indent: { left: 360 },
+      spacing: { after: 120 },
+    }),
+  );
+
+  result.push(
+    new Paragraph({
+      children: [
+        run('Ziel: ', { font: FONT, size: SZ.body, bold: true }),
+        run(`${block.config.transformation} → ${block.config.zielniveau}`, { font: FONT, size: SZ.body }),
+      ],
+      spacing: { after: 100 },
+    }),
+  );
+
+  if (mode === 'schueler') {
+    result.push(
+      new Paragraph({
+        children: [run('Deine Umformulierung:', { font: FONT, size: SZ.body, bold: true })],
+        spacing: { after: 60 },
+      }),
+    );
+    for (let i = 0; i < 6; i++) {
+      result.push(writingLine(true));
+    }
+  } else {
+    result.push(
+      new Paragraph({
+        children: [
+          run('Musterlösung:  ', { font: FONT, size: SZ.body, bold: true }),
+          run(block.loesung.umformulierung, { font: FONT, size: SZ.body, italics: true }),
+        ],
+        spacing: { after: 80 },
+      }),
+    );
+    result.push(
+      new Paragraph({
+        children: [
+          run('Begründung:  ', { font: FONT, size: SZ.body, bold: true }),
+          run(block.loesung.begruendung, { font: FONT, size: SZ.body, italics: true }),
+        ],
+        spacing: { after: 80 },
+      }),
+    );
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Block: songanalyse
+// ---------------------------------------------------------------------------
+
+function buildSonganalyse(
+  block: Extract<Block, { typ: 'songanalyse' }>,
+  mode: Mode,
+): (Paragraph | Table)[] {
+  const result: (Paragraph | Table)[] = [];
+
+  result.push(
+    new Paragraph({
+      keepNext: true,
+      children: [
+        run(`${block.config.interpret} – ${block.config.titel}`, { font: FONT, size: SZ.h3, bold: true }),
+        ...(block.config.genre ? [run(`  (${block.config.genre})`, { font: FONT, size: SZ.body, italics: true, color: COLOR.gray })] : []),
+      ],
+      spacing: { after: 80 },
+    }),
+  );
+
+  result.push(
+    new Paragraph({
+      keepNext: true,
+      children: [run('Songtext:', { font: FONT, size: SZ.body, bold: true })],
+      spacing: { after: 40 },
+    }),
+  );
+  result.push(
+    new Paragraph({
+      keepNext: true,
+      children: mehrzeiligRuns(block.config.lyrics, { font: FONT, size: SZ.body, italics: true, color: COLOR.gray }),
+      border: { left: { style: BorderStyle.SINGLE, size: 8, color: COLOR.lightGray } },
+      indent: { left: 360 },
+      spacing: { after: 120 },
+    }),
+  );
+
+  result.push(
+    new Paragraph({
+      children: [
+        run('Aufgabe:  ', { font: FONT, size: SZ.body, bold: true }),
+        run(block.config.aufgabe, { font: FONT, size: SZ.body }),
+      ],
+      spacing: { after: 100 },
+    }),
+  );
+
+  if (mode === 'schueler') {
+    for (let i = 0; i < 8; i++) {
+      result.push(writingLine(true));
+    }
+  } else {
+    result.push(
+      new Paragraph({
+        children: [
+          run('Ergebnis:  ', { font: FONT, size: SZ.body, bold: true }),
+          run(block.loesung.ergebnis, { font: FONT, size: SZ.body, italics: true }),
+        ],
+        spacing: { after: 80 },
+      }),
+    );
+    for (const ap of block.loesung.analysepunkte) {
+      result.push(
+        new Paragraph({
+          children: [
+            run(`• ${ap.aspekt}:  `, { font: FONT, size: SZ.body, bold: true }),
+            run(ap.befund, { font: FONT, size: SZ.body, italics: true }),
+            ...(ap.zitat ? [run(`  („${ap.zitat}")`, { font: FONT, size: SZ.body, italics: true, color: COLOR.gray })] : []),
+          ],
+          spacing: { after: 40 },
+        }),
+      );
+    }
+    if (block.loesung.zitate.length > 0) {
+      result.push(
+        new Paragraph({
+          children: [
+            run('Wichtige Zitate:  ', { font: FONT, size: SZ.body, bold: true }),
+            run(block.loesung.zitate.map((z) => `„${z}"`).join('; '), { font: FONT, size: SZ.body, italics: true }),
+          ],
+          spacing: { before: 80, after: 60 },
+        }),
+      );
+    }
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -1023,6 +1648,24 @@ function run(text: string, opts: RunOpts): TextRun {
     italics: opts.italics ?? false,
     ...(opts.color !== undefined ? { color: opts.color } : {}),
   });
+}
+
+// Wie run(), aber erhält Zeilenumbrüche (\n) als echte docx-Umbrüche (break:1)
+// statt sie zu verschlucken. Für eingebettete mehrzeilige Texte (Lyrics, Ausgangstext).
+function mehrzeiligRuns(text: string, opts: RunOpts): TextRun[] {
+  const zeilen = text.replace(/\r\n/g, '\n').split('\n');
+  return zeilen.map(
+    (zeile, i) =>
+      new TextRun({
+        text: zeile,
+        font: opts.font,
+        size: opts.size,
+        bold: opts.bold ?? false,
+        italics: opts.italics ?? false,
+        ...(opts.color !== undefined ? { color: opts.color } : {}),
+        ...(i > 0 ? { break: 1 } : {}),
+      }),
+  );
 }
 
 function blankLine(widthChars = 60): TextRun {
@@ -1049,15 +1692,6 @@ function writingLine(keepNext = false): Paragraph {
   });
 }
 
-function divider(): Paragraph {
-  return new Paragraph({
-    children: [],
-    border: {
-      bottom: { style: BorderStyle.SINGLE, size: 2, color: COLOR.lightGray },
-    },
-    spacing: { before: 80, after: 80 },
-  });
-}
 
 function formatDatum(iso: string): string {
   const [y, m, d] = iso.split('-');

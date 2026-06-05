@@ -2,7 +2,7 @@ import { useReducer, useCallback } from 'react';
 import type { AppState, AppAction, StepId } from '../lib/types';
 import { getDefaultMeta } from '../lib/constants';
 
-const STEPS_ORDER: StepId[] = ['input', 'baukasten', 'llm', 'generate'];
+const STEPS_ORDER: StepId[] = ['absicht', 'input', 'baukasten', 'llm', 'generate'];
 
 function wizardReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
@@ -14,12 +14,21 @@ function wizardReducer(state: AppState, action: AppAction): AppState {
         generiertesDokument:
           action.step === 'baukasten' ? null : state.generiertesDokument,
       };
+    case 'SET_AUFTRAG':
+      return { ...state, auftrag: action.auftrag };
     case 'SET_META':
       return { ...state, meta: { ...state.meta, ...action.meta } };
     case 'ADD_QUELLTEXT':
       return { ...state, quelltexte: [...state.quelltexte, action.quelltext] };
     case 'REMOVE_QUELLTEXT':
       return { ...state, quelltexte: state.quelltexte.filter((q) => q.id !== action.id) };
+    case 'UPDATE_QUELLTEXT':
+      return {
+        ...state,
+        quelltexte: state.quelltexte.map((q) =>
+          q.id === action.id ? { ...q, ...action.quelltext } : q,
+        ),
+      };
     case 'ADD_BLOCK':
       return { ...state, bloecke: [...state.bloecke, action.block] };
     case 'UPDATE_BLOCK':
@@ -60,7 +69,8 @@ function wizardReducer(state: AppState, action: AppAction): AppState {
 }
 
 const INITIAL_STATE: AppState = {
-  step: 'input',
+  step: 'absicht',
+  auftrag: null,
   meta: getDefaultMeta(),
   quelltexte: [],
   bloecke: [],
@@ -75,7 +85,7 @@ export function useWizard() {
   const [state, dispatch] = useReducer(wizardReducer, INITIAL_STATE);
 
   const currentIndex = STEPS_ORDER.indexOf(state.step);
-  const canGoNext = currentIndex < STEPS_ORDER.length - 1;
+  const canGoNext = currentIndex < STEPS_ORDER.length - 1 && !(state.step === 'absicht' && !state.auftrag);
   const canGoBack = currentIndex > 0;
 
   const goNext = useCallback(() => {

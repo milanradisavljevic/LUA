@@ -15,7 +15,7 @@ export function BlockPreviewSchreibaufgabe({ block, showSolution }: Props) {
   const lineHeightPx = Math.round(9 * 3.78);
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'var(--font)', fontSize: '11pt', lineHeight: 1.6 }}>
       <p style={{ marginBottom: '0.75rem' }}>
         <strong>Arbeitsanweisung:</strong> {block.arbeitsanweisung}
       </p>

@@ -14,7 +14,7 @@ export function BlockPreviewVerstaendnisfrage({ block, showSolution }: Props) {
   const antworten = loesung.antworten ?? {};
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'var(--font)', fontSize: '11pt', lineHeight: 1.6 }}>
       <p style={{ marginBottom: '0.75rem' }}>
         <strong>Arbeitsanweisung:</strong> {block.arbeitsanweisung}
       </p>

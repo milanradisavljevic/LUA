@@ -9,9 +9,29 @@ const STANDARD_SCHLUESSEL: Omit<Notenstufe, 'minPunkte' | 'maxPunkte'>[] = [
 ];
 
 export function berechneNotenschluessel(gesamtPunkte: number): Notenstufe[] {
-  return STANDARD_SCHLUESSEL.map((s) => ({
-    ...s,
-    minPunkte: Math.ceil(gesamtPunkte * s.minProzent / 100),
-    maxPunkte: Math.floor(gesamtPunkte * s.maxProzent / 100),
-  }));
+  // Kaskadierende Berechnung: jede Note schliesst nahtlos an die naechste an.
+  // Note 1 (beste): max = gesamtPunkte
+  // Note n: max = minPunkte(n-1) - 1
+  // Note 5 (schlechteste): min = 0
+
+  const result: Notenstufe[] = [];
+  let prevMin = gesamtPunkte + 1; // Note 1 bekommt max = gesamtPunkte
+
+  for (const s of STANDARD_SCHLUESSEL) {
+    const minPunkte = Math.ceil(gesamtPunkte * s.minProzent / 100);
+    const maxPunkte = prevMin - 1;
+
+    // Letzte Note (5) bekommt min = 0, damit 0 immer enthalten ist
+    const effectiveMin = s.note === 5 ? 0 : Math.min(minPunkte, maxPunkte);
+
+    result.push({
+      ...s,
+      minPunkte: effectiveMin,
+      maxPunkte: Math.max(maxPunkte, effectiveMin),
+    });
+
+    prevMin = effectiveMin;
+  }
+
+  return result;
 }

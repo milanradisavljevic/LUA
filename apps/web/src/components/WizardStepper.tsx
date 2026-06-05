@@ -9,7 +9,7 @@ export function WizardStepper({ currentStep }: Props) {
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
   return (
-    <nav className="wizard-stepper" style={{
+    <nav className="wizard-stepper" aria-label={`Fortschritt: Schritt ${currentIndex + 1} von ${STEPS.length}`} style={{
       display: 'flex',
       gap: '0.25rem',
       marginBottom: '1.5rem',
@@ -19,7 +19,11 @@ export function WizardStepper({ currentStep }: Props) {
         const isActive = i === currentIndex;
         const isDone = i < currentIndex;
         return (
-          <div key={step.id} style={{
+          <div
+            key={step.id}
+            aria-current={isActive ? 'step' : undefined}
+            aria-label={`Schritt ${i + 1}: ${step.label}${isActive ? ' (aktuell)' : isDone ? ' (erledigt)' : ''}`}
+            style={{
             flex: 1,
             display: 'flex',
             alignItems: 'center',
@@ -32,7 +36,7 @@ export function WizardStepper({ currentStep }: Props) {
             fontSize: '0.8125rem',
             border: isActive ? 'none' : `1px solid ${isDone ? 'var(--color-accent)' : 'var(--color-gray-2)'}`,
           }}>
-            <span style={{
+            <span aria-hidden="true" style={{
               width: 20, height: 20, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '0.6875rem', fontWeight: 700,
@@ -41,7 +45,7 @@ export function WizardStepper({ currentStep }: Props) {
             }}>
               {isDone ? '✓' : i + 1}
             </span>
-            <span>{step.label}</span>
+            <span aria-hidden="true">{step.label}</span>
           </div>
         );
       })}

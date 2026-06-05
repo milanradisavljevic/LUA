@@ -1,4 +1,30 @@
 node_modules/
 dist/
 *.tsbuildinfo
+scripts/out/
 .env
+.env.txt
+.env.local
+*.env.*
+neue ENV-Datei.txt
+*API_KEY*
+*api_key*
+src-tauri/.env.local
+src-tauri/target/
+
+# Generierte Ausgaben
+src-tauri/*.docx
+src-tauri/~$*
+*.pdf
+
+# Session-/Export-Dateien
+session-*.md
+kimi-export-*.md
+offene Punkte.txt
+
+# Vorlagen und Assets (nicht Code)
+*.docx
+!packages/renderer/**/*.docx
+
+# Temporäre Dateien
+DOC-*

@@ -62,7 +62,7 @@ export function parseHtmlString(html: string, fallbackTitel?: string): ParseResu
   inhalt = inhalt.replace(/\n{3,}/g, '\n\n');
   inhalt = inhalt.trim();
 
-  return { inhalt, titel };
+  return titel !== undefined ? { inhalt, titel } : { inhalt };
 }
 
 /**

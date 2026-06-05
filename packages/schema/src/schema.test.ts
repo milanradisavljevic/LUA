@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   DocumentSchema,
+  migrateDocument,
+  CURRENT_SCHEMA_VERSION,
   MetaSchema,
   QuellTextSchema,
   LueckentextBlockSchema,
@@ -9,7 +11,18 @@ import {
   OffeneVerstaendnisfrageBlockSchema,
   OffeneSchreibaufgabeBlockSchema,
   MarkieraufgabeBlockSchema,
+  WordScrambleBlockSchema,
+  KategorisierungBlockSchema,
+  TabelleBlockSchema,
+  StiluebungBlockSchema,
+  SonganalyseBlockSchema,
   BlockSchema,
+  UnterlagentypSchema,
+  BlockTypSchema,
+  AuftragSchema,
+  PROFILE,
+  buildSkelett,
+  baueWortbank,
   type DocumentV1,
   type Meta,
   type QuellText,
@@ -19,7 +32,16 @@ import {
   type OffeneVerstaendnisfrageBlock,
   type OffeneSchreibaufgabeBlock,
   type MarkieraufgabeBlock,
+  type WordScrambleBlock,
+  type KategorisierungBlock,
+  type TabelleBlock,
+  type StiluebungBlock,
+  type SonganalyseBlock,
   type Block,
+  type Auftrag,
+  type TypProfil,
+  type Abgabe,
+  type Bewertung,
 } from './index.js';
 
 // ---------------------------------------------------------------------------
@@ -49,6 +71,58 @@ describe('MetaSchema', () => {
       notizen: 'Probearbeitsanweisung',
     };
     expect(MetaSchema.safeParse(meta).success).toBe(true);
+  });
+
+  it('accepts meta with schwierigkeit', () => {
+    const meta: Meta = {
+      stufe: 'oberstufe',
+      fach: 'deutsch',
+      thema: 'Medienkonsum',
+      datum: '2026-05-30',
+      klasse: '7A',
+      notizen: '',
+      schwierigkeit: 'schwer',
+    };
+    expect(MetaSchema.safeParse(meta).success).toBe(true);
+  });
+
+  it('rejects invalid schwierigkeit', () => {
+    const result = MetaSchema.safeParse({
+      stufe: 'oberstufe',
+      fach: 'deutsch',
+      thema: 'x',
+      datum: '2026-01-01',
+      klasse: '7A',
+      notizen: '',
+      schwierigkeit: 'extrem',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts meta with lernziele', () => {
+    const meta: Meta = {
+      stufe: 'oberstufe',
+      fach: 'deutsch',
+      thema: 'Medienkonsum',
+      datum: '2026-05-30',
+      klasse: '7A',
+      notizen: '',
+      lernziele: ['Hauptgedanke erfassen', 'Stilmittel erkennen'],
+    };
+    expect(MetaSchema.safeParse(meta).success).toBe(true);
+  });
+
+  it('rejects empty lernziel strings', () => {
+    const result = MetaSchema.safeParse({
+      stufe: 'oberstufe',
+      fach: 'deutsch',
+      thema: 'x',
+      datum: '2026-01-01',
+      klasse: '7A',
+      notizen: '',
+      lernziele: ['', 'Stilmittel'],
+    });
+    expect(result.success).toBe(false);
   });
 
   it('rejects invalid stufe', () => {
@@ -178,6 +252,18 @@ describe('LueckentextBlockSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('accepts distraktorWoerter optional', () => {
+    const block = {
+      id: 'b1',
+      typ: 'lueckentext',
+      punkte: 5,
+      arbeitsanweisung: 'Setze ein.',
+      config: { anzahlLuecken: 5, wortbank: true, distraktoren: 3, distraktorWoerter: ['falsch', 'auch falsch', 'noch einer'] },
+      loesung: { luecken: [{ nr: 1, wort: 'Wort' }] },
+    };
+    expect(LueckentextBlockSchema.safeParse(block).success).toBe(true);
+  });
+
   it('rejects punkte <= 0', () => {
     const result = LueckentextBlockSchema.safeParse({
       id: 'b1',
@@ -281,6 +367,7 @@ describe('MultipleChoiceBlockSchema', () => {
               { key: 'A', text: 'Ein Vergleich mit "wie"' },
               { key: 'B', text: 'Ein Bild ohne Vergleichswort' },
               { key: 'C', text: 'Eine Übertreibung' },
+              { key: 'D', text: 'Eine Wiederholung' },
             ],
             mehrfach: false,
           },
@@ -301,7 +388,12 @@ describe('MultipleChoiceBlockSchema', () => {
         fragen: [{
           nr: 1,
           frage: 'Welche sind Stilmittel?',
-          optionen: [{ key: 'A', text: 'Metapher' }, { key: 'B', text: 'Satz' }, { key: 'C', text: 'Ironie' }],
+          optionen: [
+            { key: 'A', text: 'Metapher' },
+            { key: 'B', text: 'Satz' },
+            { key: 'C', text: 'Ironie' },
+            { key: 'D', text: 'Anapher' },
+          ],
           mehrfach: true,
         }],
       },
@@ -482,6 +574,237 @@ describe('MarkieraufgabeBlockSchema', () => {
 });
 
 // ---------------------------------------------------------------------------
+// wordScramble
+// ---------------------------------------------------------------------------
+
+describe('WordScrambleBlockSchema', () => {
+  it('accepts valid word scramble', () => {
+    const block: WordScrambleBlock = {
+      id: 'b7',
+      typ: 'wordScramble',
+      punkte: 4,
+      arbeitsanweisung: 'Bringe die Wörter in die richtige Reihenfolge.',
+      config: { wort: 'Der Hund läuft im Park', anzahlWoerter: 5, loesungsreihenfolge: [1, 2, 3, 4, 5] },
+      loesung: { korrektAnordnung: ['Der', 'Hund', 'läuft', 'im', 'Park'] },
+    };
+    expect(WordScrambleBlockSchema.safeParse(block).success).toBe(true);
+  });
+
+  it('rejects mismatched loesungsreihenfolge length', () => {
+    const result = WordScrambleBlockSchema.safeParse({
+      id: 'b7',
+      typ: 'wordScramble',
+      punkte: 4,
+      arbeitsanweisung: 'Bringe die Wörter in die richtige Reihenfolge.',
+      config: { wort: 'Der Hund', anzahlWoerter: 5, loesungsreihenfolge: [1, 2] },
+      loesung: { korrektAnordnung: ['Der', 'Hund'] },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// kategorisierung
+// ---------------------------------------------------------------------------
+
+describe('KategorisierungBlockSchema', () => {
+  it('accepts valid categorization', () => {
+    const block: KategorisierungBlock = {
+      id: 'b8',
+      typ: 'kategorisierung',
+      punkte: 6,
+      arbeitsanweisung: 'Ordne die Begriffe der richtigen Kategorie zu.',
+      config: {
+        items: [
+          { nr: 1, text: 'Magen', optionen: ['Verdauung', 'Atmung'] },
+          { nr: 2, text: 'Lunge', optionen: ['Verdauung', 'Atmung'] },
+        ],
+        kategorien: [
+          { name: 'Verdauung', anzahlItems: 1 },
+          { name: 'Atmung', anzahlItems: 1 },
+        ],
+      },
+      loesung: { zuordnung: { '1': ['Verdauung'], '2': ['Atmung'] } },
+    };
+    expect(KategorisierungBlockSchema.safeParse(block).success).toBe(true);
+  });
+
+  it('accepts multiple categories per item (Mehrfachzuordnung)', () => {
+    const result = KategorisierungBlockSchema.safeParse({
+      id: 'b8',
+      typ: 'kategorisierung',
+      punkte: 6,
+      arbeitsanweisung: 'Ordne zu.',
+      config: {
+        items: [
+          { nr: 1, text: 'Jack', optionen: ['Jack', 'Diane'] },
+          { nr: 2, text: 'Beide', optionen: ['Jack', 'Diane'] },
+        ],
+        kategorien: [{ name: 'Jack', anzahlItems: 2 }, { name: 'Diane', anzahlItems: 1 }],
+      },
+      loesung: { zuordnung: { '1': ['Jack'], '2': ['Jack', 'Diane'] } },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects fewer than 2 items', () => {
+    const result = KategorisierungBlockSchema.safeParse({
+      id: 'b8',
+      typ: 'kategorisierung',
+      punkte: 6,
+      arbeitsanweisung: 'Ordne zu.',
+      config: {
+        items: [{ nr: 1, text: 'X', optionen: ['A', 'B'] }],
+        kategorien: [{ name: 'A', anzahlItems: 1 }, { name: 'B', anzahlItems: 0 }],
+      },
+      loesung: { zuordnung: { '1': 'A' } },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// tabelle
+// ---------------------------------------------------------------------------
+
+describe('TabelleBlockSchema', () => {
+  it('accepts valid table block', () => {
+    const block: TabelleBlock = {
+      id: 'b9',
+      typ: 'tabelle',
+      punkte: 8,
+      arbeitsanweisung: 'Fülle die Tabelle aus.',
+      config: {
+        spalten: [
+          { titel: 'Begriff', breiteProzent: 40 },
+          { titel: 'Definition', breiteProzent: 60 },
+        ],
+        zeilen: [
+          { nr: 1, zellen: [{ text: 'Begriff A' }, { luecke: true }] },
+          { nr: 2, zellen: [{ text: 'Begriff B' }, { luecke: true }] },
+        ],
+      },
+      loesung: {
+        zellen: { '1,1': 'Definition A', '2,1': 'Definition B' },
+      },
+    };
+    expect(TabelleBlockSchema.safeParse(block).success).toBe(true);
+  });
+
+  it('rejects more than 5 spalten', () => {
+    const result = TabelleBlockSchema.safeParse({
+      id: 'b9',
+      typ: 'tabelle',
+      punkte: 8,
+      arbeitsanweisung: 'Fülle aus.',
+      config: {
+        spalten: Array.from({ length: 6 }, (_, i) => ({ titel: `S${i}`, breiteProzent: 16 })),
+        zeilen: [{ nr: 1, zellen: Array.from({ length: 6 }, () => ({ luecke: true as const })) }],
+      },
+      loesung: { zellen: {} },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects rows whose Zellenzahl != Spaltenzahl', () => {
+    const result = TabelleBlockSchema.safeParse({
+      id: 'b9',
+      typ: 'tabelle',
+      punkte: 8,
+      arbeitsanweisung: 'Fülle aus.',
+      config: {
+        spalten: [{ titel: 'A', breiteProzent: 50 }, { titel: 'B', breiteProzent: 50 }],
+        zeilen: [{ nr: 1, zellen: [{ text: 'nur eine' }] }],
+      },
+      loesung: { zellen: {} },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// stiluebung
+// ---------------------------------------------------------------------------
+
+describe('StiluebungBlockSchema', () => {
+  it('accepts valid stiluebung', () => {
+    const block: StiluebungBlock = {
+      id: 'b10',
+      typ: 'stiluebung',
+      punkte: 6,
+      arbeitsanweisung: 'Formuliere den Text in gehobener Sprache.',
+      config: {
+        ausgangstext: 'Der Typ war echt cool drauf.',
+        zielniveau: 'gehoben',
+        transformation: 'verdeutlichen',
+      },
+      loesung: {
+        umformulierung: 'Der junge Mann zeigte sich überaus souverän.',
+        begruendung: 'Umgangssprachliche Wendung durch standardsprachliche ersetzt.',
+      },
+    };
+    expect(StiluebungBlockSchema.safeParse(block).success).toBe(true);
+  });
+
+  it('rejects invalid zielniveau', () => {
+    const result = StiluebungBlockSchema.safeParse({
+      id: 'b10',
+      typ: 'stiluebung',
+      punkte: 6,
+      arbeitsanweisung: 'Formuliere um.',
+      config: { ausgangstext: 'X', zielniveau: 'mittelalter', transformation: 'verdeutlichen' },
+      loesung: { umformulierung: 'Y', begruendung: 'Z' },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// songanalyse
+// ---------------------------------------------------------------------------
+
+describe('SonganalyseBlockSchema', () => {
+  it('accepts valid songanalyse', () => {
+    const block: SonganalyseBlock = {
+      id: 'b11',
+      typ: 'songanalyse',
+      punkte: 12,
+      arbeitsanweisung: 'Analysiere den Songtext.',
+      config: {
+        interpret: 'AnnenMayKantereit',
+        titel: 'Pocahontas',
+        medium: 'song',
+        genre: 'Indie',
+        lyrics: 'Und sie tanzt allein, im Mondenschein...',
+        aufgabe: 'wirkungsanalyse',
+      },
+      loesung: {
+        ergebnis: 'Der Song thematisiert Einsamkeit und Sehnsucht.',
+        zitate: ['sie tanzt allein'],
+        analysepunkte: [
+          { aspekt: 'Bildsprache', befund: 'Mondenschein als Sinnbild der Einsamkeit', zitat: 'Mondenschein' },
+        ],
+      },
+    };
+    expect(SonganalyseBlockSchema.safeParse(block).success).toBe(true);
+  });
+
+  it('requires at least one analysepunkt', () => {
+    const result = SonganalyseBlockSchema.safeParse({
+      id: 'b11',
+      typ: 'songanalyse',
+      punkte: 12,
+      arbeitsanweisung: 'Analysiere.',
+      config: {
+        interpret: 'X', titel: 'Y', medium: 'song', lyrics: 'Z', aufgabe: 'inhaltsangabe',
+      },
+      loesung: { ergebnis: 'X', zitate: [], analysepunkte: [] },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // DocumentSchema — full document validation
 // ---------------------------------------------------------------------------
 
@@ -600,5 +923,375 @@ describe('BlockSchema discriminated union', () => {
       config: {}, loesung: {},
     });
     expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UnterlagentypSchema
+// ---------------------------------------------------------------------------
+
+describe('UnterlagentypSchema', () => {
+  it('accepts hausuebung', () => {
+    expect(UnterlagentypSchema.safeParse('hausuebung').success).toBe(true);
+  });
+  it('accepts test', () => {
+    expect(UnterlagentypSchema.safeParse('test').success).toBe(true);
+  });
+  it('accepts schularbeit', () => {
+    expect(UnterlagentypSchema.safeParse('schularbeit').success).toBe(true);
+  });
+  it('rejects invalid typ', () => {
+    expect(UnterlagentypSchema.safeParse('pruefung').success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BlockTypSchema
+// ---------------------------------------------------------------------------
+
+describe('BlockTypSchema', () => {
+  it('accepts all six block types', () => {
+    const types = ['lueckentext', 'matching', 'multipleChoice', 'offeneVerstaendnisfrage', 'offeneSchreibaufgabe', 'markieraufgabe'];
+    for (const t of types) {
+      expect(BlockTypSchema.safeParse(t).success).toBe(true);
+    }
+  });
+  it('rejects unknown block type', () => {
+    expect(BlockTypSchema.safeParse('unbekannt').success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AuftragSchema
+// ---------------------------------------------------------------------------
+
+describe('AuftragSchema', () => {
+  it('accepts minimal valid auftrag', () => {
+    const auftrag: Auftrag = {
+      typ: 'schularbeit',
+      fach: 'deutsch',
+      stufe: 'oberstufe',
+      thema: 'Medienkonsum',
+      datum: '2026-06-01',
+      quelltexte: [],
+    };
+    expect(AuftragSchema.safeParse(auftrag).success).toBe(true);
+  });
+
+  it('accepts full auftrag with optional fields', () => {
+    const auftrag: Auftrag = {
+      typ: 'test',
+      fach: 'englisch',
+      stufe: 'unterstufe',
+      thema: 'Environment',
+      datum: '2026-06-15',
+      klasse: '3B',
+      quelltexte: [{ id: 'q1', titel: 'Artikel', inhalt: 'Text...', herkunft: { typ: 'upload', ref: 'f.pdf' } }],
+      dauerMinuten: 25,
+      schwierigkeit: 'mittel',
+      gewuenschteAufgabenarten: ['multipleChoice', 'offeneVerstaendnisfrage'],
+      gesamtpunkteZiel: 30,
+      notizen: 'Bitte schwerer.',
+      lernziele: ['Hauptgedanke erfassen', 'Stilmittel erkennen'],
+    };
+    expect(AuftragSchema.safeParse(auftrag).success).toBe(true);
+  });
+
+  it('accepts auftrag with lernziele', () => {
+    const auftrag: Auftrag = {
+      typ: 'test',
+      fach: 'deutsch',
+      stufe: 'unterstufe',
+      thema: 'x',
+      datum: '2026-01-01',
+      quelltexte: [],
+      lernziele: ['Leseverstaendnis'],
+    };
+    expect(AuftragSchema.safeParse(auftrag).success).toBe(true);
+  });
+
+  it('rejects invalid typ', () => {
+    const result = AuftragSchema.safeParse({
+      typ: 'pruefung',
+      fach: 'deutsch',
+      stufe: 'oberstufe',
+      thema: 'x',
+      datum: '2026-01-01',
+      quelltexte: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects invalid datum format', () => {
+    const result = AuftragSchema.safeParse({
+      typ: 'hausuebung',
+      fach: 'deutsch',
+      stufe: 'unterstufe',
+      thema: 'x',
+      datum: '31.05.2026',
+      quelltexte: [],
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PROFILE
+// ---------------------------------------------------------------------------
+
+describe('PROFILE', () => {
+  it('has entries for all three unterlagentypen', () => {
+    expect(PROFILE.hausuebung).toBeDefined();
+    expect(PROFILE.test).toBeDefined();
+    expect(PROFILE.schularbeit).toBeDefined();
+  });
+
+  it('hausuebung has valid standardAufgabenarten summing to ~1.0', () => {
+    const sum = PROFILE.hausuebung.standardAufgabenarten.reduce((s, a) => s + a.punkteAnteil, 0);
+    expect(sum).toBeCloseTo(1.0, 1);
+    expect(PROFILE.hausuebung.rasterErzeugen).toBe(false);
+    expect(PROFILE.hausuebung.notenschluesselErzeugen).toBe(false);
+  });
+
+  it('test has valid standardAufgabenarten summing to ~1.0', () => {
+    const sum = PROFILE.test.standardAufgabenarten.reduce((s, a) => s + a.punkteAnteil, 0);
+    expect(sum).toBeCloseTo(1.0, 1);
+    expect(PROFILE.test.rasterErzeugen).toBe(true);
+  });
+
+  it('schularbeit has valid standardAufgabenarten summing to ~1.0', () => {
+    const sum = PROFILE.schularbeit.standardAufgabenarten.reduce((s, a) => s + a.punkteAnteil, 0);
+    expect(sum).toBeCloseTo(1.0, 1);
+    expect(PROFILE.schularbeit.notenschluesselErzeugen).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildSkelett
+// ---------------------------------------------------------------------------
+
+describe('buildSkelett', () => {
+  it('builds hausuebung skeleton with default profile blocks', () => {
+    const auftrag: Auftrag = {
+      typ: 'hausuebung',
+      fach: 'deutsch',
+      stufe: 'unterstufe',
+      thema: 'Medien',
+      datum: '2026-06-01',
+      quelltexte: [],
+    };
+    const blocks = buildSkelett(auftrag);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]!.typ).toBe('lueckentext');
+    expect(blocks[1]!.typ).toBe('offeneVerstaendnisfrage');
+    const total = blocks.reduce((s, b) => s + b.punkte, 0);
+    expect(total).toBe(PROFILE.hausuebung.defaultGesamtpunkte);
+  });
+
+  it('builds schularbeit skeleton with default profile blocks', () => {
+    const auftrag: Auftrag = {
+      typ: 'schularbeit',
+      fach: 'deutsch',
+      stufe: 'oberstufe',
+      thema: 'Umwelt',
+      datum: '2026-06-01',
+      quelltexte: [],
+    };
+    const blocks = buildSkelett(auftrag);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]!.typ).toBe('offeneVerstaendnisfrage');
+    expect(blocks[1]!.typ).toBe('offeneSchreibaufgabe');
+    const total = blocks.reduce((s, b) => s + b.punkte, 0);
+    expect(total).toBe(PROFILE.schularbeit.defaultGesamtpunkte);
+  });
+
+  it('uses gewuenschteAufgabenarten when provided', () => {
+    const auftrag: Auftrag = {
+      typ: 'test',
+      fach: 'englisch',
+      stufe: 'unterstufe',
+      thema: 'Reisen',
+      datum: '2026-06-01',
+      quelltexte: [],
+      gewuenschteAufgabenarten: ['multipleChoice'],
+    };
+    const blocks = buildSkelett(auftrag);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.typ).toBe('multipleChoice');
+    expect(blocks[0]!.punkte).toBe(PROFILE.test.defaultGesamtpunkte);
+  });
+
+  it('uses gesamtpunkteZiel when provided', () => {
+    const auftrag: Auftrag = {
+      typ: 'test',
+      fach: 'deutsch',
+      stufe: 'oberstufe',
+      thema: 'x',
+      datum: '2026-06-01',
+      quelltexte: [],
+      gesamtpunkteZiel: 36,
+    };
+    const blocks = buildSkelett(auftrag);
+    const total = blocks.reduce((s, b) => s + b.punkte, 0);
+    expect(total).toBe(36);
+  });
+
+  it('sets wortbank=true for unterstufe lueckentext', () => {
+    const auftrag: Auftrag = {
+      typ: 'hausuebung',
+      fach: 'deutsch',
+      stufe: 'unterstufe',
+      thema: 'x',
+      datum: '2026-06-01',
+      quelltexte: [],
+    };
+    const blocks = buildSkelett(auftrag);
+    const luecke = blocks.find((b) => b.typ === 'lueckentext');
+    expect(luecke).toBeDefined();
+    if (luecke && luecke.typ === 'lueckentext') {
+      expect(luecke.config.wortbank).toBe(true);
+      expect(luecke.config.distraktoren).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('sets wortbank=false for oberstufe lueckentext', () => {
+    const auftrag: Auftrag = {
+      typ: 'hausuebung',
+      fach: 'deutsch',
+      stufe: 'oberstufe',
+      thema: 'x',
+      datum: '2026-06-01',
+      quelltexte: [],
+    };
+    const blocks = buildSkelett(auftrag);
+    const luecke = blocks.find((b) => b.typ === 'lueckentext');
+    expect(luecke).toBeDefined();
+    if (luecke && luecke.typ === 'lueckentext') {
+      expect(luecke.config.wortbank).toBe(false);
+    }
+  });
+
+  it('every block has positive punkte', () => {
+    const auftrag: Auftrag = {
+      typ: 'schularbeit',
+      fach: 'deutsch',
+      stufe: 'oberstufe',
+      thema: 'x',
+      datum: '2026-06-01',
+      quelltexte: [],
+    };
+    const blocks = buildSkelett(auftrag);
+    for (const b of blocks) {
+      expect(b.punkte).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('returns valid BlockSchema objects', () => {
+    const auftrag: Auftrag = {
+      typ: 'test',
+      fach: 'englisch',
+      stufe: 'unterstufe',
+      thema: 'x',
+      datum: '2026-06-01',
+      quelltexte: [],
+    };
+    const blocks = buildSkelett(auftrag);
+    for (const b of blocks) {
+      const result = BlockSchema.safeParse(b);
+      if (!result.success) {
+        console.error('Validation failed for block:', b.typ, JSON.stringify(result.error.issues, null, 2));
+      }
+      expect(result.success).toBe(true);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Deterministische Utils
+// ---------------------------------------------------------------------------
+
+describe('baueWortbank', () => {
+  it('mischt Loesungen und Distraktoren', () => {
+    const result = baueWortbank(['Apfel', 'Birne'], ['Kirsche', 'Dattel'], 'seed-1');
+    expect(result).toHaveLength(4);
+    expect(result).toContain('Apfel');
+    expect(result).toContain('Birne');
+    expect(result).toContain('Kirsche');
+    expect(result).toContain('Dattel');
+  });
+
+  it('ist seed-stabil', () => {
+    const r1 = baueWortbank(['A', 'B'], ['C', 'D'], 'fixed-seed');
+    const r2 = baueWortbank(['A', 'B'], ['C', 'D'], 'fixed-seed');
+    expect(r1).toEqual(r2);
+  });
+
+  it('gibt leeres Array fuer leere Eingaben', () => {
+    const result = baueWortbank([], [], 'seed');
+    expect(result).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Korrektur-Namespace (Typ-Checks)
+// ---------------------------------------------------------------------------
+
+describe('Korrektur-Namespace Typen', () => {
+  it('Abgabe can be constructed', () => {
+    const abgabe: Abgabe = { dokumentId: 'doc-1', schuelerRef: 's-42' };
+    expect(abgabe.dokumentId).toBe('doc-1');
+    expect(abgabe.schuelerRef).toBe('s-42');
+  });
+
+  it('Bewertung can be constructed', () => {
+    const bewertung: Bewertung = {
+      dokumentId: 'doc-1',
+      proBlock: [{ blockId: 'b1', erreichtePunkte: 5, anmerkung: 'Gut' }],
+      gesamtPunkte: 5,
+      note: 2,
+    };
+    expect(bewertung.note).toBe(2);
+    expect(bewertung.proBlock).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// migrateDocument (R8 — Schema-Versionierung)
+// ---------------------------------------------------------------------------
+
+describe('migrateDocument', () => {
+  const base = {
+    schemaVersion: '0.1.0',
+    meta: { stufe: 'oberstufe', fach: 'deutsch', thema: 'T', datum: '2026-05-30', klasse: '7A', notizen: '' },
+    quelltexte: [{ id: 'q1', titel: 'Q', inhalt: 'Text', herkunft: { typ: 'upload', ref: 'x.pdf' } }],
+    bloecke: [{
+      id: 'b1', typ: 'lueckentext', punkte: 8, quelleId: 'q1',
+      arbeitsanweisung: 'Setze ein.',
+      config: { anzahlLuecken: 8, wortbank: false, distraktoren: 0 },
+      loesung: { luecken: [{ nr: 1, wort: 'Medien' }] },
+    }],
+  };
+
+  it('migriert ein aktuelles Dokument unverändert', () => {
+    const doc = migrateDocument(base);
+    expect(doc.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    expect(doc.bloecke).toHaveLength(1);
+  });
+
+  it('ergänzt eine fehlende schemaVersion', () => {
+    const { schemaVersion: _omit, ...ohneVersion } = base;
+    const doc = migrateDocument(ohneVersion);
+    expect(doc.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+  });
+
+  it('hebt eine abweichende Version auf die aktuelle an', () => {
+    const doc = migrateDocument({ ...base, schemaVersion: '0.0.1' });
+    expect(doc.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+  });
+
+  it('wirft bei strukturell ungültigem Dokument', () => {
+    expect(() => migrateDocument({ ...base, bloecke: [] })).toThrow();
+    expect(() => migrateDocument(null)).toThrow();
+    expect(() => migrateDocument('nope')).toThrow();
   });
 });

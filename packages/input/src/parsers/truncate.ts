@@ -84,7 +84,7 @@ export function truncateText(input: string, options: TruncateOptions = {}): Trun
   // Mittlere Absaetze: nur bis limitFuerMittlere
   let mittlereHinzugefuegt = 0;
   for (let i = 1; i < absaetze.length - 1; i++) {
-    const absatz = absaetze[i];
+    const absatz = absaetze[i]!;
     const w = countWords(absatz);
 
     if (currentWords + w > limitFuerMittlere) {

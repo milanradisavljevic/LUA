@@ -1,8 +1,7 @@
 import type { DocumentV1, Meta, QuellText, Block } from '@lehrunterlagen/schema';
 
-// Anbieter-Kennung. In Phase 2 ist nur 'anthropic' implementiert,
-// 'openai' und 'kimi' folgen in Phase 5 (siehe TASKS.md 5.1, 5.2).
-export type ProviderId = 'anthropic' | 'openai' | 'kimi';
+// Anbieter-Kennung. anthropic + OpenAI-kompatible (openai, deepseek, mistral, qwen, kimi).
+export type ProviderId = 'anthropic' | 'openai' | 'deepseek' | 'mistral' | 'qwen' | 'kimi';
 
 export interface ProviderConfig {
   provider: ProviderId;
@@ -30,7 +29,12 @@ export type BlockRequest =
       umfangWorte: { min: number; max: number };
       aspekte: string[];
     }
-  | { typ: 'markieraufgabe'; punkte: number; quelleId: string; anweisung: string };
+  | { typ: 'markieraufgabe'; punkte: number; quelleId: string; anweisung: string }
+  | { typ: 'wordScramble'; punkte: number; quelleId?: string; anzahlWoerter: number }
+  | { typ: 'kategorisierung'; punkte: number; quelleId?: string; anzahlItems: number; kategorien: string[] }
+  | { typ: 'tabelle'; punkte: number; quelleId?: string; spalten: string[] }
+  | { typ: 'stiluebung'; punkte: number; quelleId?: string; zielniveau: string; transformation: string }
+  | { typ: 'songanalyse'; punkte: number; quelleId?: string; aufgabe: string };
 
 export type BlockTyp = Block['typ'];
 

@@ -16,7 +16,7 @@ export function BlockPreviewLueckentext({ block, showSolution, onUpdate }: Props
   const luecken = loesung.luecken ?? [];
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'var(--font)', fontSize: '11pt', lineHeight: 1.6 }}>
       <p style={{ marginBottom: '0.5rem' }}>
         <strong>Arbeitsanweisung:</strong>{' '}
         {onUpdate ? (

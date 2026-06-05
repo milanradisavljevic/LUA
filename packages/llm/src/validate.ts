@@ -1,9 +1,18 @@
-import { DocumentSchema, type DocumentV1 } from '@lehrunterlagen/schema';
+import { DocumentSchema, type DocumentV1, type QuellText } from '@lehrunterlagen/schema';
+import { normalizeDocument } from './normalize.js';
+import { transformToSchema } from './transform.js';
+import { runQualityChecks, type QualityIssue, type LlmJudgeResult } from './quality.js';
 
 export interface ValidationResult {
   ok: boolean;
   document?: DocumentV1;
   fehler?: string;
+  qualityIssues?: QualityIssue[];
+  judge?: LlmJudgeResult;
+}
+
+function isObject(val: unknown): val is Record<string, unknown> {
+  return typeof val === 'object' && val !== null && !Array.isArray(val);
 }
 
 // Holt das JSON-Objekt aus der Modellantwort heraus, auch wenn versehentlich
@@ -13,94 +22,39 @@ export function extractJson(raw: string): string {
   // ```json ... ``` oder ``` ... ``` entfernen
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fence?.[1]) s = fence[1].trim();
-  // Auf das erste { bis zum letzten } eingrenzen
-  const first = s.indexOf('{');
-  const last = s.lastIndexOf('}');
-  if (first !== -1 && last !== -1 && last > first) {
-    s = s.slice(first, last + 1);
+
+  // Unterstuetze beide Formate:
+  // 1. Array (nur bloecke) — suche erstes [ bis letztes ]
+  // 2. Objekt (volles Dokument) — suche erstes { bis letztes }
+  const firstBrace = s.indexOf('{');
+  const firstBracket = s.indexOf('[');
+  const lastBrace = s.lastIndexOf('}');
+  const lastBracket = s.lastIndexOf(']');
+
+  const hasObject = firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace;
+  const hasArray = firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket;
+
+  if (hasArray && hasObject) {
+    // Beides vorhanden — waehle das, was zuerst kommt
+    if (firstBracket < firstBrace) {
+      s = s.slice(firstBracket, lastBracket + 1);
+    } else {
+      s = s.slice(firstBrace, lastBrace + 1);
+    }
+  } else if (hasArray) {
+    s = s.slice(firstBracket, lastBracket + 1);
+  } else if (hasObject) {
+    s = s.slice(firstBrace, lastBrace + 1);
   }
+
   return s;
 }
 
-// Normalisiert LLM-Ausgabe: Claude liefert oft Arrays statt Records.
-// z.B. antworten: [{ "nr": 1, "antwort": ["B"] }] -> { "1": ["B"] }
-// z.B. zuordnung: [{ "item": 1, "option": "B" }] -> { "1": "B" }
-function normalizeDocument(data: Record<string, unknown>): Record<string, unknown> {
-  const doc = { ...data };
-  if (!Array.isArray(doc.bloecke)) return doc;
-
-  doc.bloecke = doc.bloecke.map((block: Record<string, unknown>) => {
-    if (!block.loesung || typeof block.loesung !== 'object') return block;
-    const loesung = { ...block.loesung } as Record<string, unknown>;
-
-    // multipleChoice + offeneVerstaendnisfrage: antworten Array -> Record
-    if (Array.isArray(loesung.antworten)) {
-      const record: Record<string, unknown> = {};
-      for (const entry of loesung.antworten) {
-        if (entry && typeof entry === 'object') {
-          const e = entry as Record<string, unknown>;
-          const key = String(e.nr ?? e.frage ?? Object.keys(record).length + 1);
-          // Liefert verschiedene Moeglichkeiten: korrekt, antwort, key, value
-          record[key] = e.korrekt ?? e.antwort ?? e.key ?? e.value ?? entry;
-        }
-      }
-      loesung.antworten = record;
-    }
-
-    // Falls antworten ein Record ist, aber Values sind Objekte statt Arrays
-    // z.B. { "1": { "key": "A" } } -> { "1": ["A"] }
-    // oder { "1": "A" } -> { "1": ["A"] }
-    if (loesung.antworten && typeof loesung.antworten === 'object' && !Array.isArray(loesung.antworten)) {
-      const fixed: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(loesung.antworten as Record<string, unknown>)) {
-        if (Array.isArray(v)) {
-          fixed[k] = v;
-        } else if (v && typeof v === 'object') {
-          const obj = v as Record<string, unknown>;
-          fixed[k] = [obj.key ?? obj.antwort ?? obj.value ?? ''];
-        } else if (typeof v === 'string') {
-          fixed[k] = [v];
-        } else {
-          fixed[k] = [String(v ?? '')];
-        }
-      }
-      loesung.antworten = fixed;
-    }
-
-    // matching: zuordnung Array -> Record
-    if (Array.isArray(loesung.zuordnung)) {
-      const record: Record<string, string> = {};
-      for (const entry of loesung.zuordnung) {
-        if (entry && typeof entry === 'object') {
-          const e = entry as Record<string, unknown>;
-          const key = String(e.nr ?? e.item ?? e.frage ?? Object.keys(record).length + 1);
-          record[key] = String(e.option ?? e.key ?? e.value ?? '');
-        }
-      }
-      loesung.zuordnung = record;
-    }
-
-    // Falls zuordnung ein Record ist, aber Values sind Objekte statt Strings
-    if (loesung.zuordnung && typeof loesung.zuordnung === 'object' && !Array.isArray(loesung.zuordnung)) {
-      const fixed: Record<string, string> = {};
-      for (const [k, v] of Object.entries(loesung.zuordnung as Record<string, unknown>)) {
-        if (v && typeof v === 'object' && !Array.isArray(v)) {
-          const obj = v as Record<string, unknown>;
-          fixed[k] = String(obj.option ?? obj.key ?? obj.value ?? '');
-        } else {
-          fixed[k] = String(v);
-        }
-      }
-      loesung.zuordnung = fixed;
-    }
-
-    return { ...block, loesung };
-  });
-
-  return doc;
-}
-
-export function parseAndValidate(raw: string): ValidationResult {
+export async function parseAndValidate(
+  raw: string,
+  meta?: any,
+  quelltexte?: any[]
+): Promise<ValidationResult> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(extractJson(raw));
@@ -108,10 +62,34 @@ export function parseAndValidate(raw: string): ValidationResult {
     return { ok: false, fehler: `JSON nicht parsebar: ${(e as Error).message}` };
   }
 
-  // Erst normalisieren, dann validieren
-  const normalized = typeof parsed === 'object' && parsed !== null
-    ? normalizeDocument(parsed as Record<string, unknown>)
-    : parsed;
+  // Das Modell liefert nur INHALTE (bloecke). meta/quelltexte/schemaVersion sind
+  // Hoheit des Aufrufers (Lehrer-Eingabe) — niemals aus der Modellantwort uebernehmen,
+  // sonst ueberschreiben halluzinierte Werte (Klasse, Thema, Quelltext) die echten.
+  let bloecke: unknown;
+  if (Array.isArray(parsed)) {
+    bloecke = parsed;
+  } else if (isObject(parsed)) {
+    // Volles Dokument zurueckgegeben: nur die bloecke herausziehen.
+    bloecke = Array.isArray(parsed.bloecke) ? parsed.bloecke : undefined;
+  }
+
+  if (bloecke === undefined) {
+    return { ok: false, fehler: 'Ungueltiges Format: weder bloecke-Array noch Objekt mit bloecke erhalten.' };
+  }
+
+  let docCandidate: unknown;
+  if (meta && quelltexte) {
+    docCandidate = { schemaVersion: '0.1.0', meta, quelltexte, bloecke };
+  } else if (isObject(parsed)) {
+    // Kein meta/quelltexte vom Aufrufer (z.B. Tests): vorhandenes Dokument nutzen,
+    // aber schemaVersion erzwingen, falls das Modell sie ausgelassen hat.
+    docCandidate = { schemaVersion: '0.1.0', ...parsed };
+  } else {
+    return { ok: false, fehler: 'Nur bloecke-Array erhalten, aber meta/quelltexte fehlen zum Zusammensetzen.' };
+  }
+
+  const transformed = transformToSchema(docCandidate);
+  const normalized = normalizeDocument(transformed);
 
   const result = DocumentSchema.safeParse(normalized);
   if (!result.success) {
@@ -120,5 +98,18 @@ export function parseAndValidate(raw: string): ValidationResult {
       .join('\n');
     return { ok: false, fehler };
   }
-  return { ok: true, document: result.data };
+
+  const document = result.data;
+  if (!quelltexte) {
+    return { ok: true, document, qualityIssues: [], judge: { score: 1, issues: [] } };
+  }
+
+  const { issues: qualityIssues, judge } = await runQualityChecks(document, quelltexte as QuellText[]);
+  const errors = qualityIssues.filter((i) => i.severity === 'error');
+  if (errors.length > 0) {
+    const fehler = errors.map((i) => `- ${i.blockId}: ${i.message}`).join('\n');
+    return { ok: false, fehler, qualityIssues, judge };
+  }
+
+  return { ok: true, document, qualityIssues, judge };
 }

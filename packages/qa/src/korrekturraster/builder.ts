@@ -7,6 +7,11 @@ import {
   TEXTANALYSE,
   OPEN_WRITING,
   readingComprehension,
+  WORD_SCRAMBLE,
+  KATEGORISIERUNG,
+  TABELLE,
+  STILUEBUNG,
+  SONGANALYSE,
 } from './kataloge';
 import { berechneNotenschluessel } from './notenschluessel';
 
@@ -20,8 +25,21 @@ function waehleKatalog(block: Block, fach: string): KriterienKatalog[] {
     case 'matching':
     case 'multipleChoice':
     case 'markieraufgabe':
+    case 'wordScramble':
       // Geschlossene Blocks: eine Zeile "Richtig/Falsch"
       return [{ kriterium: 'Richtig/Falsch', beschreibung: 'Volle Punkte bei richtiger Antwort, 0 bei falsch', maxPunkte: block.punkte }];
+
+    case 'kategorisierung':
+      return KATEGORISIERUNG;
+
+    case 'tabelle':
+      return TABELLE;
+
+    case 'stiluebung':
+      return STILUEBUNG;
+
+    case 'songanalyse':
+      return SONGANALYSE;
 
     case 'offeneVerstaendnisfrage':
       return readingComprehension(block.config.fragen.length);
@@ -62,8 +80,8 @@ function skaliereKatalog(katalog: KriterienKatalog[], zielPunkte: number): Raste
   const diff = zielPunkte - summe;
   if (diff !== 0 && skaliert.length > 0) {
     // Groesstes Element anpassen
-    const maxIdx = skaliert.reduce((mi, k, i, arr) => k.maxPunkte > arr[mi].maxPunkte ? i : mi, 0);
-    skaliert[maxIdx].maxPunkte += diff;
+    const maxIdx = skaliert.reduce((mi, k, i, arr) => k.maxPunkte > arr[mi]!.maxPunkte ? i : mi, 0);
+    skaliert[maxIdx]!.maxPunkte += diff;
   }
 
   return skaliert;

@@ -1,11 +1,12 @@
-import type { DocumentV1, Meta, QuellText, Block } from '@lehrunterlagen/schema';
+import type { DocumentV1, Meta, QuellText, Block, Auftrag } from '@lehrunterlagen/schema';
 
-export type StepId = 'input' | 'baukasten' | 'llm' | 'generate';
+export type StepId = 'absicht' | 'input' | 'baukasten' | 'llm' | 'generate';
 
-export type LlmProvider = 'claude' | 'chatgpt' | 'kimi';
+export type LlmProvider = 'claude' | 'chatgpt' | 'kimi' | 'deepseek' | 'mistral' | 'qwen';
 
 export interface AppState {
   step: StepId;
+  auftrag: Auftrag | null;
   meta: Meta;
   quelltexte: QuellText[];
   bloecke: Block[];
@@ -18,6 +19,7 @@ export interface AppState {
 }
 
 export const STEPS: { id: StepId; label: string }[] = [
+  { id: 'absicht', label: 'Absicht' },
   { id: 'input', label: 'Quelltexte' },
   { id: 'baukasten', label: 'Aufgabenblöcke' },
   { id: 'llm', label: 'KI-Modell' },
@@ -26,9 +28,11 @@ export const STEPS: { id: StepId; label: string }[] = [
 
 export type AppAction =
   | { type: 'SET_STEP'; step: StepId }
+  | { type: 'SET_AUFTRAG'; auftrag: Auftrag | null }
   | { type: 'SET_META'; meta: Partial<Meta> }
   | { type: 'ADD_QUELLTEXT'; quelltext: QuellText }
   | { type: 'REMOVE_QUELLTEXT'; id: string }
+  | { type: 'UPDATE_QUELLTEXT'; id: string; quelltext: Partial<QuellText> }
   | { type: 'ADD_BLOCK'; block: Block }
   | { type: 'UPDATE_BLOCK'; id: string; block: Partial<Block> }
   | { type: 'REMOVE_BLOCK'; id: string }

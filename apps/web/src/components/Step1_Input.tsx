@@ -14,6 +14,22 @@ async function readFileAsText(file: File): Promise<string> {
     const result = await mammoth.extractRawText({ arrayBuffer });
     return result.value;
   }
+  if (file.name.endsWith('.pdf')) {
+    // pdfjs-dist — extract text from PDF
+    const pdfjsLib = await import('pdfjs-dist');
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n\n';
+    }
+    return fullText.trim();
+  }
   // txt / html / fallback
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -42,7 +58,7 @@ export function Step1_Input({ state, dispatch }: Props) {
         quelltext: { id, titel, inhalt, herkunft: { typ: 'upload', ref: file.name } },
       });
     } catch {
-      alert('Datei konnte nicht gelesen werden. Bitte .txt, .docx oder .html hochladen.');
+      alert('Datei konnte nicht gelesen werden. Bitte .txt, .docx, .pdf oder .html hochladen.');
     }
     // Input zurücksetzen damit dieselbe Datei nochmal hochgeladen werden kann
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -56,7 +72,7 @@ export function Step1_Input({ state, dispatch }: Props) {
         id,
         titel: '',
         inhalt: '',
-        herkunft: { typ: 'upload', ref: '' },
+        herkunft: { typ: 'eingabe', ref: '' },
       },
     });
   };
@@ -109,6 +125,23 @@ export function Step1_Input({ state, dispatch }: Props) {
 
       <h2 style={{ marginBottom: '1rem' }}>Quelltexte</h2>
 
+      {state.quelltexte.length === 0 && (
+        <div style={{
+          padding: '2rem 1rem',
+          textAlign: 'center',
+          color: 'var(--color-gray-1)',
+          background: 'var(--color-gray-3)',
+          borderRadius: 'var(--radius)',
+          marginBottom: '1rem',
+        }}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📄</div>
+          <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Noch keine Quelltexte</div>
+          <div style={{ fontSize: '0.8125rem' }}>
+            Lade eine Datei hoch (.txt, .docx, .pdf, .html) oder gib einen Text manuell ein.
+          </div>
+        </div>
+      )}
+
       {state.quelltexte.map((qt, i) => (
         <div key={qt.id} style={{
           padding: '1rem', marginBottom: '0.75rem',
@@ -125,20 +158,16 @@ export function Step1_Input({ state, dispatch }: Props) {
             <div>
               <label>Titel</label>
               <input type="text" value={qt.titel} placeholder="Titel des Quelltexts"
-                onChange={(e) => {
-                  const updated = { ...qt, titel: e.target.value };
-                  dispatch({ type: 'REMOVE_QUELLTEXT', id: qt.id });
-                  dispatch({ type: 'ADD_QUELLTEXT', quelltext: updated });
-                }} />
+                onChange={(e) => dispatch({ type: 'UPDATE_QUELLTEXT', id: qt.id, quelltext: { titel: e.target.value } })} />
             </div>
             <div>
               <label>Inhalt</label>
-              <textarea rows={4} value={qt.inhalt} placeholder="Quelltext hier einfügen…"
-                onChange={(e) => {
-                  const updated = { ...qt, inhalt: e.target.value };
-                  dispatch({ type: 'REMOVE_QUELLTEXT', id: qt.id });
-                  dispatch({ type: 'ADD_QUELLTEXT', quelltext: updated });
-                }} />
+              <textarea rows={10} value={qt.inhalt} placeholder="Quelltext hier einfügen…"
+                style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}
+                onChange={(e) => dispatch({ type: 'UPDATE_QUELLTEXT', id: qt.id, quelltext: { inhalt: e.target.value } })} />
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginTop: '0.25rem' }}>
+                Zeilenumbrüche bleiben erhalten. <strong>Leerzeile = neue Strophe/Absatz.</strong>
+              </p>
             </div>
           </div>
         </div>

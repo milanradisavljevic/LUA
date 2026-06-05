@@ -7,6 +7,11 @@ import multipleChoice from './fixtures/multipleChoice.json';
 import offeneVerstaendnisfrage from './fixtures/offeneVerstaendnisfrage.json';
 import offeneSchreibaufgabe from './fixtures/offeneSchreibaufgabe.json';
 import markieraufgabe from './fixtures/markieraufgabe.json';
+import wordScramble from './fixtures/wordScramble.json';
+import kategorisierung from './fixtures/kategorisierung.json';
+import tabelle from './fixtures/tabelle.json';
+import stiluebung from './fixtures/stiluebung.json';
+import songanalyse from './fixtures/songanalyse.json';
 
 const fixtures = [
   { name: 'lueckentext', data: lueckentext },
@@ -15,6 +20,11 @@ const fixtures = [
   { name: 'offeneVerstaendnisfrage', data: offeneVerstaendnisfrage },
   { name: 'offeneSchreibaufgabe', data: offeneSchreibaufgabe },
   { name: 'markieraufgabe', data: markieraufgabe },
+  { name: 'wordScramble', data: wordScramble },
+  { name: 'kategorisierung', data: kategorisierung },
+  { name: 'tabelle', data: tabelle },
+  { name: 'stiluebung', data: stiluebung },
+  { name: 'songanalyse', data: songanalyse },
 ];
 
 describe('Fixture-Validierung gegen DocumentSchema', () => {
@@ -78,6 +88,52 @@ describe('Fixture-Details pruefen', () => {
     const block = doc.bloecke[0];
     if (block.typ === 'markieraufgabe') {
       expect(block.loesung.stellen.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('wordScramble: loesungsreihenfolge passt zu anzahlWoerter', () => {
+    const doc = DocumentSchema.parse(wordScramble);
+    const block = doc.bloecke[0];
+    if (block.typ === 'wordScramble') {
+      expect(block.config.loesungsreihenfolge.length).toBe(block.config.anzahlWoerter);
+      expect(block.loesung.korrektAnordnung.length).toBe(block.config.anzahlWoerter);
+    }
+  });
+
+  it('kategorisierung: kategorien und items konsistent', () => {
+    const doc = DocumentSchema.parse(kategorisierung);
+    const block = doc.bloecke[0];
+    if (block.typ === 'kategorisierung') {
+      expect(block.config.kategorien.length).toBeGreaterThanOrEqual(2);
+      expect(block.config.items.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('tabelle: spalten 2-5, zeilen >= 1', () => {
+    const doc = DocumentSchema.parse(tabelle);
+    const block = doc.bloecke[0];
+    if (block.typ === 'tabelle') {
+      expect(block.config.spalten.length).toBeGreaterThanOrEqual(2);
+      expect(block.config.spalten.length).toBeLessThanOrEqual(5);
+      expect(block.config.zeilen.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('stiluebung: zielniveau und transformation gueltig', () => {
+    const doc = DocumentSchema.parse(stiluebung);
+    const block = doc.bloecke[0];
+    if (block.typ === 'stiluebung') {
+      expect(['umgangssprachlich', 'standard', 'gehoben', 'fachsprachlich']).toContain(block.config.zielniveau);
+      expect(['verdeutlichen', 'variieren', 'kuerzen', 'erweitern']).toContain(block.config.transformation);
+    }
+  });
+
+  it('songanalyse: medium=song, mind. 1 analysepunkt', () => {
+    const doc = DocumentSchema.parse(songanalyse);
+    const block = doc.bloecke[0];
+    if (block.typ === 'songanalyse') {
+      expect(block.config.medium).toBe('song');
+      expect(block.loesung.analysepunkte.length).toBeGreaterThanOrEqual(1);
     }
   });
 });

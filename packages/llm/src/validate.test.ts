@@ -31,28 +31,28 @@ describe('extractJson', () => {
 });
 
 describe('parseAndValidate', () => {
-  it('akzeptiert ein schema-konformes Dokument', () => {
-    const res = parseAndValidate(JSON.stringify(validDoc));
+  it('akzeptiert ein schema-konformes Dokument', async () => {
+    const res = await parseAndValidate(JSON.stringify(validDoc));
     expect(res.ok).toBe(true);
     expect(res.document?.bloecke[0]?.typ).toBe('lueckentext');
   });
 
-  it('akzeptiert Dokument auch mit Markdown-Zaeunen drumherum', () => {
-    const res = parseAndValidate('```json\n' + JSON.stringify(validDoc) + '\n```');
+  it('akzeptiert Dokument auch mit Markdown-Zaeunen drumherum', async () => {
+    const res = await parseAndValidate('```json\n' + JSON.stringify(validDoc) + '\n```');
     expect(res.ok).toBe(true);
   });
 
-  it('lehnt unparsebaren Text ab', () => {
-    const res = parseAndValidate('kein json');
+  it('lehnt unparsebaren Text ab', async () => {
+    const res = await parseAndValidate('kein json');
     expect(res.ok).toBe(false);
     expect(res.fehler).toContain('nicht parsebar');
   });
 
-  it('lehnt wortbank=true bei oberstufe ab', () => {
+  it('lehnt wortbank=true bei oberstufe ab', async () => {
     const doc = JSON.parse(JSON.stringify(validDoc));
     doc.bloecke[0].config.wortbank = true;
     doc.bloecke[0].config.distraktoren = 2;
-    const res = parseAndValidate(JSON.stringify(doc));
+    const res = await parseAndValidate(JSON.stringify(doc));
     expect(res.ok).toBe(false);
   });
 });

@@ -68,3 +68,59 @@ export function readingComprehension(anzahlFragen: number): KriterienKatalog[] {
   }
   return katalog;
 }
+
+// ---------------------------------------------------------------------------
+// wordScramble (Unter- und Oberstufe)
+// ---------------------------------------------------------------------------
+
+export const WORD_SCRAMBLE: KriterienKatalog[] = [
+  { kriterium: 'Reihenfolge', beschreibung: 'Alle Woerter in der vom Satz geforderten Reihenfolge', maxPunkte: 5 },
+  { kriterium: 'Wortmaterial', beschreibung: 'Nur die vorgegebenen Woerter verwendet; keine zusaetzlichen', maxPunkte: 2 },
+  { kriterium: 'Rechtschreibung', beschreibung: 'Korrekte Schreibweise (Gross-/Kleinschreibung am Satzanfang)', maxPunkte: 2 },
+];
+
+// ---------------------------------------------------------------------------
+// kategorisierung (Unterstufe und Oberstufe)
+// ---------------------------------------------------------------------------
+
+export const KATEGORISIERUNG: KriterienKatalog[] = [
+  { kriterium: 'Vollstaendigkeit', beschreibung: 'Alle Items einer Kategorie zugeordnet; keine Luecken', maxPunkte: 4 },
+  { kriterium: 'Korrekte Zuordnung', beschreibung: 'Jedes Item der richtigen Kategorie zugeordnet', maxPunkte: 4 },
+  { kriterium: 'Begruendung', beschreibung: 'Nachvollziehbare Begruendung der Zuordnung (bei freier Antwort)', maxPunkte: 2 },
+];
+
+// ---------------------------------------------------------------------------
+// tabelle (Unterstufe und Oberstufe)
+// ---------------------------------------------------------------------------
+
+export const TABELLE: KriterienKatalog[] = [
+  { kriterium: 'Vollstaendigkeit', beschreibung: 'Alle Zellen ausgefuellt; keine leeren Felder', maxPunkte: 3 },
+  { kriterium: 'Sachrichtigkeit', beschreibung: 'Inhalte korrekt und dem Thema entsprechend', maxPunkte: 5 },
+  { kriterium: 'Praezision', beschreibung: 'Knappe, sachliche Formulierungen; keine Fuellwoerter', maxPunkte: 3 },
+  { kriterium: 'Erfuellungs-Kriterien', beschreibung: 'Alle in der Loesung genannten Kriterien erfuellt', maxPunkte: 3 },
+];
+
+// ---------------------------------------------------------------------------
+// stiluebung (Oberstufe)
+// ---------------------------------------------------------------------------
+
+export const STILUEBUNG: KriterienKatalog[] = [
+  { kriterium: 'Zielniveau erreicht', beschreibung: 'Umformulierung entspricht dem geforderten Sprachniveau', maxPunkte: 4 },
+  { kriterium: 'Transformation umgesetzt', beschreibung: 'Geforderte Transformation (verdeutlichen/variieren/kuerzen/erweitern) klar erkennbar', maxPunkte: 4 },
+  { kriterium: 'Inhaltstreue', beschreibung: 'Bedeutung des Ausgangstextes erhalten; keine inhaltlichen Verfaelschungen', maxPunkte: 3 },
+  { kriterium: 'Sprachliche Qualitaet', beschreibung: 'Grammatik, Rechtschreibung, Zeichensetzung', maxPunkte: 3 },
+];
+
+// ---------------------------------------------------------------------------
+// songanalyse (Oberstufe)
+// ---------------------------------------------------------------------------
+
+export const SONGANALYSE: KriterienKatalog[] = [
+  { kriterium: 'Inhalt / Textverstaendnis', beschreibung: 'Songtext inhaltlich korrekt erfasst; Hauptbotschaft benannt', maxPunkte: 4 },
+  { kriterium: 'Bildsprache / Metaphern', beschreibung: 'Zentrale Metaphern und Bilder identifiziert und gedeutet', maxPunkte: 4 },
+  { kriterium: 'Sprachliche Mittel', beschreibung: 'Stilmittel (Trikolon, rhetorische Frage, etc.) erkannt und belegt', maxPunkte: 4 },
+  { kriterium: 'Wirkung', beschreibung: 'Wirkung der Mittel auf den Hoerer nachvollziehbar beschrieben', maxPunkte: 3 },
+  { kriterium: 'Zitate / Belege', beschreibung: 'Aussagen mit konkreten Songtext-Zitaten belegt', maxPunkte: 2 },
+  { kriterium: 'Struktur / Aufbau', beschreibung: 'Sinnvoller Aufbau; klare Abschnittsgliederung', maxPunkte: 2 },
+  { kriterium: 'Sprachrichtigkeit', beschreibung: 'Grammatik, Rechtschreibung, Zeichensetzung', maxPunkte: 3 },
+];

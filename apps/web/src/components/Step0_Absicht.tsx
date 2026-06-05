@@ -1,0 +1,472 @@
+import { useState, useCallback } from 'react';
+import type { AppState, AppAction } from '../lib/types';
+import { BLOCK_TYPE_DEFS } from '../lib/constants';
+import { buildSkelett, type Auftrag } from '@lehrunterlagen/schema';
+import { EXAMPLE_ABSICHTEN } from '../lib/exampleAbsichten';
+
+interface Props {
+  state: AppState;
+  dispatch: React.Dispatch<AppAction>;
+}
+
+const UNTERLAGENTYPEN = [
+  { id: 'hausuebung' as const, label: 'Hausübung', beschreibung: 'Kurz, niedrige Stakes, ~15 Min, ~12 Pkte' },
+  { id: 'test' as const, label: 'Test / Stundenwiederholung', beschreibung: 'Mittel, Punkte + einfacher Schlüssel, ~25 Min, ~24 Pkte' },
+  { id: 'schularbeit' as const, label: 'Schularbeit / Klassenarbeit', beschreibung: 'Lang, hohe Stakes, Maturastruktur, ~50 Min, ~48 Pkte' },
+];
+
+const SCHWIERIGKEITEN = [
+  { id: 'leicht' as const, label: 'Leicht' },
+  { id: 'mittel' as const, label: 'Mittel' },
+  { id: 'schwer' as const, label: 'Schwer' },
+];
+
+export function Step0_Absicht({ state, dispatch }: Props) {
+  const [typ, setTyp] = useState<NonNullable<Auftrag['typ']>>('schularbeit');
+  const [fach, setFach] = useState<NonNullable<Auftrag['fach']>>('deutsch');
+  const [stufe, setStufe] = useState<NonNullable<Auftrag['stufe']>>('oberstufe');
+  const [thema, setThema] = useState('');
+  const [datum, setDatum] = useState(new Date().toISOString().slice(0, 10));
+  const [klasse, setKlasse] = useState('');
+  const [dauerMinuten, setDauerMinuten] = useState<number | ''>('');
+  const [schwierigkeit, setSchwierigkeit] = useState<NonNullable<Auftrag['schwierigkeit']>>('mittel');
+  const [gewuenschteAufgabenarten, setGewuenschteAufgabenarten] = useState<string[]>([]);
+  const [gesamtpunkteZiel, setGesamtpunkteZiel] = useState<number | ''>('');
+  const [notizen, setNotizen] = useState('');
+  const [lernzieleRaw, setLernzieleRaw] = useState('');
+  const [fehler, setFehler] = useState<string | null>(null);
+
+  const toggleAufgabenart = useCallback((id: string) => {
+    setGewuenschteAufgabenarten((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
+
+  const handleErstellen = useCallback(() => {
+    setFehler(null);
+
+    if (!thema.trim()) {
+      setFehler('Bitte gib ein Thema ein.');
+      return;
+    }
+
+    const auftrag: Auftrag = {
+      typ,
+      fach,
+      stufe,
+      thema: thema.trim(),
+      datum,
+      klasse: klasse.trim() || undefined,
+      quelltexte: state.quelltexte,
+      dauerMinuten: dauerMinuten !== '' ? Number(dauerMinuten) : undefined,
+      schwierigkeit,
+      gewuenschteAufgabenarten: gewuenschteAufgabenarten.length > 0 ? gewuenschteAufgabenarten as Auftrag['gewuenschteAufgabenarten'] : undefined,
+      gesamtpunkteZiel: gesamtpunkteZiel !== '' ? Number(gesamtpunkteZiel) : undefined,
+      notizen: notizen.trim() || undefined,
+      lernziele: lernzieleRaw.split(',').map((s) => s.trim()).filter(Boolean) || undefined,
+    };
+
+    try {
+      const bloecke = buildSkelett(auftrag);
+      dispatch({ type: 'SET_AUFTRAG', auftrag });
+      // Ersetze vorhandene Blöcke durch das Skelett
+      for (const b of [...state.bloecke]) {
+        dispatch({ type: 'REMOVE_BLOCK', id: b.id });
+      }
+      for (const b of bloecke) {
+        dispatch({ type: 'ADD_BLOCK', block: b });
+      }
+      // Meta synchronisieren
+      dispatch({
+        type: 'SET_META',
+        meta: {
+          stufe,
+          fach,
+          thema: thema.trim(),
+          datum,
+          klasse: klasse.trim(),
+          notizen: notizen.trim(),
+          typ,
+          schwierigkeit,
+          lernziele: lernzieleRaw.split(',').map((s) => s.trim()).filter(Boolean) || undefined,
+        },
+      });
+      dispatch({ type: 'SET_STEP', step: 'input' });
+    } catch (err) {
+      setFehler(err instanceof Error ? err.message : 'Fehler beim Erstellen des Skeletts.');
+    }
+  }, [typ, fach, stufe, thema, datum, klasse, dauerMinuten, schwierigkeit, gewuenschteAufgabenarten, gesamtpunkteZiel, notizen, state.quelltexte, state.bloecke, dispatch]);
+
+  const fachLabel = fach === 'deutsch' ? 'Deutsch' : 'Englisch';
+  const stufeLabel = stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe';
+
+  return (
+    <div>
+      <h2 style={{ margin: '0 0 0.5rem' }}>Neue Unterlage — Absicht erfassen</h2>
+      <p style={{ color: 'var(--color-gray-1)', margin: '0 0 1.25rem', fontSize: '0.875rem' }}>
+        Beschreibe, was du brauchst. Die App baut daraus automatisch das passende Skelett.
+      </p>
+
+      {/* Schnellstart — Beispiel-Absichten */}
+      <section style={{ marginBottom: '1.25rem' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+          Schnellstart
+        </label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+          {EXAMPLE_ABSICHTEN.map((ex) => (
+            <button
+              key={ex.id}
+              onClick={() => {
+                setTyp(ex.auftrag.typ);
+                setFach(ex.auftrag.fach);
+                setStufe(ex.auftrag.stufe);
+                setThema(ex.auftrag.thema);
+                setDauerMinuten(ex.auftrag.dauerMinuten ?? '');
+                setSchwierigkeit(ex.auftrag.schwierigkeit ?? 'mittel');
+                setLernzieleRaw(ex.auftrag.lernziele?.join(', ') ?? '');
+                setNotizen(ex.auftrag.notizen ?? '');
+                // Optional: gleich Skelett erstellen
+                // handleErstellen();
+              }}
+              style={{
+                textAlign: 'left',
+                padding: '0.75rem',
+                borderRadius: 'var(--radius)',
+                border: '1px solid var(--color-gray-2)',
+                background: 'white',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-accent)';
+                (e.currentTarget as HTMLButtonElement).style.background = '#f3e5f5';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-gray-2)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'white';
+              }}
+            >
+              <span style={{ fontSize: '1.25rem', display: 'block', marginBottom: '0.25rem' }}>{ex.icon}</span>
+              <strong style={{ fontSize: '0.875rem' }}>{ex.label}</strong>
+              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-gray-1)', marginTop: '0.125rem' }}>
+                {ex.beschreibung}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {fehler && (
+        <div style={{
+          padding: '0.75rem 1rem',
+          background: '#ffebee',
+          color: '#c62828',
+          borderRadius: 'var(--radius)',
+          marginBottom: '1rem',
+          fontSize: '0.875rem',
+        }}>
+          {fehler}
+        </div>
+      )}
+
+      {/* Typ */}
+      <section style={{ marginBottom: '1.25rem' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+          Unterlagentyp
+        </label>
+        <div style={{ display: 'grid', gap: '0.5rem' }}>
+          {UNTERLAGENTYPEN.map((u) => (
+            <button
+              key={u.id}
+              onClick={() => setTyp(u.id)}
+              style={{
+                textAlign: 'left',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius)',
+                border: typ === u.id ? '2px solid var(--color-accent)' : '1px solid var(--color-gray-2)',
+                background: typ === u.id ? '#f3e5f5' : 'white',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+              }}
+            >
+              <strong>{u.label}</strong>
+              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-gray-1)', marginTop: '0.125rem' }}>
+                {u.beschreibung}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Fach & Stufe */}
+      <section style={{ marginBottom: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Fach</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {(['deutsch', 'englisch'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFach(f)}
+                style={{
+                  flex: 1,
+                  padding: '0.5rem',
+                  borderRadius: 'var(--radius)',
+                  border: fach === f ? '2px solid var(--color-accent)' : '1px solid var(--color-gray-2)',
+                  background: fach === f ? '#f3e5f5' : 'white',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                }}
+              >
+                {f === 'deutsch' ? 'Deutsch' : 'Englisch'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Stufe</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {(['unterstufe', 'oberstufe'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStufe(s)}
+                style={{
+                  flex: 1,
+                  padding: '0.5rem',
+                  borderRadius: 'var(--radius)',
+                  border: stufe === s ? '2px solid var(--color-accent)' : '1px solid var(--color-gray-2)',
+                  background: stufe === s ? '#f3e5f5' : 'white',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                }}
+              >
+                {s === 'oberstufe' ? 'Oberstufe' : 'Unterstufe'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Thema */}
+      <section style={{ marginBottom: '1.25rem' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+          Thema <span style={{ color: '#c62828' }}>*</span>
+        </label>
+        <input
+          type="text"
+          value={thema}
+          onChange={(e) => setThema(e.target.value)}
+          placeholder="z. B. Medienkonsum und Jugendliche"
+          style={{
+            width: '100%',
+            padding: '0.625rem 0.875rem',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--color-gray-2)',
+            fontSize: '0.875rem',
+          }}
+        />
+      </section>
+
+      {/* Datum & Klasse */}
+      <section style={{ marginBottom: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Datum</label>
+          <input
+            type="date"
+            value={datum}
+            onChange={(e) => setDatum(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--color-gray-2)',
+              fontSize: '0.875rem',
+            }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Klasse (optional)</label>
+          <input
+            type="text"
+            value={klasse}
+            onChange={(e) => setKlasse(e.target.value)}
+            placeholder="z. B. 7A"
+            style={{
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--color-gray-2)',
+              fontSize: '0.875rem',
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Dauer & Schwierigkeit & Punkte */}
+      <section style={{ marginBottom: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+        <div>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Dauer (Min, opt.)</label>
+          <input
+            type="number"
+            min={1}
+            value={dauerMinuten}
+            onChange={(e) => setDauerMinuten(e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="~50"
+            style={{
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--color-gray-2)',
+              fontSize: '0.875rem',
+            }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Schwierigkeit</label>
+          <select
+            value={schwierigkeit}
+            onChange={(e) => setSchwierigkeit(e.target.value as NonNullable<Auftrag['schwierigkeit']>)}
+            style={{
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--color-gray-2)',
+              fontSize: '0.875rem',
+              background: 'white',
+            }}
+          >
+            {SCHWIERIGKEITEN.map((s) => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Punkte (opt.)</label>
+          <input
+            type="number"
+            min={1}
+            value={gesamtpunkteZiel}
+            onChange={(e) => setGesamtpunkteZiel(e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder="~48"
+            style={{
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--color-gray-2)',
+              fontSize: '0.875rem',
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Optionale Aufgabenarten */}
+      <section style={{ marginBottom: '1.25rem' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+          Gewünschte Aufgabenarten (optional)
+        </label>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', margin: '0 0 0.5rem' }}>
+          Wenn du nichts auswählst, entscheidet die App anhand des Typ-Profils.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          {BLOCK_TYPE_DEFS.map((bt) => {
+            const aktiv = gewuenschteAufgabenarten.includes(bt.id);
+            return (
+              <button
+                key={bt.id}
+                onClick={() => toggleAufgabenart(bt.id)}
+                style={{
+                  padding: '0.375rem 0.75rem',
+                  borderRadius: 'var(--radius)',
+                  border: aktiv ? '2px solid var(--color-accent)' : '1px solid var(--color-gray-2)',
+                  background: aktiv ? '#f3e5f5' : 'white',
+                  cursor: 'pointer',
+                  fontSize: '0.8125rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}
+              >
+                <span>{bt.icon}</span>
+                <span>{bt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Lernziele */}
+      <section style={{ marginBottom: '1.25rem' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+          Lernziele (optional)
+        </label>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', margin: '0 0 0.5rem' }}>
+          Kommagetrennt, z. B. "Hauptgedanke erfassen, Stilmittel erkennen"
+        </p>
+        <input
+          type="text"
+          value={lernzieleRaw}
+          onChange={(e) => setLernzieleRaw(e.target.value)}
+          placeholder="Hauptgedanke erfassen, Stilmittel erkennen ..."
+          style={{
+            width: '100%',
+            padding: '0.625rem 0.875rem',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--color-gray-2)',
+            fontSize: '0.875rem',
+          }}
+        />
+      </section>
+
+      {/* Notizen */}
+      <section style={{ marginBottom: '1.5rem' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>Notizen (optional)</label>
+        <textarea
+          value={notizen}
+          onChange={(e) => setNotizen(e.target.value)}
+          placeholder="Besondere Wünsche, Hinweise, Schwerpunkte ..."
+          rows={3}
+          style={{
+            width: '100%',
+            padding: '0.625rem 0.875rem',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--color-gray-2)',
+            fontSize: '0.875rem',
+            resize: 'vertical',
+          }}
+        />
+      </section>
+
+      {/* Zusammenfassung */}
+      <div style={{
+        padding: '1rem',
+        background: '#f5f5f5',
+        borderRadius: 'var(--radius)',
+        marginBottom: '1.25rem',
+        fontSize: '0.875rem',
+      }}>
+        <strong>Vorschau:</strong>{' '}
+        {UNTERLAGENTYPEN.find((u) => u.id === typ)?.label} · {fachLabel} · {stufeLabel}
+        {thema ? ` · „${thema}"` : ''}
+        {klasse ? ` · ${klasse}` : ''}
+      </div>
+
+      {/* Haupt-Aktion */}
+      <button
+        onClick={handleErstellen}
+        style={{
+          width: '100%',
+          padding: '0.875rem',
+          borderRadius: 'var(--radius)',
+          border: 'none',
+          background: 'var(--color-accent)',
+          color: 'white',
+          fontWeight: 700,
+          fontSize: '1rem',
+          cursor: 'pointer',
+        }}
+      >
+        Skelett erstellen und fortfahren →
+      </button>
+    </div>
+  );
+}

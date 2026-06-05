@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Block, Meta } from '@lehrunterlagen/schema';
 import type { AppAction } from '../lib/types';
-import { getBlockLabel } from '../lib/blockDefaults';
+import { getBlockLabel, BLOCK_ARBEITSANWEISUNG_PLACEHOLDER } from '../lib/blockDefaults';
 import { BLOCK_TYPE_DEFS } from '../lib/constants';
 import { BlockConfigPanel } from './BlockConfigPanel';
 
@@ -41,12 +41,13 @@ export function BlockCard({ block, dispatch, stufe, index }: Props) {
     <div ref={setNodeRef} style={style}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
         <button {...attributes} {...listeners}
+          aria-label={`Block „${getBlockLabel(block.typ)}" verschieben`}
           style={{
             cursor: 'grab', background: 'none', border: 'none', padding: '0.25rem',
             color: 'var(--color-gray-1)', fontSize: '1rem', lineHeight: 1,
           }}
           title="Verschieben">
-          ⠿
+          <span aria-hidden="true">⠿</span>
         </button>
         {index !== undefined && (
           <span style={{
@@ -69,19 +70,22 @@ export function BlockCard({ block, dispatch, stufe, index }: Props) {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label style={{ margin: 0, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Punkte</label>
           <input type="number" min={1} value={block.punkte}
+            aria-label="Punkte für diesen Block"
             onChange={(e) => handleChange('punkte', parseInt(e.target.value) || 0)}
             style={{ width: 64, padding: '0.25rem 0.5rem' }} />
         </div>
         <button className="btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-          onClick={handleRemove}>
-          ✕
+          onClick={handleRemove}
+          aria-label={`Block „${getBlockLabel(block.typ)}" entfernen`}
+          title="Entfernen">
+          <span aria-hidden="true">✕</span>
         </button>
       </div>
 
       <div style={{ marginBottom: '0.75rem' }}>
         <label>Arbeitsanweisung</label>
         <input type="text" value={block.arbeitsanweisung}
-          placeholder="z. B. Lies den Text. Setze die fehlenden Begriffe ein."
+          placeholder={BLOCK_ARBEITSANWEISUNG_PLACEHOLDER[block.typ]}
           onChange={(e) => handleChange('arbeitsanweisung', e.target.value)} />
       </div>
 

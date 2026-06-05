@@ -1,4 +1,8 @@
-# Lehrunterlagen-Tool — Designdokument
+# [VERALTET / ARCHIVIERT] Lehrunterlagen-Tool — Designdokument
+
+> Dieses Dokument ist veraltet und wurde am 2026-06-01 archiviert.
+> Die aktuelle Planung findet sich in `docs/agents-aufteilung.md` und `docs/fahrplan.md`.
+> Die Quellen der Wahrheit sind: `produktvision.md`, `tauri-architektur.md`, `datenmodell-erweiterung.md`.
 
 Status: Entwurf v0.1 (Phase 0, vor Natascha-Abnahme)
 Letzte Aenderung: 2026-05-31

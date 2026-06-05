@@ -32,6 +32,37 @@ describe('Notenschluessel', () => {
     expect(ns[0].minPunkte).toBe(87);
     expect(ns[4].maxPunkte).toBe(44);
   });
+
+  it('lueckenlos fuer 24 Punkte (Minimum)', () => {
+    const ns = berechneNotenschluessel(24);
+    // Note 5 muss 0 enthalten, Note 1 muss 24 enthalten
+    expect(ns[4].minPunkte).toBe(0);
+    expect(ns[0].maxPunkte).toBe(24);
+    // Keine Luecken: jede Punktzahl 0..24 muss in genau einer Note liegen
+    for (let p = 0; p <= 24; p++) {
+      const zugeordnet = ns.filter((n) => p >= n.minPunkte && p <= n.maxPunkte);
+      expect(zugeordnet.length).toBe(1);
+    }
+  });
+
+  it('lueckenlos fuer 60 Punkte', () => {
+    const ns = berechneNotenschluessel(60);
+    for (let p = 0; p <= 60; p++) {
+      const zugeordnet = ns.filter((n) => p >= n.minPunkte && p <= n.maxPunkte);
+      expect(zugeordnet.length).toBe(1);
+    }
+    // Pruefe Konsistenz mit Prozentgrenzen
+    expect(ns[0].minPunkte).toBeGreaterThanOrEqual(Math.ceil(60 * 0.87));
+    expect(ns[0].maxPunkte).toBe(60);
+  });
+
+  it('lueckenlos fuer 48 Punkte', () => {
+    const ns = berechneNotenschluessel(48);
+    for (let p = 0; p <= 48; p++) {
+      const zugeordnet = ns.filter((n) => p >= n.minPunkte && p <= n.maxPunkte);
+      expect(zugeordnet.length).toBe(1);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -165,6 +196,72 @@ describe('Builder: Gesamt', () => {
     expect(raster.gesamtPunkte).toBe(12);
     expect(raster.notenschluessel).toHaveLength(5);
     expect(raster.notenschluessel[0].maxPunkte).toBe(12);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Builder: Neue Block-Typen (5)
+// ---------------------------------------------------------------------------
+
+describe('Builder: Neue Block-Typen', () => {
+  it('wordScramble bekommt "Richtig/Falsch"', () => {
+    const doc = makeDoc([{
+      id: 'b1', typ: 'wordScramble', punkte: 4, arbeitsanweisung: 'Ordne.',
+      config: { wort: 'A B C', anzahlWoerter: 3, loesungsreihenfolge: [1, 2, 3] },
+      loesung: { korrektAnordnung: ['A', 'B', 'C'] },
+    }]);
+    const raster = buildRaster(doc);
+    expect(raster.bloecke).toHaveLength(1);
+    expect(raster.bloecke[0]!.kriterien[0]!.kriterium).toBe('Richtig/Falsch');
+    expect(raster.bloecke[0]!.maxPunkte).toBe(4);
+  });
+
+  it('kategorisierung bekommt KATEGORISIERUNG-Katalog', () => {
+    const doc = makeDoc([{
+      id: 'b1', typ: 'kategorisierung', punkte: 10, arbeitsanweisung: 'Ordne zu.',
+      config: {
+        items: [{ nr: 1, text: 'X', optionen: ['A', 'B'] }, { nr: 2, text: 'Y', optionen: ['A', 'B'] }],
+        kategorien: [{ name: 'A', anzahlItems: 1 }, { name: 'B', anzahlItems: 1 }],
+      },
+      loesung: { zuordnung: { '1': ['A'], '2': ['B'] } },
+    }]);
+    const raster = buildRaster(doc);
+    expect(raster.bloecke[0]!.kriterien.length).toBeGreaterThanOrEqual(2);
+    expect(raster.bloecke[0]!.kriterien.map((k) => k.kriterium)).toContain('Vollstaendigkeit');
+  });
+
+  it('tabelle bekommt TABELLE-Katalog', () => {
+    const doc = makeDoc([{
+      id: 'b1', typ: 'tabelle', punkte: 12, arbeitsanweisung: 'Fuelle aus.',
+      config: {
+        spalten: [{ titel: 'S1', breiteProzent: 50 }, { titel: 'S2', breiteProzent: 50 }],
+        zeilen: [{ nr: 1, zellen: [{ text: 'A' }, { luecke: true }] }],
+      },
+      loesung: { zellen: { '1,1': 'b' } },
+    }]);
+    const raster = buildRaster(doc);
+    expect(raster.bloecke[0]!.kriterien.map((k) => k.kriterium)).toContain('Sachrichtigkeit');
+  });
+
+  it('stiluebung bekommt STILUEBUNG-Katalog', () => {
+    const doc = makeDoc([{
+      id: 'b1', typ: 'stiluebung', punkte: 8, arbeitsanweisung: 'Formuliere um.',
+      config: { ausgangstext: 'X', zielniveau: 'gehoben', transformation: 'verdeutlichen' },
+      loesung: { umformulierung: 'Y', begruendung: 'Z' },
+    }]);
+    const raster = buildRaster(doc);
+    expect(raster.bloecke[0]!.kriterien.map((k) => k.kriterium)).toContain('Zielniveau erreicht');
+  });
+
+  it('songanalyse bekommt SONGANALYSE-Katalog', () => {
+    const doc = makeDoc([{
+      id: 'b1', typ: 'songanalyse', punkte: 14, arbeitsanweisung: 'Analysiere.',
+      config: { interpret: 'I', titel: 'T', medium: 'song', lyrics: 'L', aufgabe: 'inhaltsangabe' },
+      loesung: { ergebnis: 'E', zitate: [], analysepunkte: [{ aspekt: 'A', befund: 'B' }] },
+    }]);
+    const raster = buildRaster(doc);
+    expect(raster.bloecke[0]!.kriterien.map((k) => k.kriterium)).toContain('Bildsprache / Metaphern');
+    expect(raster.bloecke[0]!.kriterien.length).toBeGreaterThanOrEqual(5);
   });
 });
 

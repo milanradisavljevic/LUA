@@ -34,7 +34,7 @@ export async function parsePdf(filePath: string): Promise<ParseResult> {
     });
 
     parser.on('pdfParser_dataError', (err) => {
-      reject(new Error(err.parserError || 'PDF parsing failed'));
+      reject(new Error('parserError' in err && err.parserError ? String(err.parserError) : 'PDF parsing failed'));
     });
 
     parser.parseBuffer(buffer);

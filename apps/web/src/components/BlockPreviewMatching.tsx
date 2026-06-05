@@ -15,7 +15,7 @@ export function BlockPreviewMatching({ block, showSolution }: Props) {
   const zuordnung = loesung.zuordnung ?? {};
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'var(--font)', fontSize: '11pt', lineHeight: 1.6 }}>
       <p style={{ marginBottom: '0.75rem' }}>
         <strong>Arbeitsanweisung:</strong> {block.arbeitsanweisung}
       </p>

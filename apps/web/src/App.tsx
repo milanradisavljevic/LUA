@@ -3,6 +3,7 @@ import type { AppAction } from './lib/types';
 import type { Meta, Block } from '@lehrunterlagen/schema';
 import { useWizard } from './hooks/useWizard';
 import { WizardStepper } from './components/WizardStepper';
+import { Step0_Absicht } from './components/Step0_Absicht';
 import { Step1_Input } from './components/Step1_Input';
 import { Step2_Baukasten } from './components/Step2_Baukasten';
 import { Step3_LLMOptions } from './components/Step3_LLMOptions';
@@ -10,11 +11,13 @@ import { Step4_Generate } from './components/Step4_Generate';
 import { TemplateManager } from './components/TemplateManager';
 import { CommandPalette } from './components/CommandPalette';
 import { Sidebar } from './components/Sidebar';
+import { SettingsPanel } from './components/SettingsPanel';
 import './App.css';
 
 export default function App() {
   const { state, dispatch, goNext, goBack, currentIndex } = useWizard();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
@@ -88,6 +91,8 @@ export default function App() {
 
   const renderStep = () => {
     switch (state.step) {
+      case 'absicht':
+        return <Step0_Absicht state={state} dispatch={dispatch} />;
       case 'input':
         return <Step1_Input state={state} dispatch={dispatch} />;
       case 'baukasten':
@@ -101,7 +106,7 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      {!isMobile && <Sidebar currentView="new" />}
+      {!isMobile && <Sidebar currentView="new" onSettingsOpen={() => setSettingsOpen(true)} />}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Kopfleiste */}
@@ -150,7 +155,7 @@ export default function App() {
               ← Zurück
             </button>
           ) : <div />}
-          {currentIndex < 3 && (
+          {currentIndex < 4 && (
             <button className="btn-primary" onClick={goNext}>
               Weiter →
             </button>
@@ -166,6 +171,21 @@ export default function App() {
         onExport={handlePaletteExport}
         blockCount={state.bloecke.length}
       />
+
+      {settingsOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+        }} onClick={() => setSettingsOpen(false)}>
+          <div style={{
+            background: 'white', padding: '1.5rem', borderRadius: 'var(--radius)',
+            maxWidth: 640, width: '90%', maxHeight: '80vh', overflow: 'auto',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          }} onClick={(e) => e.stopPropagation()}>
+            <SettingsPanel />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,11 @@ import { BlockPreviewMultipleChoice } from './BlockPreviewMultipleChoice';
 import { BlockPreviewVerstaendnisfrage } from './BlockPreviewVerstaendnisfrage';
 import { BlockPreviewSchreibaufgabe } from './BlockPreviewSchreibaufgabe';
 import { BlockPreviewMarkieraufgabe } from './BlockPreviewMarkieraufgabe';
+import { BlockPreviewWordScramble } from './BlockPreviewWordScramble';
+import { BlockPreviewKategorisierung } from './BlockPreviewKategorisierung';
+import { BlockPreviewTabelle } from './BlockPreviewTabelle';
+import { BlockPreviewStiluebung } from './BlockPreviewStiluebung';
+import { BlockPreviewSonganalyse } from './BlockPreviewSonganalyse';
 
 interface Props {
   block: Block;
@@ -34,5 +39,15 @@ export function BlockPreview({ block, showSolution, onUpdate }: Props) {
       return pass(BlockPreviewSchreibaufgabe);
     case 'markieraufgabe':
       return pass(BlockPreviewMarkieraufgabe);
+    case 'wordScramble':
+      return pass(BlockPreviewWordScramble);
+    case 'kategorisierung':
+      return pass(BlockPreviewKategorisierung);
+    case 'tabelle':
+      return pass(BlockPreviewTabelle);
+    case 'stiluebung':
+      return pass(BlockPreviewStiluebung);
+    case 'songanalyse':
+      return pass(BlockPreviewSonganalyse);
   }
 }

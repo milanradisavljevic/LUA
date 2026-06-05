@@ -31,7 +31,8 @@
             "optionen": [
               { "key": "A", "text": "at six o'clock" },
               { "key": "B", "text": "at seven o'clock" },
-              { "key": "C", "text": "at half past seven" }
+              { "key": "C", "text": "at half past seven" },
+              { "key": "D", "text": "at eight o'clock" }
             ],
             "mehrfach": false
           },

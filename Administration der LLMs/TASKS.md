@@ -67,11 +67,64 @@ Schema-Aenderungswuensche an Claude Code bitte unten unter "Schema-Anfragen" ein
 
 | ID  | Aufgabe                                            | Owner       | Status |
 |-----|----------------------------------------------------|-------------|--------|
-| 5.1 | ChatGPT-Adapter                                    | OpenCode #1 | offen  |
-| 5.2 | Kimi-Adapter (mit Datenschutz-Schranke)            | OpenCode #1 | offen  |
+| 5.1 | ChatGPT-Adapter                                    | OpenCode #1 | fertig |
+| 5.2 | Kimi-Adapter (mit Datenschutz-Schranke)            | OpenCode #1 | fertig |
 | 5.3 | Drive-Anbindung, private Bibliothek                | Kimi Code   | offen  |
 | 5.4 | Sprach-/Tippbefehl zu Dokument (ueber Renderer)    | OpenCode #2 | fertig |
 | 5.5 | Korrekturraster-Anbindung                          | OpenCode #3 | fertig |
+| 5.6 | Modell-Info-Panel (Stärken, Region, Datenschutz)   | Kimi Code   | fertig |
+| 5.7 | Provider-Logos in KI-Auswahl                       | Kimi Code   | fertig |
+| 5.8 | PDF-Hinweis-Dialog im Export-Schritt               | Kimi Code   | fertig |
+
+---
+
+## Phase 6 — Aufgabentypen-Erweiterung (Vertrag: `docs/aufgabentypen-erweiterung.md`)
+
+Reihenfolge & Timing dort. Feldnamen sind fix. Kimi liefert pro Typ ZUERST Schema+Util.
+
+| ID  | Aufgabe                                                      | Owner    | Status |
+|-----|-------------------------------------------------------------|----------|--------|
+| 6.0 | Vertrag + Verteilung festlegen                              | Claude   | fertig |
+| 6.1a| Schema+Util: Lückentext echte Wortbank (`distraktorWoerter`, `baueWortbank`) | Kimi    | fertig (Konsolidierung Minimax 2026-06-04) |
+| 6.1b| Schema+Util: wordScramble (`verwuerfle`)                    | Kimi     | fertig (Konsolidierung Minimax 2026-06-04) |
+| 6.1c| Schema: kategorisierung                                     | Kimi     | fertig (Konsolidierung Minimax 2026-06-04) |
+| 6.1d| Schema: tabelle (Tabellen-Lückentext)                       | Kimi     | fertig (Konsolidierung Minimax 2026-06-04) |
+| 6.1e| Schema: stiluebung                                          | Kimi     | fertig (Konsolidierung Minimax 2026-06-04) |
+| 6.1f| Schema: songanalyse                                         | Kimi     | fertig (Konsolidierung Minimax 2026-06-04) |
+| 6.2 | Web (Preview+ConfigPanel+constants+defaults) je Typ        | Kimi     | teilweise — ConfigPanel für kategorisierung/tabelle/songanalyse noch read-only |
+| 6.3 | LLM-Vertrag (prompt/normalize/transform/quality) je Typ    | Claude   | fertig (2026-06-05) |
+| 6.4 | Renderer (`build<Typ>`+Dispatch+Labels) je Typ             | Claude   | fertig (Determinismus-Fix Claude 2026-06-05) |
+| 6.5 | Korrekturraster + Fixtures + Tests je Typ                   | Minimax  | fertig (2026-06-04) |
+| 6.6 | E2E reaktivieren (Mock-Provider, ≥1 Lauf/Typ)              | Minimax  | fertig (2026-06-04) |
+| 6.7 | Streaming + Provider-Fallback (`src-tauri`)                | Qwen     | offen  |
+| 6.8 | Prompt-Injection-Sanitisierung (Input-Schicht)            | Qwen     | offen  |
+| 6.9 | `convert_pdf` für tabellen-/gitterlastige DOCX härten      | Qwen     | offen  |
+| 6.10| Lernziel-Coverage-Ansicht (Audit K3)                       | Kimi     | offen  |
+| 6.11| Schema-Versionierung + Migration (Audit T-3)              | Kimi     | offen  |
+| 6.12| Markieraufgabe-Semantik dokumentieren (Audit D-7)         | Minimax  | offen  |
+| 6.P2| Phase 2: Kreuzworträtsel + Wortgitter (`grids.ts` + Render)| Claude   | offen  |
+
+---
+
+## Phase R — Release-Kandidat Lehrer-Test (Plan: `docs/plan-lehrer-test-2026-06.md`)
+
+Seam: Claude besitzt `useGenerate.ts` + `packages/*`; Kimi nur `apps/web/src/components/**`.
+Konvergenz: R3a + R-Hook (C-A/C-B) müssen gemergt sein, bevor Kimi R1/R3/R6/R2-UI startet.
+
+| ID  | Aufgabe                                                      | Owner    | Status |
+|-----|-------------------------------------------------------------|----------|--------|
+| R-CA| Vertrag: `Block.lernziele?` (Schema+Prompt+Normalize)       | Claude   | fertig (2026-06-05) |
+| R-CB| `useGenerate`-API: stage/elapsedMs/cancel/regenerateBlock + Provider-Fallback | Claude | fertig (2026-06-05) |
+| R2  | Robuste Fehler-/Retry-UX (Logik)                            | Claude   | fertig (Teil von R-CB) |
+| R4  | Prompt-Injection-Sanitisierung (am Prompt-Bau)             | Claude   | fertig (2026-06-05) |
+| R8  | Schema-Versionierung + `migrateDocument`                    | Claude   | fertig (2026-06-05) |
+| R9c | anzahlWoerter härten + markieraufgabe-Doku (6.12)          | Claude   | fertig (2026-06-05) |
+| R1  | Generierungs-Feedback-UI (nutzt stage/elapsedMs/cancel)     | Kimi     | fertig (2026-06-05) |
+| R3  | Lernziel-Abdeckungs-Ansicht (nutzt Block.lernziele)        | Kimi     | fertig (2026-06-05) |
+| R6  | „Block neu generieren"-Button (nutzt regenerateBlock)       | Kimi     | fertig (2026-06-05) |
+| R5  | ConfigPanel editierbar (kategorisierung/tabelle/songanalyse)| Kimi    | fertig (2026-06-05) |
+| R7  | Vorlagen Export/Import als Datei                            | Kimi     | fertig (2026-06-05) |
+| R9a | Beispiel-Absichten (Step0 Quick-Start)                     | Kimi     | fertig (2026-06-05) |
 
 ---
 

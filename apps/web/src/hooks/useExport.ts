@@ -4,6 +4,7 @@ import type { AppState } from '../lib/types';
 export function useExport() {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastSavedPaths, setLastSavedPaths] = useState<string[] | null>(null);
 
   const exportDocx = useCallback(async (state: AppState) => {
     if (!state.generiertesDokument) {
@@ -12,16 +13,25 @@ export function useExport() {
     }
     setExporting(true);
     setError(null);
+    setLastSavedPaths(null);
 
     try {
       const { renderDocumentToBlobs } = await import('@lehrunterlagen/renderer');
       const { schueler, loesung } = await renderDocumentToBlobs(state.generiertesDokument);
 
-      const thema = state.generiertesDokument.meta.thema.replace(/\s+/g, '_').slice(0, 40);
+      const thema = sanitizeFilename(state.generiertesDokument.meta.thema).slice(0, 40);
       const datum = state.generiertesDokument.meta.datum;
 
-      downloadBlob(schueler, `${datum}_${thema}_Schuelerfassung.docx`);
-      downloadBlob(loesung, `${datum}_${thema}_Loesung.docx`);
+      const schuelerName = `${datum}_${thema}_Schuelerfassung.docx`;
+      const loesungName = `${datum}_${thema}_Loesung.docx`;
+
+      // Nacheinander herunterladen mit Verzögerung, damit der Browser
+      // beide Downloads akzeptiert (manche blockieren gleichzeitige Downloads)
+      downloadBlob(schueler, schuelerName);
+      await delay(600);
+      downloadBlob(loesung, loesungName);
+
+      setLastSavedPaths([schuelerName, loesungName]);
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unbekannter Fehler beim Export';
@@ -32,7 +42,39 @@ export function useExport() {
     }
   }, []);
 
-  return { exportDocx, exporting, error };
+  const exportKorrekturraster = useCallback(async (state: AppState) => {
+    if (!state.generiertesDokument) {
+      setError('Bitte zuerst Inhalt generieren.');
+      return false;
+    }
+    setExporting(true);
+    setError(null);
+
+    try {
+      const { buildRaster } = await import('@lehrunterlagen/qa');
+      const { renderRaster } = await import('@lehrunterlagen/renderer');
+
+      const raster = buildRaster(state.generiertesDokument);
+      const buffer = await renderRaster(raster);
+      const blob = new Blob([new Uint8Array(buffer)], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+
+      const thema = state.generiertesDokument.meta.thema.replace(/\s+/g, '_').slice(0, 40);
+      const datum = state.generiertesDokument.meta.datum;
+
+      downloadBlob(blob, `${datum}_${thema}_Korrekturraster.docx`);
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unbekannter Fehler beim Raster-Export';
+      setError(msg);
+      return false;
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
+  return { exportDocx, exportKorrekturraster, exporting, error, lastSavedPaths };
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -40,8 +82,25 @@ function downloadBlob(blob: Blob, filename: string) {
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Ersetzt Umlaute und Sonderzeichen für sichere Dateinamen */
+function sanitizeFilename(text: string): string {
+  return text
+    .replace(/[äÄ]/g, 'ae')
+    .replace(/[öÖ]/g, 'oe')
+    .replace(/[üÜ]/g, 'ue')
+    .replace(/[ß]/g, 'ss')
+    .replace(/[^a-zA-Z0-9_\-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
 }

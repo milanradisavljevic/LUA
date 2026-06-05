@@ -1,50 +1,67 @@
 import { describe, it, expect } from 'vitest';
 import { runPipeline } from './glue.js';
 import { DocumentSchema } from '@lehrunterlagen/schema';
+import { mockLlmProvider, detectBlockTyp } from './__mocks__/mock-llm-provider.js';
+import lueckentext from './fixtures/lueckentext.json' assert { type: 'json' };
+import matching from './fixtures/matching.json' assert { type: 'json' };
+import multipleChoice from './fixtures/multipleChoice.json' assert { type: 'json' };
+import offeneVerstaendnisfrage from './fixtures/offeneVerstaendnisfrage.json' assert { type: 'json' };
+import offeneSchreibaufgabe from './fixtures/offeneSchreibaufgabe.json' assert { type: 'json' };
+import markieraufgabe from './fixtures/markieraufgabe.json' assert { type: 'json' };
+import wordScramble from './fixtures/wordScramble.json' assert { type: 'json' };
+import kategorisierung from './fixtures/kategorisierung.json' assert { type: 'json' };
+import tabelle from './fixtures/tabelle.json' assert { type: 'json' };
+import stiluebung from './fixtures/stiluebung.json' assert { type: 'json' };
+import songanalyse from './fixtures/songanalyse.json' assert { type: 'json' };
+import type { DocumentV1, Meta, QuellText } from '@lehrunterlagen/schema';
 
 const isDocx = (buf: Buffer) =>
   buf[0] === 0x50 && buf[1] === 0x4b && buf[2] === 0x03 && buf[3] === 0x04;
 
-// Fixture: ein valides Dokument, das das LLM zurueckgeben wuerde
-const mockLlmOutput = DocumentSchema.parse({
-  schemaVersion: '0.1.0',
-  meta: {
-    stufe: 'oberstufe',
-    fach: 'deutsch',
-    thema: 'Medienkonsum und Jugendliche',
-    datum: '2026-05-30',
-    klasse: '7A',
-    notizen: '',
-  },
-  quelltexte: [
-    {
-      id: 'q1',
-      titel: 'Social Media und das Wohlbefinden',
-      inhalt: 'Die Nutzung von sozialen Medien hat in den letzten Jahren stark zugenommen. Besonders Jugendliche verbringen jeden Tag mehrere Stunden am Tag auf Plattformen wie Instagram und TikTok.',
-      herkunft: { typ: 'upload', ref: 'quelltext_1.pdf' },
-    },
-  ],
-  bloecke: [
-    {
-      id: 'b1', typ: 'lueckentext', punkte: 8, quelleId: 'q1',
-      arbeitsanweisung: 'Lies den Text. Setze die fehlenden Begriffe ein.',
-      config: { anzahlLuecken: 3, wortbank: false, distraktoren: 0 },
-      loesung: { luecken: [{ nr: 1, wort: 'sozialen' }, { nr: 2, wort: 'Jugendliche' }, { nr: 3, wort: 'Plattformen' }] },
-    },
-    {
-      id: 'b2', typ: 'matching', punkte: 6,
-      arbeitsanweisung: 'Ordne die Begriffe den Definitionen zu.',
-      config: {
-        items: [{ nr: 1, prompt: 'Metapher' }, { nr: 2, prompt: 'Hyperbel' }],
-        optionen: [
-          { key: 'A', text: 'Uebertreibung' },
-          { key: 'B', text: 'Bildhafter Vergleich' },
-          { key: 'C', text: 'Vergleich mit wie' },
-        ],
-      },
-      loesung: { zuordnung: { '1': 'B', '2': 'A' } },
-    },
-  ],
+const ALL_FIXTURES: DocumentV1[] = [
+  lueckentext as DocumentV1,
+  matching as DocumentV1,
+  multipleChoice as DocumentV1,
+  offeneVerstaendnisfrage as DocumentV1,
+  offeneSchreibaufgabe as DocumentV1,
+  markieraufgabe as DocumentV1,
+  wordScramble as DocumentV1,
+  kategorisierung as DocumentV1,
+  tabelle as DocumentV1,
+  stiluebung as DocumentV1,
+  songanalyse as DocumentV1,
+];
+
+const mockLlmOutput = DocumentSchema.parse(lueckentext);
+
+describe('Mock-Provider: detectBlockTyp', () => {
+  it('erkennt wordScramble aus System-Prompt', () => {
+    const typ = detectBlockTyp([{ role: 'system', content: 'Erzeuge eine wordScramble-Aufgabe.' }]);
+    expect(typ).toBe('wordScramble');
+  });
+
+  it('erkennt kategorisierung', () => {
+    const typ = detectBlockTyp([{ role: 'user', content: 'Bitte eine Kategorisierung erstellen.' }]);
+    expect(typ).toBe('kategorisierung');
+  });
+
+  it('erkennt songanalyse', () => {
+    const typ = detectBlockTyp([{ role: 'user', content: 'Songanalyse: AnnenMayKantereit' }]);
+    expect(typ).toBe('songanalyse');
+  });
+
+  it('Fallback auf lueckentext bei unbekanntem Typ', () => {
+    const typ = detectBlockTyp([{ role: 'user', content: 'Irgendwas Unbekanntes' }]);
+    expect(typ).toBe('lueckentext');
+  });
+});
+
+describe('Mock-Provider: liefert valide JSON fuer alle 11 Typen', () => {
+  for (const fixture of ALL_FIXTURES) {
+    it(`Fixture ${fixture.bloecke[0]!.typ} parst mit DocumentSchema`, () => {
+      expect(() => DocumentSchema.parse(fixture)).not.toThrow();
+    });
+  }
 });
 
 describe('Glue: runPipeline (mock)', () => {
@@ -79,6 +96,75 @@ describe('Glue: runPipeline (mock)', () => {
   });
 });
 
+describe('E2E: Mock-Provider liefert je Block-Typ die richtige Fixture', () => {
+  const typToKeyword: Record<string, string> = {
+    lueckentext: 'lueckentext',
+    matching: 'matching',
+    multipleChoice: 'multiple choice',
+    offeneVerstaendnisfrage: 'verstaendnisfrage',
+    offeneSchreibaufgabe: 'schreibaufgabe',
+    markieraufgabe: 'markieraufgabe',
+    wordScramble: 'wordScramble',
+    kategorisierung: 'kategorisierung',
+    tabelle: 'tabelle',
+    stiluebung: 'stiluebung',
+    songanalyse: 'songanalyse',
+  };
+
+  for (const fixture of ALL_FIXTURES) {
+    const typ = fixture.bloecke[0]!.typ;
+    it(`Mock liefert Fixture ${typ} bei Prompt mit Keyword "${typToKeyword[typ]}"`, async () => {
+      const roh = await mockLlmProvider.complete(
+        [{ role: 'user', content: `Erzeuge eine ${typToKeyword[typ]}-Aufgabe.` }],
+        { provider: 'anthropic' },
+      );
+      const doc = JSON.parse(roh);
+      expect(doc.bloecke[0].typ).toBe(typ);
+      expect(() => DocumentSchema.parse(doc)).not.toThrow();
+    });
+  }
+});
+
+describe('E2E: runPipeline mit Mock-Provider fuer lueckentext', () => {
+  it('Pipeline liefert 2 DOCX + 1 Raster fuer lueckentext', async () => {
+    const result = await runPipeline(
+      {
+        meta: mockLlmOutput.meta,
+        quelltexte: mockLlmOutput.quelltexte,
+        bloecke: [{ typ: 'lueckentext', punkte: 8, anzahlLuecken: 3, wortbank: false, distraktoren: 0 }],
+      },
+      { provider: 'anthropic' },
+      mockLlmProvider,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(result.fehler);
+
+    expect(isDocx(result.schueler)).toBe(true);
+    expect(isDocx(result.loesung)).toBe(true);
+    expect(isDocx(result.raster)).toBe(true);
+    expect(result.schueler.length).toBeGreaterThan(1000);
+    expect(result.loesung.length).toBeGreaterThan(1000);
+    expect(result.raster.length).toBeGreaterThan(500);
+    expect(result.document.bloecke[0]!.typ).toBe('lueckentext');
+  });
+});
+
+describe('E2E: Renderer-Integration pro Block-Typ (alle 11)', () => {
+  for (const fixture of ALL_FIXTURES) {
+    const typ = fixture.bloecke[0]!.typ;
+    it(`renderDocument erzeugt 2 DOCX fuer ${typ}`, async () => {
+      const { renderDocument } = await import('@lehrunterlagen/renderer');
+      const { schueler, loesung } = await renderDocument(fixture);
+      expect(isDocx(schueler)).toBe(true);
+      expect(isDocx(loesung)).toBe(true);
+      expect(schueler.length).toBeGreaterThan(500);
+      expect(loesung.length).toBeGreaterThan(500);
+      expect(schueler.equals(loesung)).toBe(false);
+    });
+  }
+});
+
 describe('Glue: Renderer-Integration (mit fixture)', () => {
   it('renderDocument erzeugt 2 gueltige .docx aus einem validen Dokument', async () => {
     const { renderDocument } = await import('@lehrunterlagen/renderer');
@@ -92,50 +178,4 @@ describe('Glue: Renderer-Integration (mit fixture)', () => {
     expect(loesung.length).toBeGreaterThan(500);
     expect(schueler.equals(loesung)).toBe(false);
   });
-});
-
-// echter API-Test: Liefert nicht-deterministische Ergebnisse, daher skip
-// Die Pipesline funktioniert (siehe run-e2e.ts), aber das LLM produziert
-// nicht immer das exakte Schema. Normalisierung hilft, aber nicht garantiert.
-const describeE2E = describe.skip;
-
-describeE2E('E2E: Quelltext -> LLM -> 2 DOCX (echter API-Call)', () => {
-  it('generiert ein vollstaendiges Dokument aus Quelltext', async () => {
-    const result = await runPipeline(
-      {
-        meta: {
-          stufe: 'oberstufe',
-          fach: 'deutsch',
-          thema: 'Medienkonsum',
-          datum: '2026-05-30',
-          klasse: '7A',
-          notizen: '',
-        },
-        quelltexte: [
-          {
-            id: 'q1',
-            titel: 'Social Media',
-            inhalt: 'Soziale Medien sind aus dem Alltag von Jugendlichen nicht mehr wegzudenken. Plattformen wie Instagram, TikTok und Snapchat bestimmen, wie sie kommunizieren, Informationen konsumieren und ihre Freizeit gestalten.',
-            herkunft: { typ: 'upload', ref: 'text.txt' },
-          },
-        ],
-        bloecke: [
-          { typ: 'lueckentext', punkte: 8, quelleId: 'q1', anzahlLuecken: 4, wortbank: false, distraktoren: 0 },
-          { typ: 'multipleChoice', punkte: 4, quelleId: 'q1', anzahlFragen: 2, mehrfach: false },
-        ],
-      },
-      { provider: 'anthropic' },
-    );
-
-    if (!result.ok) {
-      throw new Error(`E2E fehlgeschlagen: ${result.fehler} (Versuche: ${result.versuche})`);
-    }
-
-    expect(isDocx(result.schueler)).toBe(true);
-    expect(isDocx(result.loesung)).toBe(true);
-    expect(result.schueler.length).toBeGreaterThan(1000);
-    expect(result.loesung.length).toBeGreaterThan(1000);
-    expect(result.document.schemaVersion).toBe('0.1.0');
-    expect(result.document.bloecke.length).toBe(2);
-  }, 30_000);
 });

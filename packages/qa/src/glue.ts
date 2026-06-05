@@ -1,6 +1,6 @@
 import type { DocumentV1, Meta, QuellText } from '@lehrunterlagen/schema';
 import { renderDocument, renderRaster } from '@lehrunterlagen/renderer';
-import { generateDocument, type BlockRequest, type ProviderConfig } from '@lehrunterlagen/llm';
+import { generateDocument, type BlockRequest, type Provider, type ProviderConfig } from '@lehrunterlagen/llm';
 import { buildRaster } from './korrekturraster/builder';
 
 export interface GlueInput {
@@ -28,14 +28,30 @@ export type GlueResult = GlueOk | GlueError;
 
 /**
  * End-to-end-Pipeline: Quelltexte + Baukasten-Vorgaben -> LLM -> Validierung -> 3x .docx
+ *
+ * `customProvider` ermoeglicht das Einschleusen eines Mock-Providers fuer Tests/CI.
+ * Wenn gesetzt, wird der Provider aus der Registry uebergangen.
  */
 export async function runPipeline(
   input: GlueInput,
   cfg: ProviderConfig,
+  customProvider?: Provider,
 ): Promise<GlueResult> {
   let gen;
   try {
-    gen = await generateDocument(input, cfg);
+    if (customProvider) {
+      const { buildMessages } = await import('@lehrunterlagen/llm');
+      const { parseAndValidate } = await import('@lehrunterlagen/llm');
+      const messages = buildMessages(input as any);
+      const rohText = await customProvider.complete(messages, cfg, input as any);
+      const validiert = await parseAndValidate(rohText, input.meta, input.quelltexte);
+      if (!validiert.ok || !validiert.document) {
+        return { ok: false, fehler: validiert.fehler ?? 'Mock lieferte ungueltiges Dokument', versuche: 1 };
+      }
+      gen = { ok: true as const, document: validiert.document, rohText, versuche: 1 };
+    } else {
+      gen = await generateDocument(input, cfg);
+    }
   } catch (e) {
     return { ok: false, fehler: (e as Error).message, versuche: 0 };
   }

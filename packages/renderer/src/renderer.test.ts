@@ -159,6 +159,96 @@ describe('renderDocument: alle Blocktypen rendern fehlerfrei', () => {
     await expect(renderDocument(doc)).resolves.toBeDefined();
   });
 
+  it('wordScramble', async () => {
+    const doc = makeDoc([{
+      id: 'b7', typ: 'wordScramble', punkte: 4,
+      arbeitsanweisung: 'Bringe die Wörter in die richtige Reihenfolge.',
+      config: { wort: 'Der Hund läuft im Park', anzahlWoerter: 5, loesungsreihenfolge: [1, 2, 3, 4, 5] },
+      loesung: { korrektAnordnung: ['Der', 'Hund', 'läuft', 'im', 'Park'] },
+    }]);
+    await expect(renderDocument(doc)).resolves.toBeDefined();
+  });
+
+  it('kategorisierung', async () => {
+    const doc = makeDoc([{
+      id: 'b8', typ: 'kategorisierung', punkte: 6,
+      arbeitsanweisung: 'Ordne die Begriffe zu.',
+      config: {
+        items: [
+          { nr: 1, text: 'Magen', optionen: ['Verdauung', 'Atmung'] },
+          { nr: 2, text: 'Lunge', optionen: ['Verdauung', 'Atmung'] },
+        ],
+        kategorien: [
+          { name: 'Verdauung', anzahlItems: 1 },
+          { name: 'Atmung', anzahlItems: 1 },
+        ],
+      },
+      loesung: { zuordnung: { '1': ['Verdauung'], '2': ['Atmung'] } },
+    }]);
+    await expect(renderDocument(doc)).resolves.toBeDefined();
+  });
+
+  it('tabelle', async () => {
+    const doc = makeDoc([{
+      id: 'b9', typ: 'tabelle', punkte: 8,
+      arbeitsanweisung: 'Fülle die Tabelle aus.',
+      config: {
+        spalten: [
+          { titel: 'Begriff', breiteProzent: 40 },
+          { titel: 'Definition', breiteProzent: 60 },
+        ],
+        zeilen: [
+          { nr: 1, zellen: [{ text: 'A1' }, { luecke: true }] },
+          { nr: 2, zellen: [{ text: 'A2' }, { luecke: true }] },
+        ],
+      },
+      loesung: {
+        zellen: { '1,1': 'X', '2,1': 'Y' },
+      },
+    }]);
+    await expect(renderDocument(doc)).resolves.toBeDefined();
+  });
+
+  it('stiluebung', async () => {
+    const doc = makeDoc([{
+      id: 'b10', typ: 'stiluebung', punkte: 6,
+      arbeitsanweisung: 'Formuliere den Text in gehobener Sprache.',
+      config: {
+        ausgangstext: 'Der Typ war echt cool drauf.',
+        zielniveau: 'gehoben',
+        transformation: 'verdeutlichen',
+      },
+      loesung: {
+        umformulierung: 'Der junge Mann zeigte sich überaus souverän.',
+        begruendung: 'Umgangssprachlich ersetzt.',
+      },
+    }]);
+    await expect(renderDocument(doc)).resolves.toBeDefined();
+  });
+
+  it('songanalyse', async () => {
+    const doc = makeDoc([{
+      id: 'b11', typ: 'songanalyse', punkte: 12,
+      arbeitsanweisung: 'Analysiere den Songtext.',
+      config: {
+        interpret: 'AnnenMayKantereit',
+        titel: 'Pocahontas',
+        medium: 'song',
+        genre: 'Indie',
+        lyrics: 'Und sie tanzt allein, im Mondenschein...',
+        aufgabe: 'wirkungsanalyse',
+      },
+      loesung: {
+        ergebnis: 'Der Song thematisiert Einsamkeit und Sehnsucht.',
+        zitate: ['sie tanzt allein'],
+        analysepunkte: [
+          { aspekt: 'Bildsprache', befund: 'Mondenschein als Sinnbild', zitat: 'Mondenschein' },
+        ],
+      },
+    }]);
+    await expect(renderDocument(doc)).resolves.toBeDefined();
+  });
+
   it('Dokument mit mehreren Bloecken verschiedener Typen', async () => {
     const doc = makeDoc([
       {
@@ -273,5 +363,99 @@ describe('renderDocumentToBlobs', () => {
   it('schueler !== loesung (unterschiedlicher Inhalt)', async () => {
     const { schueler, loesung } = await renderDocumentToBlobs(simpleDoc);
     expect(schueler.size).not.toBe(loesung.size);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Dokument-Inhalt prüfen: minimaler ZIP-Extraktor (kein externer Zip-Dep)
+// ---------------------------------------------------------------------------
+
+import { inflateRawSync } from 'node:zlib';
+
+// Liest word/document.xml aus einem .docx-Buffer, indem die lokalen ZIP-Header
+// gescannt werden (Methode 0 = stored, 8 = deflate). Ausreichend für jszip-Output.
+function extractDocumentXml(buf: Buffer): string {
+  let off = 0;
+  while (off + 4 <= buf.length && buf.readUInt32LE(off) === 0x04034b50) {
+    const method = buf.readUInt16LE(off + 8);
+    const compSize = buf.readUInt32LE(off + 18);
+    const nameLen = buf.readUInt16LE(off + 26);
+    const extraLen = buf.readUInt16LE(off + 28);
+    const nameStart = off + 30;
+    const name = buf.toString('utf8', nameStart, nameStart + nameLen);
+    const dataStart = nameStart + nameLen + extraLen;
+    const data = buf.subarray(dataStart, dataStart + compSize);
+    if (name === 'word/document.xml') {
+      return method === 0 ? data.toString('utf8') : inflateRawSync(data).toString('utf8');
+    }
+    off = dataStart + compSize;
+  }
+  throw new Error('word/document.xml nicht gefunden');
+}
+
+describe('renderDocument: Dokument-Qualität (Layout)', () => {
+  const lyricsDoc = (): DocumentV1 => ({
+    schemaVersion: '0.1.0',
+    meta: { stufe: 'oberstufe', fach: 'deutsch', thema: 'Songanalyse', datum: '2026-06-05', klasse: '6i', notizen: '' },
+    quelltexte: [{
+      id: 'q1', titel: 'Hotel California',
+      inhalt: 'Zeile eins\nZeile zwei\nZeile drei\n\nStrophe zwei A\nStrophe zwei B',
+      herkunft: { typ: 'eingabe', ref: '' },
+    }],
+    bloecke: [
+      { id: 'b1', typ: 'offeneVerstaendnisfrage', punkte: 12, quelleId: 'q1', arbeitsanweisung: 'Beantworte.',
+        config: { fragen: [{ nr: 1, frage: 'Worum geht es?', zeilen: 3 }] },
+        loesung: { antworten: { '1': 'Eine ausführliche Musterantwort zur Frage.' } } },
+      { id: 'b2', typ: 'lueckentext', punkte: 28, quelleId: 'q1', arbeitsanweisung: 'Setze ein.',
+        config: { anzahlLuecken: 2, wortbank: false, distraktoren: 0 },
+        loesung: { luecken: [{ nr: 1, wort: 'A' }, { nr: 2, wort: 'B' }] } },
+    ],
+  });
+
+  it('Quelltext-Zeilen werden als echte Umbrüche gerendert (nicht als eine TextRun)', async () => {
+    const { schueler } = await renderDocument(lyricsDoc());
+    const xml = extractDocumentXml(schueler);
+    // 5 Zeilen verteilt auf 2 Absätze → 1 + 2 = 3 break-Runs innerhalb der Absätze
+    const breaks = (xml.match(/<w:br\/>/g) ?? []).length;
+    expect(breaks).toBeGreaterThanOrEqual(3);
+    // jede Zeile muss als eigener Text vorkommen
+    for (const z of ['Zeile eins', 'Zeile zwei', 'Zeile drei', 'Strophe zwei A', 'Strophe zwei B']) {
+      expect(xml).toContain(z);
+    }
+  });
+
+  it('Schülerkopf enthält Name/Klasse/Datum-Felder', async () => {
+    const { schueler } = await renderDocument(lyricsDoc());
+    const xml = extractDocumentXml(schueler);
+    expect(xml).toContain('Name:');
+    expect(xml).toContain('Klasse:');
+    expect(xml).toContain('Datum:');
+    expect(xml).toContain('6i');
+    expect(xml).toContain('05.06.2026');
+  });
+
+  it('Aufgabenübersicht enthält GESAMT mit korrekter Punktesumme', async () => {
+    const { schueler } = await renderDocument(lyricsDoc());
+    const xml = extractDocumentXml(schueler);
+    expect(xml).toContain('Aufgabenübersicht');
+    expect(xml).toContain('GESAMT');
+    expect(xml).toContain('Unterschrift');
+    // 12 + 28 = 40
+    expect(xml).toContain('/ 40');
+  });
+
+  it('Quelltext-Überschrift ist Singular bei einem Text', async () => {
+    const { schueler } = await renderDocument(lyricsDoc());
+    const xml = extractDocumentXml(schueler);
+    expect(xml).toContain('>Quelltext<');
+  });
+
+  it('Schüler- und Lösungsfassung bleiben paargleich erzeugt', async () => {
+    const { schueler, loesung } = await renderDocument(lyricsDoc());
+    expect(isDocx(schueler)).toBe(true);
+    expect(isDocx(loesung)).toBe(true);
+    expect(schueler.equals(loesung)).toBe(false);
+    // Beide tragen denselben Schülerkopf + Übersicht
+    expect(extractDocumentXml(loesung)).toContain('Aufgabenübersicht');
   });
 });
