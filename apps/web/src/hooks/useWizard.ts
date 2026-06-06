@@ -1,6 +1,7 @@
 import { useReducer, useCallback } from 'react';
 import type { AppState, AppAction, StepId } from '../lib/types';
 import { getDefaultMeta } from '../lib/constants';
+import { loadSettings } from '../lib/storage';
 
 const STEPS_ORDER: StepId[] = ['absicht', 'input', 'baukasten', 'llm', 'generate'];
 
@@ -63,26 +64,40 @@ function wizardReducer(state: AppState, action: AppAction): AppState {
           ),
         },
       };
+    case 'RESET_STATE':
+      return createInitialState();
+    case 'LOAD_SNAPSHOT':
+      return {
+        ...action.snapshot,
+        step: action.snapshot.generiertesDokument ? 'generate' : 'baukasten',
+        aktuelleDokumentId: action.documentId,
+      };
+    case 'SET_DOCUMENT_ID':
+      return { ...state, aktuelleDokumentId: action.id };
     default:
       return state;
   }
 }
 
-const INITIAL_STATE: AppState = {
-  step: 'absicht',
-  auftrag: null,
-  meta: getDefaultMeta(),
-  quelltexte: [],
-  bloecke: [],
-  generiertesDokument: null,
-  llmProvider: 'claude',
-  modelName: 'Sonnet 4.6',
-  kreativitaet: 0.4,
-  ausgabeSprache: 'de',
-};
+function createInitialState(): AppState {
+  const settings = loadSettings();
+  return {
+    step: 'absicht',
+    auftrag: null,
+    meta: getDefaultMeta(),
+    quelltexte: [],
+    bloecke: [],
+    generiertesDokument: null,
+    llmProvider: settings.defaultProvider,
+    modelName: settings.defaultModel,
+    kreativitaet: settings.defaultKreativitaet,
+    ausgabeSprache: settings.defaultAusgabeSprache,
+    aktuelleDokumentId: null,
+  };
+}
 
 export function useWizard() {
-  const [state, dispatch] = useReducer(wizardReducer, INITIAL_STATE);
+  const [state, dispatch] = useReducer(wizardReducer, undefined, createInitialState);
 
   const currentIndex = STEPS_ORDER.indexOf(state.step);
   const canGoNext = currentIndex < STEPS_ORDER.length - 1 && !(state.step === 'absicht' && !state.auftrag);

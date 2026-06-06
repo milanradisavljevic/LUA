@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Mic, X } from 'lucide-react';
 import type { AppAction } from '../lib/types';
 import { useCommandParser } from '../hooks/useCommandParser';
 import { useVoiceCommand } from '../hooks/useVoiceCommand';
@@ -45,21 +46,21 @@ export function CommandPalette({ open, onClose, onActions, onNavigate, onExport,
 
     if (/^(zurück|back|zurueck)$/i.test(trimmed)) {
       onNavigate('back');
-      setFeedback({ type: 'success', text: '← Zurück' });
+      setFeedback({ type: 'success', text: 'Zurück' });
       onClose();
       return;
     }
 
     if (/^(weiter|next|vor)$/i.test(trimmed)) {
       onNavigate('next');
-      setFeedback({ type: 'success', text: '→ Weiter' });
+      setFeedback({ type: 'success', text: 'Weiter' });
       onClose();
       return;
     }
 
     if (/^(export(ieren)?|generieren|dokumente?\s+erstellen|download)$/i.test(trimmed)) {
       onExport();
-      setFeedback({ type: 'success', text: '📄 Exportiere Dokumente…' });
+      setFeedback({ type: 'success', text: 'Exportiere Dokumente…' });
       onClose();
       return;
     }
@@ -103,7 +104,7 @@ export function CommandPalette({ open, onClose, onActions, onNavigate, onExport,
     const result = parse(trimmed);
     if (result.action) {
       onActions(result.action);
-      setFeedback({ type: 'success', text: `✓ ${result.label}` });
+      setFeedback({ type: 'success', text: result.label });
       onClose();
     } else {
       setFeedback({
@@ -128,17 +129,17 @@ export function CommandPalette({ open, onClose, onActions, onNavigate, onExport,
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
+      position: 'fixed', inset: 0, background: 'var(--color-overlay)',
       display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
       paddingTop: '12vh', zIndex: 2000,
     }} onClick={onClose}>
       <div style={{
         width: 520, maxWidth: '90vw',
-        background: 'white', borderRadius: 'var(--radius)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+        background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius)',
+        boxShadow: '0 8px 32px var(--color-shadow)',
         overflow: 'hidden',
       }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--color-gray-2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--color-border)' }}>
           <input ref={inputRef}
             type="text"
             value={input}
@@ -147,7 +148,7 @@ export function CommandPalette({ open, onClose, onActions, onNavigate, onExport,
             placeholder="Befehl eingeben oder Mikrofon nutzen…"
             style={{
               flex: 1, border: 'none', borderRadius: 0, padding: '0.875rem 1rem',
-              fontSize: '0.9375rem', outline: 'none',
+              fontSize: '0.9375rem', outline: 'none', background: 'var(--color-bg-elevated)', color: 'var(--color-text-primary)',
             }} />
           <div style={{ display: 'flex', gap: '0.25rem', paddingRight: '0.5rem' }}>
             {voice.supported && (
@@ -155,40 +156,43 @@ export function CommandPalette({ open, onClose, onActions, onNavigate, onExport,
                 title="Spracheingabe (deutsch)"
                 style={{
                   width: 36, height: 36, borderRadius: '50%', border: 'none',
-                  background: voice.listening ? '#d93025' : 'var(--color-gray-3)',
-                  color: voice.listening ? 'white' : 'var(--color-gray-1)',
+                  background: voice.listening ? 'var(--color-error)' : 'var(--color-bg-hover)',
+                  color: voice.listening ? 'white' : 'var(--color-text-secondary)',
                   cursor: 'pointer', display: 'flex', alignItems: 'center',
                   justifyContent: 'center', fontSize: '1rem', transition: 'all 0.2s',
                 }}>
-                {voice.listening ? '🔴' : '🎤'}
+                <Mic size={16} />
               </button>
             )}
             <button onClick={onClose}
+              aria-label="Schließen"
               style={{
                 width: 36, height: 36, borderRadius: '50%', border: 'none',
-                background: 'var(--color-gray-3)', cursor: 'pointer',
+                background: 'var(--color-bg-hover)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--color-gray-1)', fontSize: '1rem',
+                color: 'var(--color-text-secondary)', fontSize: '1rem',
               }}>
-              ✕
+              <X size={16} />
             </button>
           </div>
         </div>
 
         {voice.listening && (
           <div style={{
-            padding: '0.5rem 1rem', background: '#fff3cd',
-            fontSize: '0.8125rem', color: '#856404',
+            padding: '0.5rem 1rem', background: 'var(--color-warning-bg)',
+            fontSize: '0.8125rem', color: 'var(--color-warning)',
           }}>
-            🎤 Höre zu…{voice.interimTranscript && ` (${voice.interimTranscript})`}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+              <Mic size={14} /> Höre zu…{voice.interimTranscript && ` (${voice.interimTranscript})`}
+            </span>
           </div>
         )}
 
         {feedback && (
           <div style={{
             padding: '0.5rem 1rem',
-            background: feedback.type === 'success' ? '#d4edda' : '#f8d7da',
-            color: feedback.type === 'success' ? '#155724' : '#721c24',
+            background: feedback.type === 'success' ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
+            color: feedback.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
             fontSize: '0.8125rem',
           }}>
             {feedback.text}
@@ -204,12 +208,12 @@ export function CommandPalette({ open, onClose, onActions, onNavigate, onExport,
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '0.5rem 1rem', border: 'none', background: 'transparent',
                   cursor: 'pointer', fontSize: '0.8125rem',
-                  fontFamily: 'var(--font)',
+                  fontFamily: 'var(--font)', color: 'var(--color-text-primary)',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-gray-3)')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-hover)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
                 <strong>{s.label}</strong>
-                <p style={{ fontSize: '0.6875rem', color: 'var(--color-gray-1)', marginTop: '0.125rem' }}>
+                <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-secondary)', marginTop: '0.125rem' }}>
                   {s.description}
                 </p>
               </button>
@@ -218,7 +222,7 @@ export function CommandPalette({ open, onClose, onActions, onNavigate, onExport,
         )}
 
         {!input.trim() && (
-          <div style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: 'var(--color-gray-1)' }}>
+          <div style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
             <strong>Verfügbare Befehle:</strong>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem', marginTop: '0.375rem' }}>
               <span>Schritt 1–4</span>

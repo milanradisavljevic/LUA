@@ -89,8 +89,8 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
                   paddingTop: hasAny ? '1.5rem' : '1rem',
                   textAlign: 'center',
                   borderLeft: `4px solid ${bt.color}`,
-                  background: hasAny ? `linear-gradient(135deg, white 0%, ${bt.color}12 100%)` : 'white',
-                  borderColor: hasAny ? bt.color : 'var(--color-gray-2)',
+                  background: hasAny ? `linear-gradient(135deg, white 0%, ${bt.color}12 100%)` : 'var(--color-bg-surface)',
+                  borderColor: hasAny ? bt.color : 'var(--color-border)',
                   borderWidth: hasAny ? '2px' : '1px',
                   position: 'relative',
                   transition: 'all 0.2s ease',
@@ -98,7 +98,7 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px var(--color-shadow)';
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
@@ -112,7 +112,7 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
                     top: -8,
                     right: -8,
                     background: `linear-gradient(135deg, ${bt.color}, ${bt.color}dd)`,
-                    color: 'white',
+                    color: 'var(--color-bg-surface)',
                     fontSize: '0.75rem',
                     fontWeight: 700,
                     minWidth: 26,
@@ -130,11 +130,11 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
                   </div>
                 )}
 
-                <span style={{ fontSize: '1.5rem' }}>{bt.icon}</span>
+                <bt.Icon size={28} style={{ color: bt.color }} />
                 <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{bt.label}</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)' }}>{bt.description}</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{bt.description}</span>
                 {bt.id === 'lueckentext' && !STUFE_RULES[state.meta.stufe].wortbankAllowed && (
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--color-gray-1)' }}>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-secondary)' }}>
                     (Wortbank nur Unterstufe)
                   </span>
                 )}
@@ -166,7 +166,7 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
       <PointSummary totalPoints={totalPoints} blockCount={state.bloecke.length} />
 
       {state.bloecke.length === 0 ? (
-        <p style={{ color: 'var(--color-gray-1)', textAlign: 'center', padding: '3rem 0' }}>
+        <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center', padding: '3rem 0' }}>
           Noch keine Aufgabenblöcke. Wähle oben einen Blocktyp und füge ihn hinzu.
         </p>
       ) : (

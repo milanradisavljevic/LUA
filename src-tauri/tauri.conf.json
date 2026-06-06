@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Lehrunterlagen-Tool",
+        "title": "LUA — Lehrunterlagen-Applikation",
         "width": 1280,
         "height": 800,
         "resizable": true,

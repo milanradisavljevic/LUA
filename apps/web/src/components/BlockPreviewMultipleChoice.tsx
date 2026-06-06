@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import type { Block } from '@lehrunterlagen/schema';
 
 interface Props {
@@ -30,7 +31,7 @@ export function BlockPreviewMultipleChoice({ block, showSolution }: Props) {
             <p style={{ marginBottom: '0.375rem', fontWeight: 600, fontSize: '10.5pt' }}>
               {frage.nr}. {frage.frage}
               {frage.mehrfach && (
-                <span style={{ fontWeight: 400, fontSize: '9pt', color: '#595959' }}>
+                <span style={{ fontWeight: 400, fontSize: '9pt', color: 'var(--color-text-secondary)' }}>
                   {' '}(Mehrfachauswahl möglich)
                 </span>
               )}
@@ -44,12 +45,12 @@ export function BlockPreviewMultipleChoice({ block, showSolution }: Props) {
                 }}>
                   <span style={{
                     width: 16, height: 16, borderRadius: frage.mehrfach ? 2 : '50%',
-                    border: '1.5px solid #595959', display: 'inline-flex',
+                    border: '1.5px solid var(--color-text-secondary)', display: 'inline-flex',
                     alignItems: 'center', justifyContent: 'center',
-                    background: showSolution && isCorrect ? '#e8f0fe' : 'transparent',
+                    background: showSolution && isCorrect ? 'var(--color-bg-selected)' : 'transparent',
                     fontSize: '9pt', fontWeight: 700, flexShrink: 0,
                   }}>
-                    {showSolution && isCorrect ? '✓' : ''}
+                    {showSolution && isCorrect ? <Check size={12} /> : ''}
                   </span>
                   <span style={{
                     color: showSolution && isCorrect ? '#000' : undefined,
@@ -58,7 +59,7 @@ export function BlockPreviewMultipleChoice({ block, showSolution }: Props) {
                     {opt.key}: {opt.text}
                   </span>
                   {showSolution && isCorrect && (
-                    <span style={{ fontStyle: 'italic', fontSize: '9pt', color: '#595959' }}>
+                    <span style={{ fontStyle: 'italic', fontSize: '9pt', color: 'var(--color-text-secondary)' }}>
                       (richtig)
                     </span>
                   )}

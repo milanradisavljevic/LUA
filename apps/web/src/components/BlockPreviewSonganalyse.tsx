@@ -21,12 +21,12 @@ export function BlockPreviewSonganalyse({ block, showSolution }: Props) {
 
       <h4 style={{ margin: '0.5rem 0', fontSize: '12pt' }}>
         {block.config.interpret} – {block.config.titel}
-        {block.config.genre && <span style={{ fontSize: '10pt', color: '#595959', fontWeight: 400 }}>  ({block.config.genre})</span>}
+        {block.config.genre && <span style={{ fontSize: '10pt', color: 'var(--color-text-secondary)', fontWeight: 400 }}>  ({block.config.genre})</span>}
       </h4>
 
       <div style={{ marginBottom: '0.75rem' }}>
-        <p style={{ fontSize: '9pt', color: '#595959', fontWeight: 600 }}>Songtext:</p>
-        <blockquote style={{ margin: '0.25rem 0', padding: '0.5rem 0 0.5rem 0.75rem', borderLeft: '3px solid #BFBFBF', color: '#595959', fontStyle: 'italic' }}>
+        <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', fontWeight: 600 }}>Songtext:</p>
+        <blockquote style={{ margin: '0.25rem 0', padding: '0.5rem 0 0.5rem 0.75rem', borderLeft: '3px solid var(--color-border)', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
           {block.config.lyrics}
         </blockquote>
       </div>
@@ -36,7 +36,7 @@ export function BlockPreviewSonganalyse({ block, showSolution }: Props) {
       </p>
 
       {showSolution ? (
-        <div style={{ padding: '0.5rem', background: '#F5F5F5', borderRadius: 4 }}>
+        <div style={{ padding: '0.5rem', background: 'var(--color-bg-hover)', borderRadius: 4 }}>
           <strong style={{ fontSize: '10pt' }}>Ergebnis:</strong>
           <p style={{ fontStyle: 'italic', marginTop: '0.25rem' }}>{block.loesung.ergebnis}</p>
           {block.loesung.analysepunkte.length > 0 && (
@@ -44,14 +44,14 @@ export function BlockPreviewSonganalyse({ block, showSolution }: Props) {
               {block.loesung.analysepunkte.map((ap, i) => (
                 <li key={i} style={{ marginBottom: '0.25rem' }}>
                   <strong>{ap.aspekt}:</strong> <em>{ap.befund}</em>
-                  {ap.zitat && <span style={{ color: '#595959' }}> („{ap.zitat}")</span>}
+                  {ap.zitat && <span style={{ color: 'var(--color-text-secondary)' }}> („{ap.zitat}")</span>}
                 </li>
               ))}
             </ul>
           )}
         </div>
       ) : (
-        <p style={{ fontSize: '9pt', color: '#595959', fontStyle: 'italic' }}>
+        <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
           (Eigene Analyse in das freie Feld schreiben)
         </p>
       )}

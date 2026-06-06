@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { ArrowRight } from 'lucide-react';
 import type { AppState, AppAction } from '../lib/types';
 import { BLOCK_TYPE_DEFS } from '../lib/constants';
 import { buildSkelett, type Auftrag } from '@lehrunterlagen/schema';
@@ -103,7 +104,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
   return (
     <div>
       <h2 style={{ margin: '0 0 0.5rem' }}>Neue Unterlage — Absicht erfassen</h2>
-      <p style={{ color: 'var(--color-gray-1)', margin: '0 0 1.25rem', fontSize: '0.875rem' }}>
+      <p style={{ color: 'var(--color-text-secondary)', margin: '0 0 1.25rem', fontSize: '0.875rem' }}>
         Beschreibe, was du brauchst. Die App baut daraus automatisch das passende Skelett.
       </p>
 
@@ -132,24 +133,26 @@ export function Step0_Absicht({ state, dispatch }: Props) {
                 textAlign: 'left',
                 padding: '0.75rem',
                 borderRadius: 'var(--radius)',
-                border: '1px solid var(--color-gray-2)',
-                background: 'white',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-surface)',
                 cursor: 'pointer',
                 fontSize: '0.8125rem',
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-accent)';
-                (e.currentTarget as HTMLButtonElement).style.background = '#f3e5f5';
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-highlight-bg)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-gray-2)';
-                (e.currentTarget as HTMLButtonElement).style.background = 'white';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-bg-surface)';
               }}
             >
-              <span style={{ fontSize: '1.25rem', display: 'block', marginBottom: '0.25rem' }}>{ex.icon}</span>
+              <span style={{ display: 'block', marginBottom: '0.25rem', color: 'var(--color-accent)' }}>
+                <ex.Icon size={22} />
+              </span>
               <strong style={{ fontSize: '0.875rem' }}>{ex.label}</strong>
-              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-gray-1)', marginTop: '0.125rem' }}>
+              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.125rem' }}>
                 {ex.beschreibung}
               </span>
             </button>
@@ -160,8 +163,8 @@ export function Step0_Absicht({ state, dispatch }: Props) {
       {fehler && (
         <div style={{
           padding: '0.75rem 1rem',
-          background: '#ffebee',
-          color: '#c62828',
+          background: 'var(--color-error-bg)',
+          color: 'var(--color-error)',
           borderRadius: 'var(--radius)',
           marginBottom: '1rem',
           fontSize: '0.875rem',
@@ -184,14 +187,14 @@ export function Step0_Absicht({ state, dispatch }: Props) {
                 textAlign: 'left',
                 padding: '0.75rem 1rem',
                 borderRadius: 'var(--radius)',
-                border: typ === u.id ? '2px solid var(--color-accent)' : '1px solid var(--color-gray-2)',
-                background: typ === u.id ? '#f3e5f5' : 'white',
+                border: typ === u.id ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+                background: typ === u.id ? 'var(--color-highlight-bg)' : 'var(--color-bg-surface)',
                 cursor: 'pointer',
                 fontSize: '0.875rem',
               }}
             >
               <strong>{u.label}</strong>
-              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-gray-1)', marginTop: '0.125rem' }}>
+              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.125rem' }}>
                 {u.beschreibung}
               </span>
             </button>
@@ -212,8 +215,8 @@ export function Step0_Absicht({ state, dispatch }: Props) {
                   flex: 1,
                   padding: '0.5rem',
                   borderRadius: 'var(--radius)',
-                  border: fach === f ? '2px solid var(--color-accent)' : '1px solid var(--color-gray-2)',
-                  background: fach === f ? '#f3e5f5' : 'white',
+                  border: fach === f ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+                  background: fach === f ? 'var(--color-highlight-bg)' : 'var(--color-bg-surface)',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                 }}
@@ -234,8 +237,8 @@ export function Step0_Absicht({ state, dispatch }: Props) {
                   flex: 1,
                   padding: '0.5rem',
                   borderRadius: 'var(--radius)',
-                  border: stufe === s ? '2px solid var(--color-accent)' : '1px solid var(--color-gray-2)',
-                  background: stufe === s ? '#f3e5f5' : 'white',
+                  border: stufe === s ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+                  background: stufe === s ? 'var(--color-highlight-bg)' : 'var(--color-bg-surface)',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                 }}
@@ -250,7 +253,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
       {/* Thema */}
       <section style={{ marginBottom: '1.25rem' }}>
         <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-          Thema <span style={{ color: '#c62828' }}>*</span>
+          Thema <span style={{ color: 'var(--color-error)' }}>*</span>
         </label>
         <input
           type="text"
@@ -261,7 +264,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
             width: '100%',
             padding: '0.625rem 0.875rem',
             borderRadius: 'var(--radius)',
-            border: '1px solid var(--color-gray-2)',
+            border: '1px solid var(--color-border)',
             fontSize: '0.875rem',
           }}
         />
@@ -279,7 +282,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
               width: '100%',
               padding: '0.625rem 0.875rem',
               borderRadius: 'var(--radius)',
-              border: '1px solid var(--color-gray-2)',
+              border: '1px solid var(--color-border)',
               fontSize: '0.875rem',
             }}
           />
@@ -295,7 +298,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
               width: '100%',
               padding: '0.625rem 0.875rem',
               borderRadius: 'var(--radius)',
-              border: '1px solid var(--color-gray-2)',
+              border: '1px solid var(--color-border)',
               fontSize: '0.875rem',
             }}
           />
@@ -316,7 +319,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
               width: '100%',
               padding: '0.625rem 0.875rem',
               borderRadius: 'var(--radius)',
-              border: '1px solid var(--color-gray-2)',
+              border: '1px solid var(--color-border)',
               fontSize: '0.875rem',
             }}
           />
@@ -330,9 +333,9 @@ export function Step0_Absicht({ state, dispatch }: Props) {
               width: '100%',
               padding: '0.625rem 0.875rem',
               borderRadius: 'var(--radius)',
-              border: '1px solid var(--color-gray-2)',
+              border: '1px solid var(--color-border)',
               fontSize: '0.875rem',
-              background: 'white',
+              background: 'var(--color-bg-surface)',
             }}
           >
             {SCHWIERIGKEITEN.map((s) => (
@@ -352,7 +355,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
               width: '100%',
               padding: '0.625rem 0.875rem',
               borderRadius: 'var(--radius)',
-              border: '1px solid var(--color-gray-2)',
+              border: '1px solid var(--color-border)',
               fontSize: '0.875rem',
             }}
           />
@@ -364,7 +367,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
         <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
           Gewünschte Aufgabenarten (optional)
         </label>
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', margin: '0 0 0.5rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', margin: '0 0 0.5rem' }}>
           Wenn du nichts auswählst, entscheidet die App anhand des Typ-Profils.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -377,8 +380,8 @@ export function Step0_Absicht({ state, dispatch }: Props) {
                 style={{
                   padding: '0.375rem 0.75rem',
                   borderRadius: 'var(--radius)',
-                  border: aktiv ? '2px solid var(--color-accent)' : '1px solid var(--color-gray-2)',
-                  background: aktiv ? '#f3e5f5' : 'white',
+                  border: aktiv ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+                  background: aktiv ? 'var(--color-highlight-bg)' : 'var(--color-bg-surface)',
                   cursor: 'pointer',
                   fontSize: '0.8125rem',
                   display: 'flex',
@@ -386,7 +389,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
                   gap: '0.25rem',
                 }}
               >
-                <span>{bt.icon}</span>
+                <bt.Icon size={15} style={{ color: bt.color }} />
                 <span>{bt.label}</span>
               </button>
             );
@@ -399,7 +402,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
         <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
           Lernziele (optional)
         </label>
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', margin: '0 0 0.5rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', margin: '0 0 0.5rem' }}>
           Kommagetrennt, z. B. "Hauptgedanke erfassen, Stilmittel erkennen"
         </p>
         <input
@@ -411,7 +414,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
             width: '100%',
             padding: '0.625rem 0.875rem',
             borderRadius: 'var(--radius)',
-            border: '1px solid var(--color-gray-2)',
+            border: '1px solid var(--color-border)',
             fontSize: '0.875rem',
           }}
         />
@@ -429,7 +432,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
             width: '100%',
             padding: '0.625rem 0.875rem',
             borderRadius: 'var(--radius)',
-            border: '1px solid var(--color-gray-2)',
+            border: '1px solid var(--color-border)',
             fontSize: '0.875rem',
             resize: 'vertical',
           }}
@@ -439,7 +442,7 @@ export function Step0_Absicht({ state, dispatch }: Props) {
       {/* Zusammenfassung */}
       <div style={{
         padding: '1rem',
-        background: '#f5f5f5',
+        background: 'var(--color-bg-hover)',
         borderRadius: 'var(--radius)',
         marginBottom: '1.25rem',
         fontSize: '0.875rem',
@@ -463,9 +466,10 @@ export function Step0_Absicht({ state, dispatch }: Props) {
           fontWeight: 700,
           fontSize: '1rem',
           cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
         }}
       >
-        Skelett erstellen und fortfahren →
+        Skelett erstellen und fortfahren <ArrowRight size={17} />
       </button>
     </div>
   );

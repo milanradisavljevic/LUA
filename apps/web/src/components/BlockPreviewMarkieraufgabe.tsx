@@ -18,8 +18,8 @@ export function BlockPreviewMarkieraufgabe({ block, showSolution }: Props) {
         <strong>Arbeitsanweisung:</strong> {block.arbeitsanweisung}
       </p>
 
-      <div style={{ marginBottom: '0.75rem', padding: '0.75rem', border: '1px solid #BFBFBF', borderRadius: 4, fontSize: '10pt' }}>
-        <p style={{ marginBottom: '0.5rem', fontWeight: 600, fontSize: '9pt', color: '#595959' }}>
+      <div style={{ marginBottom: '0.75rem', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 4, fontSize: '10pt' }}>
+        <p style={{ marginBottom: '0.5rem', fontWeight: 600, fontSize: '9pt', color: 'var(--color-text-secondary)' }}>
           Markieranweisung:
         </p>
         <p>{config.anweisung}</p>
@@ -32,7 +32,7 @@ export function BlockPreviewMarkieraufgabe({ block, showSolution }: Props) {
             {stellen.map((stelle, i) => (
               <li key={i} style={{
                 fontStyle: 'italic', padding: '0.25rem 0',
-                borderBottom: '1px solid #F0F0F0',
+                borderBottom: '1px solid var(--color-border)',
               }}>
                 {stelle}
               </li>
@@ -42,7 +42,7 @@ export function BlockPreviewMarkieraufgabe({ block, showSolution }: Props) {
       )}
 
       {!showSolution && (
-        <p style={{ fontSize: '9pt', color: '#595959', fontStyle: 'italic', marginTop: '0.5rem' }}>
+        <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', fontStyle: 'italic', marginTop: '0.5rem' }}>
           (Bitte markiere die entsprechenden Stellen im Quelltext.)
         </p>
       )}

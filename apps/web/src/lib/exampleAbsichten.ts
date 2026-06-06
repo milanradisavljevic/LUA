@@ -1,10 +1,12 @@
 import type { Auftrag } from '@lehrunterlagen/schema';
+import type { LucideIcon } from 'lucide-react';
+import { GraduationCap, Languages, FileText, BookOpen, Clock } from 'lucide-react';
 
 export interface ExampleAbsicht {
   id: string;
   label: string;
   beschreibung: string;
-  icon: string;
+  Icon: LucideIcon;
   auftrag: Omit<Auftrag, 'quelltexte'>;
 }
 
@@ -13,7 +15,7 @@ export const EXAMPLE_ABSICHTEN: ExampleAbsicht[] = [
     id: 'matura-deutsch',
     label: 'Matura Deutsch',
     beschreibung: 'Oberstufe · Schularbeit · Faust / Medienkritik',
-    icon: '🎓',
+    Icon: GraduationCap,
     auftrag: {
       typ: 'schularbeit',
       fach: 'deutsch',
@@ -30,7 +32,7 @@ export const EXAMPLE_ABSICHTEN: ExampleAbsicht[] = [
     id: 'test-englisch',
     label: 'Test Englisch',
     beschreibung: 'Oberstufe · Test · American Dream',
-    icon: '🇺🇸',
+    Icon: Languages,
     auftrag: {
       typ: 'test',
       fach: 'englisch',
@@ -47,7 +49,7 @@ export const EXAMPLE_ABSICHTEN: ExampleAbsicht[] = [
     id: 'hausuebung-stilmittel',
     label: 'Hausübung Stilmittel',
     beschreibung: 'Unterstufe · Hausübung · Lyrik',
-    icon: '📝',
+    Icon: FileText,
     auftrag: {
       typ: 'hausuebung',
       fach: 'deutsch',
@@ -64,7 +66,7 @@ export const EXAMPLE_ABSICHTEN: ExampleAbsicht[] = [
     id: 'klassenarbeit-lesen',
     label: 'Klassenarbeit Lesen',
     beschreibung: 'Unterstufe · Klassenarbeit · Sachtext',
-    icon: '📚',
+    Icon: BookOpen,
     auftrag: {
       typ: 'schularbeit',
       fach: 'deutsch',
@@ -81,7 +83,7 @@ export const EXAMPLE_ABSICHTEN: ExampleAbsicht[] = [
     id: 'test-englisch-unterstufe',
     label: 'Test Englisch Unterstufe',
     beschreibung: 'Unterstufe · Test · Daily Routines',
-    icon: '🕐',
+    Icon: Clock,
     auftrag: {
       typ: 'test',
       fach: 'englisch',

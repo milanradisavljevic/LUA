@@ -33,7 +33,7 @@ export function BlockPreviewVerstaendnisfrage({ block, showSolution }: Props) {
             {showSolution && answer ? (
               <div style={{
                 fontStyle: 'italic', padding: '0.5rem', marginLeft: '1rem',
-                borderLeft: '3px solid #BFBFBF', fontSize: '10.5pt',
+                borderLeft: '3px solid var(--color-border)', fontSize: '10.5pt',
               }}>
                 {answer}
               </div>
@@ -42,7 +42,7 @@ export function BlockPreviewVerstaendnisfrage({ block, showSolution }: Props) {
                 {Array.from({ length: frage.zeilen }, (_, i) => (
                   <div key={i} style={{
                     height: lineHeightPx,
-                    borderBottom: '1px solid #BFBFBF',
+                    borderBottom: '1px solid var(--color-border)',
                     marginBottom: '0.125rem',
                   }} />
                 ))}

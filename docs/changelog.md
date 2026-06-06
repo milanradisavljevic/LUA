@@ -1,5 +1,75 @@
 # Changelog
 
+## 2026-06-06 — Claude (URL-Import-Qualität + Rebranding „LUA")
+
+**URL-Import liefert jetzt den Hauptinhalt** statt Navigations-/„Skip to content"-Müll (`src-tauri/src/commands/web.rs`):
+- Fokus auf das textreichste `<article>`/`<main>`-Element (`largest_element`, verschachtelungs-bewusst) — verwirft Menüs, Header, Footer, Sidebars.
+- Mehr Rausch-Elemente entfernt: zusätzlich `header`, `aside`, `form`, `button`.
+- **Bugfix:** `remove_element` ist jetzt tag-grenzen-bewusst (`is_tag_boundary`/`find_tag_open`) — `head` fraß vorher fälschlich `<header>` und konnte den restlichen Seiteninhalt verwerfen.
+- Bekannte Skip-/Navigations-Floskeln („Skip to content", „Zum Inhalt springen" …) werden als Zeilen verworfen.
+- Tests: `cargo test commands::web` 10 grün (+3).
+
+**Rebranding auf „LUA" (Lehrunterlagen-Applikation):**
+- Neue `components/BrandLogo.tsx`: Verlaufs-Logo-Chip („LUA", Indigo→Violett→Pink) + Verlaufs-Wortmarke.
+- Sidebar (statt „Natascha"/„Lehrunterlagen-Generator") und Header (statt „Lehrunterlagen-Tool") nutzen jetzt einheitlich Chip + „LUA"-Wortmarke.
+- Fenstertitel (`tauri.conf.json`), Browser-Title und Favicon (`index.html`) auf LUA umgestellt. `productName` (Binär-/Installer-Name) bewusst unverändert gelassen.
+- Verifikation: web `typecheck` clean, `build` EXIT 0.
+
+## 2026-06-06 — Claude (Fix: URL-Import — echte Fehlermeldung + 403-Härtung)
+
+Der URL-Import zeigte immer den generischen Text „URL konnte nicht abgerufen werden…", egal was wirklich schieflief.
+
+- **Ursache:** Tauri-`invoke` rejected mit dem rohen `Err`-**String** (kein `Error`). `Step1_Input.tsx` prüfte nur `err instanceof Error` → echte Meldung (403, „command not found", Netzwerk) wurde verschluckt. Jetzt wird der String-Reject behandelt und die konkrete Ursache angezeigt; reiner Browser (kein Tauri) bekommt „URL-Import ist nur in der Desktop-App verfügbar."
+- **Härtung `src-tauri/src/commands/web.rs`:** realistischer Chrome-User-Agent (statt Bot-UA, gegen 403 bei News-Seiten wie ORF) + `Accept`/`Accept-Language`-Header; Content-Type-Erkennung breiter (`application/xhtml+xml`, `application/xml`, generisch `text/*`).
+- **`src-tauri/Cargo.toml`:** reqwest-Features `brotli` + `deflate` (zusätzlich zu `gzip`) für zuverlässige Dekompression.
+- Verifikation: `cargo test commands::web` 7 grün, Crate kompiliert; web `typecheck` clean. Grenze: Consent-/JS-Seiten liefern ggf. nur die Gerüstseite → HTML-Upload bleibt Fallback.
+
+## 2026-06-06 — Claude (Stabile SVG-Icons statt Emojis + Settings-Konsolidierung)
+
+In der gepackten EXE rendern Emojis/Symbole nicht zuverlässig (WebView2 fällt nicht auf System-Emoji-Fonts zurück; gebündelt ist nur Ubuntu ohne Emoji-Glyphen). Umstellung auf echte SVG-Icons macht die Darstellung unabhängig von System-Fonts.
+
+- **Icon-System (`lucide-react`):** Alle UI-Icons, die 13 Block-Typ-Icons (`constants.ts`, jetzt `Icon: LucideIcon`), Beispiel-Icons (`exampleAbsichten.ts`), Sidebar, Wizard-Stepper, Pfeile (←/→), ✕/★/🗑/✓ und Status-Punkte (Datenschutz/Lernziel-Abdeckung) sind nun SVG-Komponenten. Betroffen u. a. `App.tsx`, `Sidebar.tsx`, `Step0`–`Step4`, `BlockCard.tsx`, `BlockConfigPanel.tsx`, `CommandPalette.tsx`, `PreviewTwoColumn.tsx`, `_DocumentList.tsx`, Preview-Komponenten.
+- **Safety net:** `index.css` `--font` um `Segoe UI Emoji`/`Symbol`/`Noto Color Emoji` ergänzt; `⚠️` aus `models.ts`-Strings entfernt (jetzt farbiger `Circle`-Indikator). Reusable `.spin`-Animation für Lade-Icons.
+- **Settings konsolidiert:** Neue `views/SettingsView.tsx` mit zwei Abschnitten — eingebettetes `SettingsPanel` (API-Schlüssel) + **Standard-Vorgaben** (Default-Anbieter/Modell/Kreativität/Sprache, persistiert via `loadSettings`/`saveSettings`, Key `lehrunterlagen-settings`). Belegt neue Dokumente vor (`useWizard` → `createInitialState`). Sidebar-Einträge „LLM-Anbieter" & „Feedback" entfernt; „Einstellungen" navigiert in die Ansicht (altes Modal entfällt).
+- **„Neue erstellen"** startet jetzt ein frisches Dokument (`RESET_STATE`, Rückfrage bei ungespeicherter Arbeit).
+- Verifikation: `typecheck` clean, `test` 32 grün (+3 Settings-Tests), `build` EXIT 0.
+
+## 2026-06-06 — Claude (Sidebar-Navigation: Dokumente, Vorlagen, Verlauf, Favoriten, Papierkorb, Hilfe)
+
+Die Sidebar war bisher reine Deko (alle Einträge „bald verfügbar"). Jetzt ein echter View-Router: `App.tsx` schaltet über `activeView` zwischen dem Assistenten (Wizard) und sechs neuen Ansichten um; Wizard-Kopf (Speichern/Vorlagen/Befehle), Stepper und Footer-Navigation erscheinen nur im Wizard-Modus.
+
+- **Datenmodell (`apps/web/src/lib/types.ts`):** `ActiveView`, `SavedDocument`, `DocumentSnapshot`, `HistoryEntry` + Reducer-Actions `RESET_STATE`/`LOAD_SNAPSHOT`/`SET_DOCUMENT_ID` und `AppState.aktuelleDokumentId`.
+- **Persistenz (`apps/web/src/lib/storage.ts`, neu):** defensive Load/Save-Helfer für zwei neue localStorage-Keys `lehrunterlagen-documents` + `lehrunterlagen-history` (`upsertDocument`, `appendHistoryEntry`, `snapshotFromState`); `lehrunterlagen-templates` bleibt unverändert. Tests +6 (`storage.test.ts`).
+- **Reducer (`useWizard.ts`):** `LOAD_SNAPSHOT` ersetzt den State atomar (landet auf `generate` bzw. `baukasten`), inkl. `auftrag` im Snapshot (sonst blockiert `canGoNext`).
+- **Hooks:** `useDocuments` (toggleFavorite/softDelete/restore/purge/purgeAllDeleted); `useExport` schreibt nach erfolgreichem DOCX-Export einen Verlaufseintrag.
+- **Views (`apps/web/src/views/`, neu):** DocumentsView, FavoritesView, TrashView (Soft-Delete/Wiederherstellen/Papierkorb leeren), HistoryView (read-only), TemplatesView (Grid + Import/Export, teilt Storage-Key mit dem Header-Modal), HelpView (Shortcuts + Workflow); geteilt: `_ViewShell`, `_DocumentList`.
+- **Sidebar:** echte Navigation statt „bald"-Badges; `Hilfe` navigiert, `API-Schlüssel` öffnet weiter das Modal, restliche Settings bleiben deaktiviert.
+- **Speichern:** „💾 Speichern"-Button im Wizard-Header (Re-Save überschreibt via `aktuelleDokumentId`).
+- Verifikation: `pnpm --filter @lehrunterlagen/web typecheck` clean, `test` 29 grün, `build` EXIT 0.
+
+## 2026-06-06 — Claude + Kimi (Runde „Politur + Import": UX-Brüche & halbfertige Funktionen vor dem Lehrer-Test)
+
+Gemeinsame Runde nach Milans Durchklicken. Aufteilung: Claude = Prompt-Vertrag/Rust/Mechanik/Spec, Kimi = Frontend-Politur (gegen Claudes Fassaden).
+
+**Claude (A–E):**
+- **A — `meta.notizen` wirkt jetzt:** Bisher wurde das Notizen-Feld zwar im User-JSON mitgeschickt, aber der Prompt forderte nie, es zu befolgen. Neue System-Prompt-Regel „NOTIZEN DER LEHRKRAFT" (Wünsche berücksichtigen, aber **nie** Format/config/Sicherheit überschreiben) + User-Hinweis bei gesetzten Notizen (`packages/llm/src/prompt.ts`). Tests +3 (`prompt.test.ts`).
+- **B — URL-Import:** Neuer Rust-Command `fetch_url` (`src-tauri/src/commands/web.rs`), server-seitig (umgeht CORS), HTML→Lesetext (script/style/nav/footer raus, Block-Tags → Umbrüche, Entity-Decode, Whitespace-Normalisierung), Längenkappung 50k, deutsche Fehler. Registriert in `main.rs`/`mod.rs`. `cargo test` +7.
+- **C — PDF-Upload aktiviert:** pdfjs-Worker für Vite verdrahtet + `apps/web/src/vite-env.d.ts` (`?url`/Asset-Typen).
+- **D — Beispieldaten-Schutz:** `apps/web/src/lib/beispieldaten.ts` (`istNochBeispiel`/`beispielBloecke`, Schema-frei) + nicht-blockierende Export-Warnung in `useExport`. Tests +4.
+- **E — Drive-Design-Spec:** `docs/drive-integration-spec.md` (OAuth/PKCE über Tauri-Loopback, `drive.file`+Picker, Keystore-Token, UX, Fehlerfälle, Aufwand). Nur Spec, Bau nach Lehrer-Feedback.
+
+**Kimi (F–J):**
+- **F — Step 1 entrümpelt:** Doppelte meta-Felder (stufe/fach/thema/klasse/datum/notizen) → read-only Review-Karte + „Bearbeiten" (springt zu Step 0). Step 1 fokussiert jetzt Quelltexte.
+- **G — Echte Logos:** Inline-SVGs ersetzt durch echte Anbieter-Logos aus `apps/web/src/assets/provider-logos/` (neue `ProviderLogo`-Komponente).
+- **H — Navigation:** `WizardStepper`-Schritte sind klickbar (freie Navigation).
+- **I — Import-UI + Kreativregler:** `.pdf`/URL im UI, HTML-Tag-Stripping (`lib/importText.ts`), URL-Feld → `fetch_url`; Kreativregler mit Klartext-Labels + Presets (`lib/creativity.ts`).
+- **J — Beispieldaten ausgrauen:** Beispiel-Blöcke grau + „Beispiel"-Badge; Step 4 warnt/sperrt Generierung, solange Beispiel-Blöcke übrig sind.
+
+- **Verifikation:** `pnpm -r build` EXIT 0; alle JS-Tests grün (Schema 103, Renderer 28, LLM 100, Input 17, QA 96, Web 23); `cargo test` 18 passed / 2 ignored (LibreOffice/Netz-Integration).
+- **Bewusst offen:** Drive-Implementierung (nur Spec), OCR für Scan-PDFs, PDF-Export-UX-Umbau, echtes Token-Streaming.
+
+---
+
 ## 2026-06-06 — Claude (Bugfix: leere meta.klasse + UX-Klarstellung Rätsel-Wörter)
 
 - **Vierter Direkteingabe-Bug behoben:** `meta.klasse` verlangte `min(1)` → jede Generierung mit leerem Klassenfeld scheiterte (`meta.klasse: String must contain at least 1 character(s)`), unabhängig vom Blocktyp. Fix: `klasse` darf leer sein (`packages/schema`); Renderer zeigt bei leerer Klasse im Titel nichts und im Schülerkopf eine Eintragelinie statt eines leeren Werts. Regressionstest + angepasster Schema-Test.

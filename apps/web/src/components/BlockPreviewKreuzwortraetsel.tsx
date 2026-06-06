@@ -23,7 +23,7 @@ export function BlockPreviewKreuzwortraetsel({ block, showSolution }: Props) {
       </p>
 
       {gitter.zeilen === 0 ? (
-        <p style={{ fontSize: '9pt', color: '#595959', fontStyle: 'italic' }}>
+        <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
           (Noch keine gültigen Einträge — mindestens zwei Wörter mit ≥ 2 Buchstaben nötig.)
         </p>
       ) : (
@@ -41,7 +41,7 @@ export function BlockPreviewKreuzwortraetsel({ block, showSolution }: Props) {
                     return (
                       <td key={c} style={{
                         position: 'relative', width: CELL, height: CELL,
-                        border: '1px solid #000', textAlign: 'center', verticalAlign: 'middle',
+                        border: '1px solid var(--color-text-primary)', textAlign: 'center', verticalAlign: 'middle',
                         fontSize: '11pt', fontWeight: 700, background: '#fff',
                       }}>
                         {num !== null && (

@@ -1,10 +1,15 @@
 import { useState } from 'react';
+import {
+  Loader2, Sparkles, FileDown, ClipboardList, FileType, CheckCircle2,
+  AlertTriangle, Timer, Bot, X,
+} from 'lucide-react';
 import type { AppState, AppAction } from '../lib/types';
 import { getBlockLabel } from '../lib/blockDefaults';
 import { PreviewTwoColumn } from './PreviewTwoColumn';
 import { useGenerate } from '../hooks/useGenerate';
 import { useExport } from '../hooks/useExport';
 import { usePdfExport } from '../hooks/usePdfExport';
+import { beispielBloecke } from '../lib/beispieldaten';
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
@@ -17,7 +22,7 @@ interface Props {
 
 export function Step4_Generate({ state, dispatch }: Props) {
   const { generate, cancel, generating, stage, elapsedMs, aktiverProvider, error: generateError } = useGenerate(dispatch);
-  const { exportDocx, exportKorrekturraster, exporting, error: exportError, lastSavedPaths } = useExport();
+  const { exportDocx, exportKorrekturraster, exporting, error: exportError, warnung: exportWarnung, lastSavedPaths } = useExport();
   const pdfExport = usePdfExport();
   const [showPdfHint, setShowPdfHint] = useState(false);
 
@@ -41,7 +46,9 @@ export function Step4_Generate({ state, dispatch }: Props) {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
-  const canGenerate = state.quelltexte.length > 0 && state.bloecke.length > 0 && !!state.llmProvider;
+  const exampleBlockIds = beispielBloecke(state.bloecke);
+  const hasExampleBlocks = exampleBlockIds.length > 0;
+  const canGenerate = state.quelltexte.length > 0 && state.bloecke.length > 0 && !!state.llmProvider && !hasExampleBlocks;
   const canExport = !!state.generiertesDokument;
   const error = generateError ?? exportError ?? pdfExport.error;
 
@@ -58,7 +65,7 @@ export function Step4_Generate({ state, dispatch }: Props) {
       }}>
         {/* Zusammenfassung */}
         <div style={{
-          padding: '1rem', border: '1px solid var(--color-gray-2)',
+          padding: '1rem', border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius)',
         }}>
           <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Zusammenfassung</h3>
@@ -72,7 +79,7 @@ export function Step4_Generate({ state, dispatch }: Props) {
                 ['KI-Modell', state.llmProvider ? `${state.llmProvider} (${state.modelName})` : '—'],
               ].map(([label, value]) => (
                 <tr key={label}>
-                  <td style={{ padding: '0.25rem 0.5rem', color: 'var(--color-gray-1)', width: 110 }}>{label}</td>
+                  <td style={{ padding: '0.25rem 0.5rem', color: 'var(--color-text-secondary)', width: 110 }}>{label}</td>
                   <td style={{ padding: '0.25rem 0.5rem' }}><strong>{value}</strong></td>
                 </tr>
               ))}
@@ -82,7 +89,7 @@ export function Step4_Generate({ state, dispatch }: Props) {
 
         {/* Aktionen */}
         <div style={{
-          padding: '1rem', border: '1px solid var(--color-gray-2)',
+          padding: '1rem', border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius)', display: 'flex',
           flexDirection: 'column', gap: '0.75rem', justifyContent: 'center',
         }}>
@@ -91,9 +98,12 @@ export function Step4_Generate({ state, dispatch }: Props) {
             className="btn-primary"
             onClick={() => generate(state)}
             disabled={!canGenerate || generating || exporting}
-            style={{ padding: '0.65rem 1.25rem', fontSize: '0.9375rem' }}
+            style={{ padding: '0.65rem 1.25rem', fontSize: '0.9375rem',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
           >
-            {generating ? '⏳ Inhalt wird generiert…' : '✨ Inhalt generieren'}
+            {generating
+              ? <><Loader2 size={16} className="spin" /> Inhalt wird generiert…</>
+              : <><Sparkles size={16} /> Inhalt generieren</>}
           </button>
 
           {/* Schritt 2: Exportieren */}
@@ -102,9 +112,12 @@ export function Step4_Generate({ state, dispatch }: Props) {
             onClick={() => exportDocx(state)}
             disabled={!canExport || exporting || generating}
             style={{ padding: '0.65rem 1.25rem', fontSize: '0.9375rem',
-              opacity: canExport ? 1 : 0.45 }}
+              opacity: canExport ? 1 : 0.45,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
           >
-            {exporting ? 'Exportiere…' : '📄 Beide Dokumente exportieren'}
+            {exporting
+              ? <><Loader2 size={16} className="spin" /> Exportiere…</>
+              : <><FileDown size={16} /> Beide Dokumente exportieren</>}
           </button>
 
           {/* Schritt 3: Korrekturraster */}
@@ -113,9 +126,10 @@ export function Step4_Generate({ state, dispatch }: Props) {
             onClick={() => exportKorrekturraster(state)}
             disabled={!canExport || exporting || generating}
             style={{ padding: '0.65rem 1.25rem', fontSize: '0.9375rem',
-              opacity: canExport ? 1 : 0.45, borderStyle: 'dashed' }}
+              opacity: canExport ? 1 : 0.45, borderStyle: 'dashed',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
           >
-            📋 Korrekturraster exportieren
+            <ClipboardList size={16} /> Korrekturraster exportieren
           </button>
 
           {/* PDF-Export */}
@@ -130,33 +144,38 @@ export function Step4_Generate({ state, dispatch }: Props) {
             }}
             disabled={!canExport || pdfExport.converting}
             style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem',
-              opacity: canExport ? 1 : 0.45, borderStyle: 'dotted' }}
+              opacity: canExport ? 1 : 0.45, borderStyle: 'dotted',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
           >
-            {pdfExport.converting ? '⏳ PDF wird erstellt…' : '📕 Als PDF speichern'}
+            {pdfExport.converting
+              ? <><Loader2 size={15} className="spin" /> PDF wird erstellt…</>
+              : <><FileType size={15} /> Als PDF speichern</>}
           </button>
 
           {lastSavedPaths && (
             <div style={{
               padding: '0.5rem 0.75rem',
-              background: '#e8f5e9',
+              background: 'var(--color-success-bg)',
               borderRadius: 'var(--radius)',
               fontSize: '0.75rem',
               lineHeight: 1.5,
             }}>
-              <strong>✓ Dateien heruntergeladen:</strong>
+              <strong style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                <CheckCircle2 size={14} color="var(--color-success)" /> Dateien heruntergeladen:
+              </strong>
               <ul style={{ margin: '0.25rem 0 0 1.25rem', padding: 0 }}>
                 {lastSavedPaths.map((name) => (
                   <li key={name}>{name}</li>
                 ))}
               </ul>
-              <p style={{ fontSize: '0.7rem', color: 'var(--color-gray-1)', margin: '0.25rem 0 0 0' }}>
+              <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', margin: '0.25rem 0 0 0' }}>
                 Suchen Sie im Ordner "Downloads" Ihres Computers.
               </p>
             </div>
           )}
 
           {canExport && !lastSavedPaths && (
-            <p style={{ fontSize: '0.7rem', color: 'var(--color-gray-1)', textAlign: 'center', margin: 0 }}>
+            <p style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', textAlign: 'center', margin: 0 }}>
               Schülerfassung + Lösung + Korrekturraster als DOCX
             </p>
           )}
@@ -165,9 +184,24 @@ export function Step4_Generate({ state, dispatch }: Props) {
             <p style={{ color: 'var(--color-error)', fontSize: '0.75rem', margin: 0 }}>{error}</p>
           )}
 
+          {exportWarnung && (
+            <p style={{
+              color: 'var(--color-warning)', background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning)',
+              borderRadius: 'var(--radius)', padding: '0.5rem 0.625rem', fontSize: '0.75rem', margin: 0,
+              display: 'flex', alignItems: 'center', gap: '0.375rem',
+            }}>
+              <AlertTriangle size={14} style={{ flexShrink: 0 }} /> {exportWarnung}
+            </p>
+          )}
+
           {!canGenerate && (
-            <p style={{ color: 'var(--color-gray-1)', fontSize: '0.75rem', textAlign: 'center', margin: 0 }}>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', textAlign: 'center', margin: 0 }}>
               Quelltexte, Aufgabenblöcke und KI-Modell erforderlich.
+            </p>
+          )}
+          {hasExampleBlocks && (
+            <p style={{ color: 'var(--color-warning)', fontSize: '0.75rem', textAlign: 'center', margin: 0 }}>
+              {exampleBlockIds.length} Aufgabenblock{exampleBlockIds.length === 1 ? '' : 'e'} enthalten noch Beispieldaten. Bitte im Baukasten ersetzen.
             </p>
           )}
         </div>
@@ -176,13 +210,13 @@ export function Step4_Generate({ state, dispatch }: Props) {
       {/* Wartebildschirm */}
       {generating && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.96)',
+          position: 'fixed', inset: 0, background: 'var(--color-bg-backdrop)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 200,
         }}>
           {/* Spinner */}
           <div style={{
             width: 48, height: 48,
-            border: '4px solid var(--color-gray-3)',
+            border: '4px solid var(--color-bg-base)',
             borderTop: '4px solid var(--color-accent)',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
@@ -200,7 +234,7 @@ export function Step4_Generate({ state, dispatch }: Props) {
           {/* Fortschrittsbalken */}
           <div style={{
             width: 280, height: 6,
-            background: 'var(--color-gray-3)',
+            background: 'var(--color-bg-base)',
             borderRadius: 3,
             marginBottom: '1rem',
             overflow: 'hidden',
@@ -217,15 +251,21 @@ export function Step4_Generate({ state, dispatch }: Props) {
           {/* Timer + Provider */}
           <div style={{
             display: 'flex', gap: '1rem',
-            fontSize: '0.8125rem', color: 'var(--color-gray-1)',
+            fontSize: '0.8125rem', color: 'var(--color-text-secondary)',
             marginBottom: '1.5rem',
           }}>
-            <span>⏱ {formatTime(elapsedMs)}</span>
-            {aktiverProvider && <span>🤖 {aktiverProvider}</span>}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+              <Timer size={14} /> {formatTime(elapsedMs)}
+            </span>
+            {aktiverProvider && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                <Bot size={14} /> {aktiverProvider}
+              </span>
+            )}
           </div>
 
           {/* Hinweis */}
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-gray-1)', maxWidth: 360, textAlign: 'center', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', maxWidth: 360, textAlign: 'center', lineHeight: 1.5, marginBottom: '1.5rem' }}>
             Das Generieren der Inhalte kann bis zu 2 Minuten dauern, je nach Modell und Komplexität.
           </p>
 
@@ -233,9 +273,10 @@ export function Step4_Generate({ state, dispatch }: Props) {
           <button
             className="btn-secondary"
             onClick={cancel}
-            style={{ fontSize: '0.8125rem', padding: '0.4rem 1rem' }}
+            style={{ fontSize: '0.8125rem', padding: '0.4rem 1rem',
+              display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
           >
-            ✕ Abbrechen
+            <X size={14} /> Abbrechen
           </button>
         </div>
       )}
@@ -243,12 +284,12 @@ export function Step4_Generate({ state, dispatch }: Props) {
       {/* PDF-Wartebildschirm (separat, einfacher) */}
       {pdfExport.converting && !generating && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.92)',
+          position: 'fixed', inset: 0, background: 'var(--color-bg-backdrop)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 200,
         }}>
           <div style={{
             width: 48, height: 48,
-            border: '4px solid var(--color-gray-3)',
+            border: '4px solid var(--color-bg-base)',
             borderTop: '4px solid var(--color-accent)',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
@@ -257,7 +298,7 @@ export function Step4_Generate({ state, dispatch }: Props) {
           <h3 style={{ marginBottom: '0.5rem', fontSize: '1.125rem' }}>
             PDF wird erstellt…
           </h3>
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-gray-1)', maxWidth: 360, textAlign: 'center', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', maxWidth: 360, textAlign: 'center', lineHeight: 1.5 }}>
             LibreOffice konvertiert das Dokument. Dies dauert in der Regel wenige Sekunden.
           </p>
         </div>
@@ -265,13 +306,14 @@ export function Step4_Generate({ state, dispatch }: Props) {
 
       {/* Zweispaltige Vorschau */}
       {state.bloecke.length > 0 && (
-        <div style={{ borderTop: '2px solid var(--color-gray-2)', paddingTop: '1rem' }}>
+        <div style={{ borderTop: '2px solid var(--color-border)', paddingTop: '1rem' }}>
           <h3 style={{ fontSize: '0.9375rem', marginBottom: '0.75rem' }}>
             Vorschau
             {state.generiertesDokument && (
               <span style={{ fontSize: '0.75rem', color: 'var(--color-accent)',
-                marginLeft: '0.75rem', fontWeight: 400 }}>
-                ✓ mit generiertem Inhalt
+                marginLeft: '0.75rem', fontWeight: 400,
+                display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <CheckCircle2 size={13} /> mit generiertem Inhalt
               </span>
             )}
           </h3>
@@ -282,12 +324,12 @@ export function Step4_Generate({ state, dispatch }: Props) {
       {/* PDF-Hinweis Modal (Browser-Dev) */}
       {showPdfHint && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          position: 'fixed', inset: 0, background: 'var(--color-overlay)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
         }} onClick={() => setShowPdfHint(false)}>
           <div style={{
-            background: 'white', padding: '1.5rem', borderRadius: 'var(--radius)',
-            maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            background: 'var(--color-bg-surface)', padding: '1.5rem', borderRadius: 'var(--radius)',
+            maxWidth: 420, width: '90%', boxShadow: '0 8px 32px var(--color-shadow)',
           }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: '0.75rem' }}>PDF erstellen</h3>
             <p style={{ fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '1rem' }}>
@@ -297,7 +339,7 @@ export function Step4_Generate({ state, dispatch }: Props) {
             <ol style={{ fontSize: '0.875rem', lineHeight: 1.6, paddingLeft: '1.25rem', marginBottom: '1.25rem' }}>
               <li>Laden Sie die DOCX-Datei herunter.</li>
               <li>Öffnen Sie sie in <strong>Microsoft Word</strong> oder <strong>LibreOffice Writer</strong>.</li>
-              <li>Wählen Sie <em>Datei → Als PDF exportieren</em> (oder Drucken → Als PDF speichern).</li>
+              <li>Wählen Sie <em>Datei &rsaquo; Als PDF exportieren</em> (oder Drucken &rsaquo; Als PDF speichern).</li>
             </ol>
             <button
               className="btn-primary"
@@ -313,17 +355,17 @@ export function Step4_Generate({ state, dispatch }: Props) {
       {/* PDF-Pfad-Input Modal (Tauri) */}
       {pdfExport.showPathInput && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          position: 'fixed', inset: 0, background: 'var(--color-overlay)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
         }} onClick={pdfExport.closePathInput}>
           <div style={{
-            background: 'white', padding: '1.5rem', borderRadius: 'var(--radius)',
-            maxWidth: 520, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            background: 'var(--color-bg-surface)', padding: '1.5rem', borderRadius: 'var(--radius)',
+            maxWidth: 520, width: '90%', boxShadow: '0 8px 32px var(--color-shadow)',
           }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: '0.5rem' }}>PDF aus DOCX erstellen</h3>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--color-gray-1)', marginBottom: '1rem' }}>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
               Geben Sie den vollständigen Pfad zur DOCX-Datei ein.
-              Beispiel: <code style={{ background: 'var(--color-gray-3)', padding: '0.125rem 0.25rem', borderRadius: '4px' }}>C:\Users\…\Downloads\Datei.docx</code>
+              Beispiel: <code style={{ background: 'var(--color-bg-base)', padding: '0.125rem 0.25rem', borderRadius: '4px' }}>C:\Users\…\Downloads\Datei.docx</code>
             </p>
 
             <input
@@ -337,18 +379,20 @@ export function Step4_Generate({ state, dispatch }: Props) {
 
             {pdfExport.pdfPath && (
               <div style={{
-                padding: '0.75rem', background: '#e8f5e9', borderRadius: 'var(--radius)',
+                padding: '0.75rem', background: 'var(--color-success-bg)', borderRadius: 'var(--radius)',
                 marginBottom: '0.75rem', fontSize: '0.8125rem',
               }}>
-                <strong>✓ PDF erstellt:</strong><br />
+                <strong style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <CheckCircle2 size={14} color="var(--color-success)" /> PDF erstellt:
+                </strong><br />
                 <code style={{ wordBreak: 'break-all' }}>{pdfExport.pdfPath}</code>
               </div>
             )}
 
             {pdfExport.error && (
               <div style={{
-                padding: '0.75rem', background: '#ffebee', borderRadius: 'var(--radius)',
-                marginBottom: '0.75rem', fontSize: '0.8125rem', color: '#c62828',
+                padding: '0.75rem', background: 'var(--color-error-bg)', borderRadius: 'var(--radius)',
+                marginBottom: '0.75rem', fontSize: '0.8125rem', color: 'var(--color-error)',
               }}>
                 {pdfExport.error}
               </div>
@@ -359,9 +403,12 @@ export function Step4_Generate({ state, dispatch }: Props) {
                 className="btn-primary"
                 onClick={pdfExport.convertToPdf}
                 disabled={pdfExport.converting}
-                style={{ flex: 1, padding: '0.5rem' }}
+                style={{ flex: 1, padding: '0.5rem',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
               >
-                {pdfExport.converting ? '⏳ Erstelle PDF…' : 'PDF erstellen'}
+                {pdfExport.converting
+                  ? <><Loader2 size={15} className="spin" /> Erstelle PDF…</>
+                  : 'PDF erstellen'}
               </button>
               <button
                 className="btn-secondary"

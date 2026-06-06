@@ -30,7 +30,7 @@ export function BlockPreviewWortgitter({ block, showSolution }: Props) {
       </p>
 
       {gitter.zeilen === 0 ? (
-        <p style={{ fontSize: '9pt', color: '#595959', fontStyle: 'italic' }}>
+        <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
           (Noch keine gültigen Wörter — mindestens zwei Wörter mit ≥ 2 Buchstaben nötig.)
         </p>
       ) : (
@@ -43,10 +43,10 @@ export function BlockPreviewWortgitter({ block, showSolution }: Props) {
                     const markiert = loesungsZellen.has(`${r},${c}`);
                     return (
                       <td key={c} style={{
-                        width: CELL, height: CELL, border: '1px solid #ccc',
+                        width: CELL, height: CELL, border: '1px solid var(--color-border)',
                         textAlign: 'center', verticalAlign: 'middle', fontSize: '10pt',
                         fontWeight: markiert ? 700 : 400,
-                        background: markiert ? '#D9D9D9' : '#fff',
+                        background: markiert ? 'var(--color-border)' : '#ffffff',
                       }}>
                         {letter}
                       </td>

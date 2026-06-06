@@ -28,3 +28,10 @@ offene Punkte.txt
 
 # Temporäre Dateien
 DOC-*
+
+# Lokale Arbeitsartefakte (Screenshots, Mockups, gespeicherte Test-Webseiten, Icon-Quellen)
+Icons für LLMs/
+Screenshot*.png
+Ursprüngliches Mockup.png
+*.ORF.at.html
+*_files/

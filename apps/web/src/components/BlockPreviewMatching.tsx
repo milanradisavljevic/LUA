@@ -1,3 +1,4 @@
+import { ArrowRight } from 'lucide-react';
 import type { Block } from '@lehrunterlagen/schema';
 
 interface Props {
@@ -34,16 +35,16 @@ export function BlockPreviewMatching({ block, showSolution }: Props) {
         <tbody>
           {items.map((item: { nr: number; prompt: string }) => (
             <tr key={item.nr}>
-              <td style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid #BFBFBF', width: '40%' }}>
+              <td style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid var(--color-border)', width: '40%' }}>
                 {item.nr}. {item.prompt}
               </td>
-              <td style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid #BFBFBF' }}>
+              <td style={{ padding: '0.375rem 0.5rem', borderBottom: '1px solid var(--color-border)' }}>
                 {showSolution && zuordnung[String(item.nr)] ? (
-                  <span style={{ fontStyle: 'italic', color: '#000' }}>
-                    → {zuordnung[String(item.nr)]}
+                  <span style={{ fontStyle: 'italic', color: '#000', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <ArrowRight size={13} /> {zuordnung[String(item.nr)]}
                   </span>
                 ) : (
-                  <span style={{ color: '#BFBFBF' }}>(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+                  <span style={{ color: 'var(--color-border)' }}>(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
                 )}
               </td>
             </tr>
@@ -56,7 +57,7 @@ export function BlockPreviewMatching({ block, showSolution }: Props) {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' }}>
           {optionen.map((opt: { key: string; text: string }) => (
             <span key={opt.key} style={{
-              padding: '0.25rem 0.5rem', border: '1px solid #BFBFBF',
+              padding: '0.25rem 0.5rem', border: '1px solid var(--color-border)',
               borderRadius: 3, fontSize: '10pt',
             }}>
               {opt.key}: {opt.text}

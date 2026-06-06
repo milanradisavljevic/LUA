@@ -4,6 +4,25 @@ export type StepId = 'absicht' | 'input' | 'baukasten' | 'llm' | 'generate';
 
 export type LlmProvider = 'claude' | 'chatgpt' | 'kimi' | 'deepseek' | 'mistral' | 'qwen';
 
+/** Welche Hauptansicht in der Sidebar gerade aktiv ist. */
+export type ActiveView =
+  | 'wizard'
+  | 'documents'
+  | 'templates'
+  | 'history'
+  | 'favorites'
+  | 'trash'
+  | 'settings'
+  | 'help';
+
+/** Persistierte Standard-Vorgaben, die neue Dokumente vorbelegen. */
+export interface AppSettings {
+  defaultProvider: LlmProvider;
+  defaultModel: string;
+  defaultKreativitaet: number;
+  defaultAusgabeSprache: string;
+}
+
 export interface AppState {
   step: StepId;
   auftrag: Auftrag | null;
@@ -16,6 +35,48 @@ export interface AppState {
   modelName: string;
   kreativitaet: number;
   ausgabeSprache: string;
+  /** id des aktuell geladenen gespeicherten Dokuments (für Re-Save), sonst null. */
+  aktuelleDokumentId: string | null;
+}
+
+/** Vollständiger Wizard-Zustand ohne UI-/Navigationsfelder — persistierbar. */
+export interface DocumentSnapshot {
+  auftrag: Auftrag | null;
+  meta: Meta;
+  quelltexte: QuellText[];
+  bloecke: Block[];
+  generiertesDokument: DocumentV1 | null;
+  llmProvider: LlmProvider | null;
+  modelName: string;
+  kreativitaet: number;
+  ausgabeSprache: string;
+}
+
+/** Ein in localStorage gespeichertes Dokument (Wizard-Snapshot + Metadaten). */
+export interface SavedDocument {
+  id: string;
+  title: string;
+  savedAt: string;
+  updatedAt: string;
+  isFavorite: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  snapshot: DocumentSnapshot;
+}
+
+/** Read-only Protokolleintrag nach erfolgreichem Export. */
+export interface HistoryEntry {
+  id: string;
+  timestamp: string;
+  thema: string;
+  fach: Meta['fach'];
+  stufe: Meta['stufe'];
+  llmProvider: LlmProvider | null;
+  modelName: string;
+  blockCount: number;
+  totalPunkte: number;
+  exportedFiles: string[];
+  savedDocumentId: string | null;
 }
 
 export const STEPS: { id: StepId; label: string }[] = [
@@ -42,4 +103,7 @@ export type AppAction =
   | { type: 'SET_KREATIVITAET'; value: number }
   | { type: 'SET_AUSGABE_SPRACHE'; value: string }
   | { type: 'SET_GENERIERTES_DOKUMENT'; dokument: DocumentV1 | null }
-  | { type: 'UPDATE_GENERIERTER_BLOCK'; id: string; block: Partial<Block> };
+  | { type: 'UPDATE_GENERIERTER_BLOCK'; id: string; block: Partial<Block> }
+  | { type: 'RESET_STATE' }
+  | { type: 'LOAD_SNAPSHOT'; snapshot: DocumentSnapshot; documentId: string }
+  | { type: 'SET_DOCUMENT_ID'; id: string | null };

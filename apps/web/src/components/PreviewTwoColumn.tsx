@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AlertTriangle, CheckCircle2, Check, Circle, Pencil, RefreshCw } from 'lucide-react';
 import type { Block } from '@lehrunterlagen/schema';
 import type { AppState, AppAction } from '../lib/types';
 import { BlockPreview } from './BlockPreview';
@@ -54,8 +55,8 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
   const headerStyle: React.CSSProperties = {
     fontFamily: 'var(--font)',
     fontSize: '10pt',
-    color: '#595959',
-    borderBottom: '1px solid #BFBFBF',
+    color: 'var(--color-text-secondary)',
+    borderBottom: '1px solid var(--color-border)',
     paddingBottom: '0.375rem',
     marginBottom: '0.75rem',
     display: 'flex',
@@ -74,10 +75,10 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
   const renderKopf = () => (
     <>
       <div style={{
-        border: '1px solid #000', padding: '0.4rem 0.6rem', fontSize: '10pt',
+        border: '1px solid var(--color-text-primary)', padding: '0.4rem 0.6rem', fontSize: '10pt',
         marginBottom: '0.75rem', display: 'flex', gap: '1.25rem', flexWrap: 'wrap',
       }}>
-        <span><strong>Name:</strong> <span style={{ borderBottom: '1px solid #000', display: 'inline-block', minWidth: '8rem' }}>&nbsp;</span></span>
+        <span><strong>Name:</strong> <span style={{ borderBottom: '1px solid var(--color-text-primary)', display: 'inline-block', minWidth: '8rem' }}>&nbsp;</span></span>
         <span><strong>Klasse:</strong> {meta.klasse || '—'}</span>
         <span><strong>Datum:</strong> {meta.datum ? formatDatum(meta.datum) : '—'}</span>
       </div>
@@ -86,24 +87,24 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
           <p style={{ fontWeight: 600, fontSize: '11pt', marginBottom: '0.25rem' }}>Aufgabenübersicht</p>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
             <thead>
-              <tr style={{ background: '#D9D9D9' }}>
-                <th style={{ border: '1px solid #000', padding: '2px 6px', textAlign: 'left', width: '10%' }}>Nr.</th>
-                <th style={{ border: '1px solid #000', padding: '2px 6px', textAlign: 'left' }}>Aufgabe</th>
-                <th style={{ border: '1px solid #000', padding: '2px 6px', textAlign: 'right', width: '22%' }}>Punkte</th>
+              <tr style={{ background: 'var(--color-border)' }}>
+                <th style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'left', width: '10%' }}>Nr.</th>
+                <th style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'left' }}>Aufgabe</th>
+                <th style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'right', width: '22%' }}>Punkte</th>
               </tr>
             </thead>
             <tbody>
               {bloecke.map((b, i) => (
                 <tr key={b.id}>
-                  <td style={{ border: '1px solid #000', padding: '2px 6px' }}>{i + 1}</td>
-                  <td style={{ border: '1px solid #000', padding: '2px 6px' }}>{BLOCK_LABELS[b.typ] ?? b.typ}</td>
-                  <td style={{ border: '1px solid #000', padding: '2px 6px', textAlign: 'right' }}>____ / {b.punkte}</td>
+                  <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px' }}>{i + 1}</td>
+                  <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px' }}>{BLOCK_LABELS[b.typ] ?? b.typ}</td>
+                  <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'right' }}>____ / {b.punkte}</td>
                 </tr>
               ))}
-              <tr style={{ background: '#F2F2F2', fontWeight: 700 }}>
-                <td style={{ border: '1px solid #000', padding: '2px 6px' }}></td>
-                <td style={{ border: '1px solid #000', padding: '2px 6px' }}>GESAMT</td>
-                <td style={{ border: '1px solid #000', padding: '2px 6px', textAlign: 'right' }}>____ / {gesamtPunkte}</td>
+              <tr style={{ background: 'var(--color-bg-hover)', fontWeight: 700 }}>
+                <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px' }}></td>
+                <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px' }}>GESAMT</td>
+                <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'right' }}>____ / {gesamtPunkte}</td>
               </tr>
             </tbody>
           </table>
@@ -123,11 +124,11 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
           <div key={qt.id} style={{ marginTop: '0.5rem' }}>
             <p style={{ fontWeight: 600, fontSize: '11pt' }}>Text {i + 1}: {qt.titel || `Quelltext ${i + 1}`}</p>
             {qt.herkunft?.ref && (
-              <p style={{ fontSize: '9pt', fontStyle: 'italic', color: '#595959', margin: '0.1rem 0' }}>nach: {qt.herkunft.ref}</p>
+              <p style={{ fontSize: '9pt', fontStyle: 'italic', color: 'var(--color-text-secondary)', margin: '0.1rem 0' }}>nach: {qt.herkunft.ref}</p>
             )}
             <p style={{
               fontSize: '10pt', lineHeight: 1.5, whiteSpace: 'pre-wrap',
-              borderLeft: '3px solid #BFBFBF', paddingLeft: '0.6rem', marginTop: '0.25rem',
+              borderLeft: '3px solid var(--color-border)', paddingLeft: '0.6rem', marginTop: '0.25rem',
             }}>
               {qt.inhalt}
             </p>
@@ -151,7 +152,7 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
   return (
     <div>
       {!doc && (
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginBottom: '0.75rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
           Skelett-Vorschau — nach dem Generieren erscheint hier der vollständige Inhalt.
         </p>
       )}
@@ -161,16 +162,18 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
         <div style={{
           marginBottom: '1rem',
           padding: '0.75rem 1rem',
-          background: fehlendeLernziele.length > 0 ? '#fff3e0' : '#e8f5e9',
+          background: fehlendeLernziele.length > 0 ? 'var(--color-warning-bg)' : 'var(--color-success-bg)',
           borderRadius: 'var(--radius)',
-          border: `1px solid ${fehlendeLernziele.length > 0 ? '#ffb74d' : '#81c784'}`,
+          border: `1px solid ${fehlendeLernziele.length > 0 ? 'var(--color-warning)' : 'var(--color-success)'}`,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '1rem' }}>{fehlendeLernziele.length > 0 ? '⚠️' : '✅'}</span>
+            {fehlendeLernziele.length > 0
+              ? <AlertTriangle size={16} style={{ color: 'var(--color-warning)' }} />
+              : <CheckCircle2 size={16} color="var(--color-success)" />}
             <strong style={{ fontSize: '0.875rem' }}>
               Lernziel-Abdeckung
             </strong>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
               ({abgedeckteLernziele.size}/{gewuenschteLernziele.length} abgedeckt)
             </span>
           </div>
@@ -190,22 +193,22 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
                     fontSize: '0.75rem',
                     padding: '0.2rem 0.5rem',
                     borderRadius: 'var(--radius)',
-                    background: istAbgedeckt ? '#e8f5e9' : '#ffebee',
-                    color: istAbgedeckt ? '#2e7d32' : '#c62828',
-                    border: `1px solid ${istAbgedeckt ? '#81c784' : '#ef9a9a'}`,
+                    background: istAbgedeckt ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
+                    color: istAbgedeckt ? 'var(--color-success)' : 'var(--color-error)',
+                    border: `1px solid ${istAbgedeckt ? 'var(--color-success)' : 'var(--color-error)'}`,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.25rem',
                   }}
                 >
-                  {istAbgedeckt ? '✓' : '○'} {lz}
+                  {istAbgedeckt ? <Check size={12} /> : <Circle size={12} />} {lz}
                 </span>
               );
             })}
           </div>
 
           {fehlendeLernziele.length > 0 && (
-            <p style={{ fontSize: '0.75rem', color: '#e65100', margin: '0.5rem 0 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--color-warning)', margin: '0.5rem 0 0 0' }}>
               Nicht abgedeckt: {fehlendeLernziele.join(', ')} — Überprüfe die Aufgaben oder passe die Lernziele an.
             </p>
           )}
@@ -214,7 +217,7 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
 
       <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
         {/* Schülerfassung */}
-        <div style={{ borderRight: isNarrow ? 'none' : '1px solid #BFBFBF', paddingRight: isNarrow ? '0' : '1.5rem', marginBottom: isNarrow ? '1.5rem' : '0' }}>
+        <div style={{ borderRight: isNarrow ? 'none' : '1px solid var(--color-border)', paddingRight: isNarrow ? '0' : '1.5rem', marginBottom: isNarrow ? '1.5rem' : '0' }}>
           <div style={headerStyle}>
             <strong>Schüler*innenfassung</strong>
             <span>{meta.klasse} · {meta.datum}</span>
@@ -223,7 +226,7 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
             <h2 style={{ fontSize: '14pt', fontWeight: 700, marginBottom: '0.5rem' }}>
               {meta.thema || '(Thema)'}
             </h2>
-            <p style={{ fontSize: '9pt', color: '#595959', marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
               {meta.fach === 'deutsch' ? 'Deutsch' : 'Englisch'} ·{' '}
               {meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe'}
               {meta.schwierigkeit ? ` · ${meta.schwierigkeit.charAt(0).toUpperCase() + meta.schwierigkeit.slice(1)}` : ''}
@@ -233,11 +236,11 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
                 {meta.lernziele.map((lz) => (
                   <span key={lz} style={{
                     fontSize: '8pt',
-                    background: '#f3e5f5',
-                    color: '#6a1b9a',
+                    background: 'var(--color-highlight-bg)',
+                    color: 'var(--color-highlight)',
                     padding: '0.125rem 0.5rem',
                     borderRadius: 'var(--radius)',
-                    border: '1px solid #ce93d8',
+                    border: '1px solid var(--color-highlight)',
                   }}>
                     {lz}
                   </span>
@@ -248,13 +251,13 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
             {renderQuelltexte()}
             {bloecke.map((block) => (
               <div key={block.id}
-                style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid #BFBFBF', cursor: 'pointer' }}
+                style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
                 onClick={() => setEditingId(editingId === block.id ? null : block.id)}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: '#595959' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: 'var(--color-text-secondary)' }}>
                   <span>{block.punkte} Punkte</span>
                   {block.quelleId && <span>Quelle: {resolveQuelleTitel(block.quelleId)}</span>}
-                  {editingId === block.id && <span style={{ color: 'var(--color-accent)' }}>✎ Bearbeitung</span>}
+                  {editingId === block.id && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-accent)' }}><Pencil size={12} /> Bearbeitung</span>}
                 </div>
                 <BlockPreview block={block} showSolution={false}
                   onUpdate={editingId === block.id ? handleUpdate : undefined} />
@@ -262,8 +265,8 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
                 {doc && (
                   <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {generating && regenId === block.id ? (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--color-accent)' }}>
-                        🔄 Wird regeneriert… {stage}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--color-accent)' }}>
+                        <RefreshCw size={13} className="spin" /> Wird regeneriert… {stage}
                       </span>
                     ) : (
                       <>
@@ -273,13 +276,14 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
                             fontSize: '0.75rem',
                             padding: '0.2rem 0.5rem',
                             borderRadius: 'var(--radius)',
-                            border: '1px solid var(--color-gray-2)',
-                            background: 'white',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-bg-surface)',
                             cursor: 'pointer',
-                            color: 'var(--color-gray-1)',
+                            color: 'var(--color-text-secondary)',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
                           }}
                         >
-                          🔄 Neu generieren
+                          <RefreshCw size={13} /> Neu generieren
                         </button>
                         {regenId === block.id && (
                           <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
@@ -295,7 +299,7 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
                                   padding: '0.15rem 0.4rem',
                                   borderRadius: 'var(--radius)',
                                   border: '1px solid var(--color-accent)',
-                                  background: '#f3e5f5',
+                                  background: 'var(--color-highlight-bg)',
                                   cursor: 'pointer',
                                   color: 'var(--color-accent)',
                                 }}
@@ -312,10 +316,10 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
                                 fontSize: '0.6875rem',
                                 padding: '0.15rem 0.4rem',
                                 borderRadius: 'var(--radius)',
-                                border: '1px solid var(--color-gray-2)',
-                                background: 'white',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-bg-surface)',
                                 cursor: 'pointer',
-                                color: 'var(--color-gray-1)',
+                                color: 'var(--color-text-secondary)',
                               }}
                             >
                               Standard
@@ -341,7 +345,7 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
             <h2 style={{ fontSize: '14pt', fontWeight: 700, marginBottom: '0.5rem' }}>
               {meta.thema || '(Thema)'}
             </h2>
-            <p style={{ fontSize: '9pt', color: '#595959', marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
               {meta.fach === 'deutsch' ? 'Deutsch' : 'Englisch'} ·{' '}
               {meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe'} · Lösung
               {meta.schwierigkeit ? ` · ${meta.schwierigkeit.charAt(0).toUpperCase() + meta.schwierigkeit.slice(1)}` : ''}
@@ -351,11 +355,11 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
                 {meta.lernziele.map((lz) => (
                   <span key={lz} style={{
                     fontSize: '8pt',
-                    background: '#f3e5f5',
-                    color: '#6a1b9a',
+                    background: 'var(--color-highlight-bg)',
+                    color: 'var(--color-highlight)',
                     padding: '0.125rem 0.5rem',
                     borderRadius: 'var(--radius)',
-                    border: '1px solid #ce93d8',
+                    border: '1px solid var(--color-highlight)',
                   }}>
                     {lz}
                   </span>
@@ -366,8 +370,8 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
             {renderQuelltexte()}
             {bloecke.map((block) => (
               <div key={block.id}
-                style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid #BFBFBF' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: '#595959' }}>
+                style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: 'var(--color-text-secondary)' }}>
                   <span>{block.punkte} Punkte</span>
                   {block.quelleId && <span>Quelle: {resolveQuelleTitel(block.quelleId)}</span>}
                 </div>

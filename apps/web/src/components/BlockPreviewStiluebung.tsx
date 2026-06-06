@@ -1,3 +1,4 @@
+import { ArrowRight } from 'lucide-react';
 import type { Block } from '@lehrunterlagen/schema';
 
 interface Props {
@@ -20,26 +21,26 @@ export function BlockPreviewStiluebung({ block, showSolution }: Props) {
       </p>
 
       <div style={{ marginBottom: '0.75rem' }}>
-        <p style={{ fontSize: '9pt', color: '#595959', fontWeight: 600 }}>Ausgangstext:</p>
-        <blockquote style={{ margin: '0.25rem 0', padding: '0.5rem 0 0.5rem 0.75rem', borderLeft: '3px solid #BFBFBF', color: '#595959', fontStyle: 'italic' }}>
+        <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', fontWeight: 600 }}>Ausgangstext:</p>
+        <blockquote style={{ margin: '0.25rem 0', padding: '0.5rem 0 0.5rem 0.75rem', borderLeft: '3px solid var(--color-border)', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
           {block.config.ausgangstext}
         </blockquote>
       </div>
 
       <p style={{ fontSize: '10pt', marginBottom: '0.75rem' }}>
-        <strong>Ziel:</strong> {block.config.transformation} → {block.config.zielniveau}
+        <strong>Ziel:</strong> {block.config.transformation} <ArrowRight size={13} style={{ verticalAlign: 'middle' }} /> {block.config.zielniveau}
       </p>
 
       {showSolution ? (
-        <div style={{ padding: '0.5rem', background: '#F5F5F5', borderRadius: 4 }}>
+        <div style={{ padding: '0.5rem', background: 'var(--color-bg-hover)', borderRadius: 4 }}>
           <strong style={{ fontSize: '10pt' }}>Musterlösung:</strong>
           <p style={{ fontStyle: 'italic', marginTop: '0.25rem' }}>{block.loesung.umformulierung}</p>
-          <p style={{ fontSize: '10pt', color: '#595959', marginTop: '0.5rem' }}>
+          <p style={{ fontSize: '10pt', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
             <strong>Begründung:</strong> {block.loesung.begruendung}
           </p>
         </div>
       ) : (
-        <p style={{ fontSize: '9pt', color: '#595959', fontStyle: 'italic' }}>
+        <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
           (Eigene Umformulierung in das freie Feld schreiben)
         </p>
       )}

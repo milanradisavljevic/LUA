@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Files, X } from 'lucide-react';
 import type { Meta, Block } from '@lehrunterlagen/schema';
 
 const STORAGE_KEY = 'lehrunterlagen-templates';
@@ -115,27 +116,28 @@ export function TemplateManager({ meta, bloecke, onLoad }: Props) {
   if (!open) {
     return (
       <button className="btn-secondary" onClick={() => setOpen(true)}
-        style={{ fontSize: '0.8125rem' }}>
-        📋 Vorlagen
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem' }}>
+        <Files size={14} /> Vorlagen
       </button>
     );
   }
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
+      position: 'fixed', inset: 0, background: 'var(--color-overlay)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 1000,
     }} onClick={() => setOpen(false)}>
       <div style={{
-        background: 'white', borderRadius: 'var(--radius)', boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+        background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius)', boxShadow: '0 4px 24px var(--color-shadow)',
         padding: '1.5rem', width: 480, maxHeight: '80vh', overflow: 'auto',
       }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1rem' }}>Vorlagen verwalten</h2>
+          <h2 style={{ fontSize: '1rem', color: 'var(--color-text-primary)' }}>Vorlagen verwalten</h2>
           <button className="btn-secondary" onClick={() => setOpen(false)}
-            style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
-            ✕
+            aria-label="Schließen"
+            style={{ display: 'inline-flex', alignItems: 'center', padding: '0.25rem 0.4rem' }}>
+            <X size={16} />
           </button>
         </div>
 
@@ -167,7 +169,7 @@ export function TemplateManager({ meta, bloecke, onLoad }: Props) {
         </div>
 
         {templates.length === 0 ? (
-          <p style={{ color: 'var(--color-gray-1)', textAlign: 'center', padding: '1rem', fontSize: '0.8125rem' }}>
+          <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center', padding: '1rem', fontSize: '0.8125rem' }}>
             Noch keine Vorlagen gespeichert.
           </p>
         ) : (
@@ -175,12 +177,12 @@ export function TemplateManager({ meta, bloecke, onLoad }: Props) {
             {templates.map((tpl) => (
               <div key={tpl.name} style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.625rem', border: '1px solid var(--color-gray-2)',
+                padding: '0.625rem', border: '1px solid var(--color-border)',
                 borderRadius: 'var(--radius)',
               }}>
                 <div style={{ flex: 1, fontSize: '0.8125rem' }}>
-                  <strong>{tpl.name}</strong>
-                  <p style={{ fontSize: '0.6875rem', color: 'var(--color-gray-1)' }}>
+                  <strong style={{ color: 'var(--color-text-primary)' }}>{tpl.name}</strong>
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-secondary)' }}>
                     {tpl.meta.fach} &middot; {tpl.meta.stufe} &middot; {tpl.bloecke.length} Block{tpl.bloecke.length !== 1 ? 's' : ''}
                     &nbsp;&middot; {new Date(tpl.savedAt).toLocaleDateString()}
                   </p>
@@ -190,8 +192,9 @@ export function TemplateManager({ meta, bloecke, onLoad }: Props) {
                   Laden
                 </button>
                 <button className="btn-danger" onClick={() => handleDelete(tpl.name)}
-                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
-                  ✕
+                  aria-label="Vorlage löschen"
+                  style={{ display: 'inline-flex', alignItems: 'center', padding: '0.25rem 0.4rem' }}>
+                  <X size={16} />
                 </button>
               </div>
             ))}
@@ -202,7 +205,7 @@ export function TemplateManager({ meta, bloecke, onLoad }: Props) {
   );
 }
 
-function getEmptyLoesung(typ: string): Record<string, unknown> {
+export function getEmptyLoesung(typ: string): Record<string, unknown> {
   switch (typ) {
     case 'lueckentext': return { luecken: [] };
     case 'matching': return { zuordnung: {} };

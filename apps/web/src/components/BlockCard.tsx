@@ -2,8 +2,10 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Block, Meta } from '@lehrunterlagen/schema';
 import type { AppAction } from '../lib/types';
+import { Star, X } from 'lucide-react';
 import { getBlockLabel, BLOCK_ARBEITSANWEISUNG_PLACEHOLDER } from '../lib/blockDefaults';
 import { BLOCK_TYPE_DEFS } from '../lib/constants';
+import { istNochBeispiel } from '../lib/beispieldaten';
 import { BlockConfigPanel } from './BlockConfigPanel';
 
 interface Props {
@@ -18,22 +20,25 @@ interface Props {
 export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect }: Props) {
   const typeDef = BLOCK_TYPE_DEFS.find((bt) => bt.id === block.typ);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+  const isExample = istNochBeispiel(block);
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform) || (isSelected ? 'scale(1.008)' : 'scale(1)'),
     transition: transition || 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : isExample ? 0.68 : 1,
     padding: '1rem',
     border: isSelected
-      ? '2px solid var(--color-accent)'
-      : '1px solid var(--color-gray-2)',
+      ? '2px solid var(--color-highlight)'
+      : '1px solid var(--color-border)',
     borderRadius: 'var(--radius)',
     background: isSelected
-      ? 'linear-gradient(135deg, #faf5ff 0%, #f3e5f5 100%)'
-      : 'white',
+      ? 'var(--color-highlight-bg)'
+      : isExample
+        ? 'var(--color-bg-hover)'
+        : 'var(--color-bg-surface)',
     boxShadow: isSelected
-      ? '0 0 0 4px rgba(106, 27, 154, 0.08), 0 8px 32px rgba(106, 27, 154, 0.15), 0 2px 8px rgba(106, 27, 154, 0.1)'
-      : '0 1px 3px rgba(0,0,0,0.06)',
+      ? '0 0 0 4px var(--color-highlight-bg), 0 8px 32px var(--color-shadow), 0 2px 8px var(--color-shadow)'
+      : '0 1px 3px var(--color-shadow)',
     position: 'relative',
     zIndex: isSelected ? 10 : 1,
     cursor: 'default',
@@ -60,8 +65,8 @@ export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect 
           bottom: 8,
           width: 4,
           borderRadius: '0 4px 4px 0',
-          background: 'linear-gradient(180deg, #9c27b0, #6a1b9a, #9c27b0)',
-          boxShadow: '0 0 12px rgba(156, 39, 176, 0.6), 0 0 4px rgba(156, 39, 176, 0.3)',
+          background: 'var(--color-highlight)',
+          boxShadow: '0 0 12px var(--color-highlight-bg), 0 0 4px var(--color-highlight-bg)',
         }} />
       )}
 
@@ -71,7 +76,7 @@ export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect 
           position: 'absolute',
           top: -1,
           right: 20,
-          background: 'linear-gradient(135deg, #9c27b0, #6a1b9a)',
+          background: 'var(--color-highlight)',
           color: 'white',
           fontSize: '0.625rem',
           fontWeight: 700,
@@ -79,10 +84,11 @@ export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect 
           borderRadius: '0 0 6px 6px',
           letterSpacing: '0.05em',
           textTransform: 'uppercase',
-          boxShadow: '0 2px 8px rgba(106, 27, 154, 0.3)',
+          boxShadow: '0 2px 8px var(--color-highlight-bg)',
           zIndex: 2,
+          display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
         }}>
-          ★ Markiert
+          <Star size={11} fill="currentColor" /> Markiert
         </div>
       )}
 
@@ -91,7 +97,7 @@ export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect 
           aria-label={`Block „${getBlockLabel(block.typ)}" verschieben`}
           style={{
             cursor: 'grab', background: 'none', border: 'none', padding: '0.25rem',
-            color: 'var(--color-gray-1)', fontSize: '1rem', lineHeight: 1,
+            color: 'var(--color-text-secondary)', fontSize: '1rem', lineHeight: 1,
           }}
           title="Verschieben">
           <span aria-hidden="true">⠿</span>
@@ -108,12 +114,25 @@ export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect 
           </span>
         )}
         <span style={{
-          background: '#e8f0fe', color: 'var(--color-accent)',
+          background: 'var(--color-bg-selected)', color: 'var(--color-accent)',
           padding: '0.125rem 0.5rem', borderRadius: '3px',
           fontSize: '0.75rem', fontWeight: 600,
         }}>
           {getBlockLabel(block.typ)}
         </span>
+        {isExample && (
+          <span style={{
+            background: 'var(--color-warning-bg)',
+            color: 'var(--color-warning)',
+            border: '1px solid var(--color-warning)',
+            padding: '0.125rem 0.5rem',
+            borderRadius: 3,
+            fontSize: '0.6875rem',
+            fontWeight: 700,
+          }}>
+            Beispiel
+          </span>
+        )}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {/* Markieren-Button */}
           {onSelect && (
@@ -123,8 +142,8 @@ export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect 
               title={isSelected ? 'Markiert' : 'Markieren'}
               style={{
                 background: isSelected ? 'var(--color-accent)' : 'transparent',
-                border: isSelected ? 'none' : '1px solid var(--color-gray-2)',
-                color: isSelected ? 'white' : 'var(--color-gray-1)',
+                border: isSelected ? 'none' : '1px solid var(--color-border)',
+                color: isSelected ? 'white' : 'var(--color-text-secondary)',
                 borderRadius: '50%',
                 width: 28,
                 height: 28,
@@ -138,23 +157,23 @@ export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect 
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
-                  (e.currentTarget as HTMLButtonElement).style.background = '#f3e5f5';
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-accent)';
-                  (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-accent)';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-highlight-bg)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-highlight)';
+                  (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-highlight)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isSelected) {
                   (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-gray-2)';
-                  (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-gray-1)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)';
+                  (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-secondary)';
                 }
               }}
             >
-              ★
+              <Star size={15} {...(isSelected ? { fill: 'currentColor' } : {})} />
             </button>
           )}
-          <label style={{ margin: 0, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Punkte</label>
+          <label style={{ margin: 0, fontSize: '0.75rem', whiteSpace: 'nowrap', color: 'var(--color-text-secondary)' }}>Punkte</label>
           <input type="number" min={1} value={block.punkte}
             aria-label="Punkte für diesen Block"
             onChange={(e) => handleChange('punkte', parseInt(e.target.value) || 0)}
@@ -164,7 +183,7 @@ export function BlockCard({ block, dispatch, stufe, index, isSelected, onSelect 
           onClick={handleRemove}
           aria-label={`Block „${getBlockLabel(block.typ)}" entfernen`}
           title="Entfernen">
-          <span aria-hidden="true">✕</span>
+          <X size={14} aria-hidden="true" />
         </button>
       </div>
 

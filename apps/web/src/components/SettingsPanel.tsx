@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { LLM_PROVIDERS } from '../lib/constants';
-import { PROVIDER_LOGOS } from './ProviderLogos';
-import type { LlmProvider } from '../lib/types';
+import { ProviderLogo } from './ProviderLogos';
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
@@ -91,26 +90,24 @@ export function SettingsPanel() {
 
       {!tauriAvailable && (
         <div style={{
-          padding: '1rem', marginBottom: '1rem', background: '#fff3cd', borderRadius: 'var(--radius)',
-          border: '1px solid #ffc107', fontSize: '0.875rem',
+          padding: '1rem', marginBottom: '1rem', background: 'var(--color-warning-bg)', borderRadius: 'var(--radius)',
+          border: '1px solid var(--color-warning)', fontSize: '0.875rem',
         }}>
           API-Schlüssel können nur in der Desktop-App verwaltet werden. Starte die App mit <code>pnpm run tauri dev</code>.
         </div>
       )}
 
-      <p style={{ fontSize: '0.8125rem', color: 'var(--color-gray-1)', marginBottom: '1.5rem' }}>
+      <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>
         Schlüssel werden sicher im System-Keyring gespeichert und verlassen niemals den Rechner.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {LLM_PROVIDERS.map((provider) => {
-          const Logo = PROVIDER_LOGOS[provider.id];
-          return (
+        {LLM_PROVIDERS.map((provider) => (
             <div key={provider.id} style={{
-              padding: '1rem', border: '1px solid var(--color-gray-2)', borderRadius: 'var(--radius)',
+              padding: '1rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                {Logo && <Logo size={24} />}
+                <ProviderLogo providerId={provider.id} label={provider.label} size={24} />
                 <strong>{provider.label}</strong>
               </div>
 
@@ -155,12 +152,12 @@ export function SettingsPanel() {
                 </div>
               )}
               {loaded[provider.id] && (
-                <div style={{ color: 'var(--color-gray-1)', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
+                <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
                   Hinterlegter Key: <code>{loaded[provider.id]}</code>
                 </div>
               )}
               {cleared[provider.id] && (
-                <div style={{ color: 'var(--color-gray-1)', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
+                <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
                   Schlüssel gelöscht.
                 </div>
               )}
@@ -170,8 +167,7 @@ export function SettingsPanel() {
                 </div>
               )}
             </div>
-          );
-        })}
+        ))}
       </div>
     </div>
   );

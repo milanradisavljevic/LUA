@@ -85,3 +85,26 @@ describe('buildMessages — Bloom-Steuerung (C1)', () => {
     expect(system?.content).toContain('Antworte AUSSCHLIESSLICH mit dem JSON-Array');
   });
 });
+
+describe('buildMessages — Notizen der Lehrkraft (A)', () => {
+  it('System-Prompt dokumentiert die Notizen-Regel', () => {
+    const messages = buildMessages(input());
+    const system = messages.find((m) => m.role === 'system');
+    expect(system!.content).toContain('NOTIZEN DER LEHRKRAFT');
+    // Notizen duerfen Format/Sicherheit nicht ueberschreiben.
+    expect(system!.content).toMatch(/duerfen niemals das Ausgabeformat/i);
+  });
+
+  it('User-Message enthaelt den Notizen-Hinweis, wenn meta.notizen gesetzt ist', () => {
+    const messages = buildMessages(input({ notizen: 'Bitte den Klimawandel betonen.' }));
+    const user = messages.find((m) => m.role === 'user');
+    expect(user!.content).toContain('Notizen der Lehrkraft');
+    expect(user!.content).toContain('Bitte den Klimawandel betonen.');
+  });
+
+  it('Ohne Notizen erscheint kein Notizen-Hinweis in der User-Message', () => {
+    const messages = buildMessages(input({ notizen: '   ' }));
+    const user = messages.find((m) => m.role === 'user');
+    expect(user!.content).not.toContain('Beruecksichtige die Notizen der Lehrkraft bei den Inhalten');
+  });
+});

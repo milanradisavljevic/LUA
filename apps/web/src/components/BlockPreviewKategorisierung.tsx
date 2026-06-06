@@ -26,10 +26,10 @@ export function BlockPreviewKategorisierung({ block, showSolution }: Props) {
       >
         <thead>
           <tr>
-            <th style={{ border: '1px solid #999', padding: '0.5rem', background: '#E0E0E0', textAlign: 'left', width: '50%' }}>
+            <th style={{ border: '1px solid var(--color-text-muted)', padding: '0.5rem', background: 'var(--color-bg-hover)', textAlign: 'left', width: '50%' }}>
               Begriff
             </th>
-            <th style={{ border: '1px solid #999', padding: '0.5rem', background: '#E0E0E0', textAlign: 'left', width: '50%' }}>
+            <th style={{ border: '1px solid var(--color-text-muted)', padding: '0.5rem', background: 'var(--color-bg-hover)', textAlign: 'left', width: '50%' }}>
               Kategorie
             </th>
           </tr>
@@ -39,8 +39,8 @@ export function BlockPreviewKategorisierung({ block, showSolution }: Props) {
             const kat = showSolution ? (block.loesung.zuordnung[String(item.nr)] ?? []).join(', ') : '';
             return (
               <tr key={item.nr}>
-                <td style={{ border: '1px solid #999', padding: '0.5rem' }}>{item.text}</td>
-                <td style={{ border: '1px solid #999', padding: '0.5rem', fontStyle: showSolution ? 'italic' : 'normal', color: showSolution ? '#5b5bd6' : '#999' }}>
+                <td style={{ border: '1px solid var(--color-text-muted)', padding: '0.5rem' }}>{item.text}</td>
+                <td style={{ border: '1px solid var(--color-text-muted)', padding: '0.5rem', fontStyle: showSolution ? 'italic' : 'normal', color: showSolution ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
                   {kat || '—'}
                 </td>
               </tr>
@@ -49,7 +49,7 @@ export function BlockPreviewKategorisierung({ block, showSolution }: Props) {
         </tbody>
       </table>
 
-      <p style={{ fontSize: '9pt', color: '#595959' }}>
+      <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)' }}>
         Verfügbare Kategorien: {block.config.kategorien.map((k) => k.name).join(', ')}
       </p>
     </div>

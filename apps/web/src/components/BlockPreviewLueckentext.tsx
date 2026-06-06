@@ -26,7 +26,7 @@ export function BlockPreviewLueckentext({ block, showSolution, onUpdate }: Props
       </p>
 
       {block.clue && (
-        <p style={{ fontStyle: 'italic', color: '#595959', marginBottom: '0.5rem' }}>
+        <p style={{ fontStyle: 'italic', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
           ({block.clue})
         </p>
       )}
@@ -49,21 +49,21 @@ export function BlockPreviewLueckentext({ block, showSolution, onUpdate }: Props
       </div>
 
       {wortbank && (
-        <div style={{ marginTop: '0.75rem', padding: '0.5rem', border: '1px solid #BFBFBF', borderRadius: 4 }}>
+        <div style={{ marginTop: '0.75rem', padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: 4 }}>
           <strong style={{ fontSize: '10pt' }}>Wortbank:</strong>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem', fontSize: '10pt' }}>
             {luecken.map((l: { nr: number; wort: string }) => (
               <span key={l.nr} style={{
-                padding: '0.125rem 0.5rem', border: '1px solid #BFBFBF',
-                borderRadius: 3, color: showSolution ? undefined : '#595959',
+                padding: '0.125rem 0.5rem', border: '1px solid var(--color-border)',
+                borderRadius: 3, color: showSolution ? undefined : 'var(--color-text-secondary)',
               }}>
                 {showSolution ? l.wort : '________'}
               </span>
             ))}
             {Array.from({ length: distraktoren }, (_, i) => (
               <span key={`d${i}`} style={{
-                padding: '0.125rem 0.5rem', border: '1px solid #BFBFBF',
-                borderRadius: 3, color: '#BFBFBF',
+                padding: '0.125rem 0.5rem', border: '1px solid var(--color-border)',
+                borderRadius: 3, color: 'var(--color-border)',
               }}>
                 ________
               </span>
@@ -80,7 +80,7 @@ function EditableText({ value, onChange }: { value: string; onChange: (v: string
     <input type="text" value={value}
       onChange={(e) => onChange(e.target.value)}
       style={{
-        fontFamily: 'inherit', fontSize: 'inherit', border: '1px dashed #BFBFBF',
+        fontFamily: 'inherit', fontSize: 'inherit', border: '1px dashed var(--color-border)',
         background: 'transparent', width: 'auto', minWidth: 200, padding: '0.125rem 0.25rem',
       }} />
   );

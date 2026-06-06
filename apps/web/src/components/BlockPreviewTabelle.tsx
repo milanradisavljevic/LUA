@@ -27,7 +27,7 @@ export function BlockPreviewTabelle({ block, showSolution }: Props) {
         <thead>
           <tr>
             {block.config.spalten.map((s, i) => (
-              <th key={i} style={{ border: '1px solid #999', padding: '0.5rem', background: '#E0E0E0', textAlign: 'left', width: `${s.breiteProzent}%` }}>
+              <th key={i} style={{ border: '1px solid var(--color-text-muted)', padding: '0.5rem', background: 'var(--color-bg-hover)', textAlign: 'left', width: `${s.breiteProzent}%` }}>
                 {s.titel}
               </th>
             ))}
@@ -45,7 +45,7 @@ export function BlockPreviewTabelle({ block, showSolution }: Props) {
                     : '';
                 const zeigeLuecke = istLuecke && !showSolution;
                 return (
-                  <td key={i} style={{ border: '1px solid #999', padding: '0.5rem', fontStyle: istLuecke && showSolution ? 'italic' : 'normal', color: istLuecke && showSolution ? '#5b5bd6' : istLuecke ? '#999' : '#000' }}>
+                  <td key={i} style={{ border: '1px solid var(--color-text-muted)', padding: '0.5rem', fontStyle: istLuecke && showSolution ? 'italic' : 'normal', color: istLuecke && showSolution ? 'var(--color-accent)' : istLuecke ? 'var(--color-text-muted)' : '#000' }}>
                     {zeigeLuecke ? '________' : (inhalt || (istLuecke ? '—' : ''))}
                   </td>
                 );

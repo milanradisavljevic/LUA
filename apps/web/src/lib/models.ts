@@ -108,7 +108,7 @@ export const MODELS: ModelInfo[] = [
     kostenInputProMioToken: 0.14,
     kostenOutputProMioToken: 0.28,
     region: 'China (DeepSeek)',
-    datenschutz: '⚠️ Chinesischer Anbieter — nur für selbst verfasste Inhalte',
+    datenschutz: 'Chinesischer Anbieter — nur für selbst verfasste Inhalte',
   },
   {
     label: 'DeepSeek V4 Pro',
@@ -118,7 +118,7 @@ export const MODELS: ModelInfo[] = [
     kostenInputProMioToken: 0.435,
     kostenOutputProMioToken: 0.87,
     region: 'China (DeepSeek)',
-    datenschutz: '⚠️ Chinesischer Anbieter — nur für selbst verfasste Inhalte',
+    datenschutz: 'Chinesischer Anbieter — nur für selbst verfasste Inhalte',
   },
 
   // --- Mistral ---
@@ -156,7 +156,7 @@ export const MODELS: ModelInfo[] = [
     kostenInputProMioToken: 0.359,
     kostenOutputProMioToken: 1.434,
     region: 'China (Alibaba Cloud)',
-    datenschutz: '⚠️ Chinesischer Anbieter — nur für selbst verfasste Inhalte',
+    datenschutz: 'Chinesischer Anbieter — nur für selbst verfasste Inhalte',
   },
   {
     label: 'Qwen 3.6 Plus',
@@ -166,7 +166,7 @@ export const MODELS: ModelInfo[] = [
     kostenInputProMioToken: 0.115,
     kostenOutputProMioToken: 0.688,
     region: 'China (Alibaba Cloud)',
-    datenschutz: '⚠️ Chinesischer Anbieter — nur für selbst verfasste Inhalte',
+    datenschutz: 'Chinesischer Anbieter — nur für selbst verfasste Inhalte',
   },
 
   // --- Kimi (Moonshot AI) ---
@@ -181,7 +181,7 @@ export const MODELS: ModelInfo[] = [
     kostenInputProMioToken: 0.28,
     kostenOutputProMioToken: 1.38,
     region: 'China (Moonshot AI)',
-    datenschutz: '⚠️ Chinesischer Anbieter — nur für selbst verfasste Inhalte',
+    datenschutz: 'Chinesischer Anbieter — nur für selbst verfasste Inhalte',
   },
   // Quelle: https://platform.moonshot.cn/docs/pricing/chat-k26
   // Kimi K2.6: Input ¥6.50/MTok (cache miss), Output ¥27.00/MTok
@@ -194,7 +194,7 @@ export const MODELS: ModelInfo[] = [
     kostenInputProMioToken: 0.9,
     kostenOutputProMioToken: 3.72,
     region: 'China (Moonshot AI)',
-    datenschutz: '⚠️ Chinesischer Anbieter — nur für selbst verfasste Inhalte',
+    datenschutz: 'Chinesischer Anbieter — nur für selbst verfasste Inhalte',
   },
 ];
 

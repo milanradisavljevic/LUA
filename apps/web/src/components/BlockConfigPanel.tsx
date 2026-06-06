@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { X } from 'lucide-react';
 import type { Block, Meta } from '@lehrunterlagen/schema';
 import { isWortbankEnabled } from '../lib/constants';
 
@@ -13,7 +14,7 @@ function ConfigField({ label, error, children }: { label: string; error?: string
     <div style={{ marginBottom: '0.75rem' }}>
       <label>{label}</label>
       {children}
-      {error && <p style={{ color: '#d93025', fontSize: '0.6875rem', marginTop: '0.125rem' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--color-error)', fontSize: '0.6875rem', marginTop: '0.125rem' }}>{error}</p>}
     </div>
   );
 }
@@ -35,7 +36,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     }, [wortbank, distraktoren]);
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Lückentext-Konfiguration</h3>
         <ConfigField label="Anzahl Lücken">
           <input type="number" min={1} value={config.anzahlLuecken as number ?? 6}
@@ -54,7 +55,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
             <option value="true">An</option>
           </select>
           {!wortbankAllowed && (
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
               {' '}(nur in der Unterstufe)
             </span>
           )}
@@ -93,7 +94,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     }, [items.length, optionen.length]);
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Matching-Konfiguration</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
@@ -137,7 +138,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
           </div>
         </div>
         {errors.optionen && (
-          <p style={{ color: '#d93025', fontSize: '0.6875rem', marginTop: '0.25rem' }}>{errors.optionen}</p>
+          <p style={{ color: 'var(--color-error)', fontSize: '0.6875rem', marginTop: '0.25rem' }}>{errors.optionen}</p>
         )}
       </div>
     );
@@ -151,11 +152,11 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     }>) ?? [];
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Multiple-Choice-Konfiguration</h3>
         {fragen.map((frage, fi) => (
           <div key={fi} style={{
-            padding: '0.75rem', border: '1px solid var(--color-gray-2)',
+            padding: '0.75rem', border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius)', marginBottom: '0.75rem',
           }}>
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
@@ -210,11 +211,11 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     const fragen = (config.fragen as Array<{ nr: number; frage: string; zeilen: number }>) ?? [];
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Verständnisfragen</h3>
         {fragen.map((frage, fi) => (
           <div key={fi} style={{
-            padding: '0.75rem', border: '1px solid var(--color-gray-2)',
+            padding: '0.75rem', border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius)', marginBottom: '0.75rem',
           }}>
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -262,7 +263,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     }, [umfang.min, umfang.max]);
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Schreibaufgabe-Konfiguration</h3>
         <ConfigField label="Situation">
           <textarea rows={2} value={config.situation as string ?? ''} placeholder="Ausgangssituation beschreiben"
@@ -293,7 +294,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
               {aspekte.length > 1 && (
                 <button className="btn-danger" style={{ fontSize: '0.6875rem', padding: '0.125rem 0.375rem' }}
                   onClick={() => set('aspekte', aspekte.filter((_: unknown, j: number) => j !== i))}>
-                  ✕
+                  <X size={13} />
                 </button>
               )}
             </div>
@@ -309,7 +310,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
 
   if (block.typ === 'markieraufgabe') {
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Markieraufgabe</h3>
         <ConfigField label="Anweisung zum Markieren">
           <textarea rows={2} value={config.anweisung as string ?? ''}
@@ -322,7 +323,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
 
   if (block.typ === 'wordScramble') {
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Wörter ordnen</h3>
         <ConfigField label="Ausgangswort/Satz (Leerzeichen-getrennt)">
           <textarea rows={2} value={config.wort as string ?? ''}
@@ -338,7 +339,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     const items = (config.items as Array<{ nr: number; text: string; optionen: string[] }>) ?? [];
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Kategorisierung</h3>
 
         {/* Kategorien */}
@@ -362,7 +363,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
                   style={{ fontSize: '0.6875rem', padding: '0.125rem 0.375rem' }}
                   onClick={() => set('kategorien', kategorien.filter((_: unknown, j: number) => j !== i))}
                 >
-                  ✕
+                  <X size={13} />
                 </button>
               )}
             </div>
@@ -381,7 +382,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
           {items.map((item, i) => (
             <div key={i} style={{
               padding: '0.5rem',
-              border: '1px solid var(--color-gray-2)',
+              border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius)',
               marginBottom: '0.5rem',
             }}>
@@ -404,7 +405,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
                     style={{ fontSize: '0.6875rem', padding: '0.125rem 0.375rem' }}
                     onClick={() => set('items', items.filter((_: unknown, j: number) => j !== i))}
                   >
-                    ✕
+                    <X size={13} />
                   </button>
                 )}
               </div>
@@ -413,7 +414,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
                   <span key={oi} style={{
                     fontSize: '0.75rem',
                     padding: '0.125rem 0.375rem',
-                    background: '#e8f0fe',
+                    background: 'var(--color-bg-selected)',
                     borderRadius: '3px',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -426,9 +427,9 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
                         newItems[i] = { ...item, optionen: item.optionen.filter((_: unknown, j: number) => j !== oi) };
                         set('items', newItems);
                       }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.625rem', color: '#666' }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.625rem', color: 'var(--color-text-muted)' }}
                     >
-                      ✕
+                      <X size={13} />
                     </button>
                   </span>
                 ))}
@@ -469,7 +470,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     const zeilen = (config.zeilen as Array<{ nr: number; zellen: Array<{ text?: string; luecke?: true }> }>) ?? [];
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Tabelle</h3>
 
         {/* Spalten */}
@@ -522,7 +523,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
                   set('zeilen', newZeilen);
                 }}
               >
-                ✕ Spalte
+                <X size={13} /> Spalte
               </button>
             )}
           </div>
@@ -559,11 +560,11 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
                     ) : (
                       <div style={{
                         padding: '0.375rem 0.5rem',
-                        background: '#fff3e0',
-                        border: '1px dashed #ff9800',
+                        background: 'var(--color-warning-bg)',
+                        border: '1px dashed var(--color-warning)',
                         borderRadius: 'var(--radius)',
                         fontSize: '0.75rem',
-                        color: '#e65100',
+                        color: 'var(--color-warning)',
                         textAlign: 'center',
                       }}>
                         Lücke
@@ -584,10 +585,10 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
                         top: 2,
                         fontSize: '0.625rem',
                         padding: '0 3px',
-                        background: 'rgba(255,255,255,0.9)',
+                        background: 'var(--color-bg-surface)',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#666',
+                        color: 'var(--color-text-muted)',
                       }}
                       title={isLuecke ? 'Zu Text umwandeln' : 'Zu Lücke umwandeln'}
                     >
@@ -602,7 +603,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
                   style={{ fontSize: '0.6875rem', padding: '0.125rem 0.375rem' }}
                   onClick={() => set('zeilen', zeilen.filter((_: unknown, j: number) => j !== zi))}
                 >
-                  ✕
+                  <X size={13} />
                 </button>
               )}
             </div>
@@ -621,7 +622,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
 
   if (block.typ === 'stiluebung') {
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Stilübung</h3>
         <ConfigField label="Zielniveau">
           <select value={config.zielniveau as string} onChange={(e) => set('zielniveau', e.target.value)}>
@@ -645,7 +646,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
 
   if (block.typ === 'songanalyse') {
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Songanalyse</h3>
 
         <ConfigField label="Interpret">
@@ -707,9 +708,9 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     };
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Kreuzworträtsel</h3>
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginBottom: '0.5rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
           Beim Generieren zieht die KI die Wörter + Hinweise automatisch aus dem Quelltext —
           diese Liste legt nur die <strong>Anzahl</strong> fest und dient als Vorschau.
           Du kannst die Beispiele stehen lassen. Das Gitter wird automatisch gebaut.
@@ -737,7 +738,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
               aria-label={`Eintrag ${i + 1} entfernen`}
               onClick={() => setEintraege(eintraege.filter((_, idx) => idx !== i))}
             >
-              ✕
+              <X size={13} />
             </button>
           </div>
         ))}
@@ -758,9 +759,9 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
     const setWoerter = (next: string[]) => set('woerter', next);
 
     return (
-      <div style={{ borderTop: '1px solid var(--color-gray-2)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Wortgitter</h3>
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', marginBottom: '0.5rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
           Beim Generieren zieht die KI die Wörter automatisch aus dem Quelltext —
           diese Liste legt nur die <strong>Anzahl</strong> fest und dient als Vorschau.
           Du kannst die Beispiele stehen lassen. Das Buchstabengitter wird automatisch gebaut.
@@ -781,7 +782,7 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
               aria-label={`Wort ${i + 1} entfernen`}
               onClick={() => setWoerter(woerter.filter((_, idx) => idx !== i))}
             >
-              ✕
+              <X size={13} />
             </button>
           </div>
         ))}

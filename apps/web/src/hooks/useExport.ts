@@ -1,9 +1,13 @@
 import { useState, useCallback } from 'react';
 import type { AppState } from '../lib/types';
+import { beispielBloecke } from '../lib/beispieldaten';
+import { getBlockLabel } from '../lib/blockDefaults';
+import { appendHistoryEntry } from '../lib/storage';
 
 export function useExport() {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warnung, setWarnung] = useState<string | null>(null);
   const [lastSavedPaths, setLastSavedPaths] = useState<string[] | null>(null);
 
   const exportDocx = useCallback(async (state: AppState) => {
@@ -13,7 +17,20 @@ export function useExport() {
     }
     setExporting(true);
     setError(null);
+    setWarnung(null);
     setLastSavedPaths(null);
+
+    // Nicht-blockierende Warnung: noch unveränderte Beispieldaten im Dokument?
+    const beispielIds = beispielBloecke(state.generiertesDokument.bloecke);
+    if (beispielIds.length > 0) {
+      const labels = state.generiertesDokument.bloecke
+        .filter((b) => beispielIds.includes(b.id))
+        .map((b) => getBlockLabel(b.typ));
+      setWarnung(
+        `Achtung: ${beispielIds.length} Block/Blöcke enthalten noch Beispieldaten (${labels.join(', ')}). ` +
+        'Bitte generieren oder bearbeiten, bevor du das Dokument an Schüler:innen ausgibst.',
+      );
+    }
 
     try {
       const { renderDocumentToBlobs } = await import('@lehrunterlagen/renderer');
@@ -32,6 +49,23 @@ export function useExport() {
       downloadBlob(loesung, loesungName);
 
       setLastSavedPaths([schuelerName, loesungName]);
+
+      // Verlaufseintrag protokollieren (read-only Log in der Sidebar)
+      const dok = state.generiertesDokument;
+      appendHistoryEntry({
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        thema: dok.meta.thema,
+        fach: dok.meta.fach,
+        stufe: dok.meta.stufe,
+        llmProvider: state.llmProvider,
+        modelName: state.modelName,
+        blockCount: dok.bloecke.length,
+        totalPunkte: dok.bloecke.reduce((sum, b) => sum + (b.punkte ?? 0), 0),
+        exportedFiles: [schuelerName, loesungName],
+        savedDocumentId: state.aktuelleDokumentId,
+      });
+
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unbekannter Fehler beim Export';
@@ -74,7 +108,7 @@ export function useExport() {
     }
   }, []);
 
-  return { exportDocx, exportKorrekturraster, exporting, error, lastSavedPaths };
+  return { exportDocx, exportKorrekturraster, exporting, error, warnung, lastSavedPaths };
 }
 
 function downloadBlob(blob: Blob, filename: string) {

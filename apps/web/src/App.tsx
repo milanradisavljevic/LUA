@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { AppAction } from './lib/types';
+import { Save, Command, ArrowLeft, ArrowRight } from 'lucide-react';
+import type { AppAction, ActiveView, SavedDocument } from './lib/types';
 import type { Meta, Block } from '@lehrunterlagen/schema';
 import { useWizard } from './hooks/useWizard';
+import { useTheme } from './hooks/useTheme';
+import { useZoom } from './hooks/useZoom';
 import { WizardStepper } from './components/WizardStepper';
 import { Step0_Absicht } from './components/Step0_Absicht';
 import { Step1_Input } from './components/Step1_Input';
@@ -11,13 +14,24 @@ import { Step4_Generate } from './components/Step4_Generate';
 import { TemplateManager } from './components/TemplateManager';
 import { CommandPalette } from './components/CommandPalette';
 import { Sidebar } from './components/Sidebar';
-import { SettingsPanel } from './components/SettingsPanel';
+import { ThemeToggle } from './components/ThemeToggle';
+import { DocumentsView } from './views/DocumentsView';
+import { FavoritesView } from './views/FavoritesView';
+import { TrashView } from './views/TrashView';
+import { HistoryView } from './views/HistoryView';
+import { TemplatesView } from './views/TemplatesView';
+import { HelpView } from './views/HelpView';
+import { SettingsView } from './views/SettingsView';
+import { loadDocuments, upsertDocument, snapshotFromState } from './lib/storage';
 import './App.css';
 
 export default function App() {
-  const { state, dispatch, goNext, goBack, currentIndex } = useWizard();
+  const { state, dispatch, goNext, goBack, goToStep, currentIndex } = useWizard();
+  const { resolved: theme, toggle: toggleTheme } = useTheme();
+  const { zoom, reset: resetZoom } = useZoom();
+  const [activeView, setActiveView] = useState<ActiveView>('wizard');
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
@@ -84,10 +98,52 @@ export default function App() {
 
   const handleLoadTemplate = (meta: Meta, bloecke: Block[]) => {
     dispatch({ type: 'SET_META', meta });
-    for (const block of bloecke) {
-      dispatch({ type: 'ADD_BLOCK', block });
-    }
+    dispatch({ type: 'REORDER_BLOCKS', bloecke });
+    setActiveView('wizard');
+    goToStep('baukasten');
   };
+
+  const handleSaveDocument = useCallback(() => {
+    const existing = state.aktuelleDokumentId
+      ? loadDocuments().find((d) => d.id === state.aktuelleDokumentId)
+      : undefined;
+    const now = new Date().toISOString();
+    const id = existing?.id ?? crypto.randomUUID();
+    const doc: SavedDocument = {
+      id,
+      title: state.meta.thema?.trim() || 'Unbenannt',
+      savedAt: existing?.savedAt ?? now,
+      updatedAt: now,
+      isFavorite: existing?.isFavorite ?? false,
+      isDeleted: false,
+      deletedAt: null,
+      snapshot: snapshotFromState(state),
+    };
+    upsertDocument(doc);
+    if (state.aktuelleDokumentId !== id) {
+      dispatch({ type: 'SET_DOCUMENT_ID', id });
+    }
+    setSaveMsg('Gespeichert');
+    window.setTimeout(() => setSaveMsg(null), 2000);
+  }, [state, dispatch]);
+
+  const handleOpenDocument = useCallback((doc: SavedDocument) => {
+    const hasWork = state.bloecke.length > 0 || state.generiertesDokument !== null;
+    if (hasWork && !window.confirm('Aktuellen Stand verwerfen und das gespeicherte Dokument laden?')) {
+      return;
+    }
+    dispatch({ type: 'LOAD_SNAPSHOT', snapshot: doc.snapshot, documentId: doc.id });
+    setActiveView('wizard');
+  }, [state.bloecke.length, state.generiertesDokument, dispatch]);
+
+  const handleNewDocument = useCallback(() => {
+    const hasWork = state.bloecke.length > 0 || state.generiertesDokument !== null;
+    if (hasWork && !window.confirm('Aktuellen Stand verwerfen und ein neues Dokument beginnen?')) {
+      return;
+    }
+    dispatch({ type: 'RESET_STATE' });
+    setActiveView('wizard');
+  }, [state.bloecke.length, state.generiertesDokument, dispatch]);
 
   const renderStep = () => {
     switch (state.step) {
@@ -104,63 +160,109 @@ export default function App() {
     }
   };
 
+  const renderView = () => {
+    switch (activeView) {
+      case 'wizard':
+        return (
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            <WizardStepper currentStep={state.step} onStepClick={goToStep} />
+            <div style={{ marginTop: '1.25rem' }}>{renderStep()}</div>
+          </div>
+        );
+      case 'documents':
+        return <DocumentsView onOpenDocument={handleOpenDocument} />;
+      case 'favorites':
+        return <FavoritesView onOpenDocument={handleOpenDocument} />;
+      case 'trash':
+        return <TrashView />;
+      case 'history':
+        return <HistoryView />;
+      case 'templates':
+        return <TemplatesView meta={state.meta} bloecke={state.bloecke} onLoad={handleLoadTemplate} />;
+      case 'settings':
+        return <SettingsView />;
+      case 'help':
+        return <HelpView />;
+    }
+  };
+
+  const isWizard = activeView === 'wizard';
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      {!isMobile && <Sidebar currentView="new" onSettingsOpen={() => setSettingsOpen(true)} />}
+      {!isMobile && (
+        <Sidebar
+          currentView={activeView}
+          onViewChange={setActiveView}
+          onNewDocument={handleNewDocument}
+        />
+      )}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Kopfleiste */}
         <header style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '0.75rem 1.25rem',
-          background: 'white',
-          borderBottom: '1px solid var(--color-gray-2)',
+          background: 'var(--color-bg-surface)',
+          borderBottom: '1px solid var(--color-border)',
         }}>
           <div>
-            <h1 style={{ fontSize: '1.125rem', margin: 0 }}>Lehrunterlagen-Tool</h1>
-            <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-1)', margin: 0 }}>
+            <h1 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
+              Lehrunterlagen-Applikation
+            </h1>
+            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', margin: 0 }}>
               AHS Deutsch &amp; Englisch · Unter- und Oberstufe
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button className="btn-secondary" onClick={() => setPaletteOpen(true)}
-              style={{ fontSize: '0.75rem', padding: '0.375rem 0.625rem' }}
-              title="Befehl eingeben (Ctrl+K)">
-              ⌨ Befehle
-            </button>
-            <TemplateManager meta={state.meta} bloecke={state.bloecke} onLoad={handleLoadTemplate} />
-          </div>
+          {isWizard && (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {saveMsg && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-success)' }}>{saveMsg}</span>
+              )}
+              <button className="btn-secondary" onClick={() => setPaletteOpen(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', padding: '0.375rem 0.625rem' }}
+                title="Befehl eingeben (Ctrl+K)">
+                <Command size={14} /> Befehle
+              </button>
+              <button className="btn-secondary" onClick={handleSaveDocument}
+                disabled={state.bloecke.length === 0}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', padding: '0.375rem 0.625rem' }}
+                title={state.bloecke.length === 0 ? 'Erst Blöcke anlegen' : 'Dokument speichern'}>
+                <Save size={14} /> Speichern
+              </button>
+              <TemplateManager meta={state.meta} bloecke={state.bloecke} onLoad={handleLoadTemplate} />
+              <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            </div>
+          )}
         </header>
 
         {/* Hauptbereich */}
-        <main style={{ flex: 1, overflow: 'auto', padding: '1.25rem', background: 'var(--color-gray-3)' }}>
-          <div style={{ maxWidth: 960, margin: '0 auto' }}>
-            <WizardStepper currentStep={state.step} />
-
-            <div style={{ marginTop: '1.25rem' }}>
-              {renderStep()}
-            </div>
-          </div>
+        <main style={{ flex: 1, overflow: 'auto', padding: '1.25rem', background: 'var(--color-bg-base)' }}>
+          {renderView()}
         </main>
 
-        {/* Footer-Navigation */}
-        <footer style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '0.75rem 1.25rem',
-          background: 'white',
-          borderTop: '1px solid var(--color-gray-2)',
-        }}>
-          {currentIndex > 0 ? (
-            <button className="btn-secondary" onClick={goBack}>
-              ← Zurück
-            </button>
-          ) : <div />}
-          {currentIndex < 4 && (
-            <button className="btn-primary" onClick={goNext}>
-              Weiter →
-            </button>
-          )}
-        </footer>
+        {/* Footer-Navigation (nur im Assistenten) */}
+        {isWizard && (
+          <footer style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '0.75rem 1.25rem',
+            background: 'var(--color-bg-surface)',
+            borderTop: '1px solid var(--color-border)',
+          }}>
+            {currentIndex > 0 ? (
+              <button className="btn-secondary" onClick={goBack}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                <ArrowLeft size={16} /> Zurück
+              </button>
+            ) : <div />}
+            {currentIndex < 4 && (
+              <button className="btn-primary" onClick={goNext}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                Weiter <ArrowRight size={16} />
+              </button>
+            )}
+          </footer>
+        )}
       </div>
 
       <CommandPalette
@@ -172,18 +274,19 @@ export default function App() {
         blockCount={state.bloecke.length}
       />
 
-      {settingsOpen && (
+      {/* Zoom-Anzeige */}
+      {zoom !== 1.0 && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
-        }} onClick={() => setSettingsOpen(false)}>
-          <div style={{
-            background: 'white', padding: '1.5rem', borderRadius: 'var(--radius)',
-            maxWidth: 640, width: '90%', maxHeight: '80vh', overflow: 'auto',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-          }} onClick={(e) => e.stopPropagation()}>
-            <SettingsPanel />
-          </div>
+          position: 'fixed', bottom: 12, right: 12,
+          padding: '4px 10px', borderRadius: 'var(--radius)',
+          background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
+          fontSize: '0.75rem', color: 'var(--color-text-secondary)',
+          boxShadow: 'var(--shadow)', zIndex: 1000, display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          Zoom: {Math.round(zoom * 100)}%
+          <button onClick={resetZoom} className="btn-secondary" style={{ fontSize: '0.6875rem', padding: '2px 6px' }}>
+            Reset
+          </button>
         </div>
       )}
     </div>

@@ -48,7 +48,7 @@ export function BlockPreviewSchreibaufgabe({ block, showSolution }: Props) {
           <strong style={{ fontSize: '10pt' }}>Musterlösung:</strong>
           <div style={{
             fontStyle: 'italic', padding: '0.5rem', marginTop: '0.25rem',
-            borderLeft: '3px solid #BFBFBF', fontSize: '10.5pt',
+            borderLeft: '3px solid var(--color-border)', fontSize: '10.5pt',
           }}>
             {loesung.musterloesung}
           </div>
@@ -60,12 +60,12 @@ export function BlockPreviewSchreibaufgabe({ block, showSolution }: Props) {
                   {Object.entries(loesung.erwartungshorizont as Record<string, string>).map(([key, val]) => (
                     <tr key={key}>
                       <td style={{
-                        padding: '0.25rem 0.5rem', border: '1px solid #BFBFBF',
+                        padding: '0.25rem 0.5rem', border: '1px solid var(--color-border)',
                         fontWeight: 600, width: 140, fontSize: '9pt',
                       }}>
                         {key}
                       </td>
-                      <td style={{ padding: '0.25rem 0.5rem', border: '1px solid #BFBFBF', fontSize: '9pt' }}>
+                      <td style={{ padding: '0.25rem 0.5rem', border: '1px solid var(--color-border)', fontSize: '9pt' }}>
                         {val}
                       </td>
                     </tr>
@@ -77,12 +77,12 @@ export function BlockPreviewSchreibaufgabe({ block, showSolution }: Props) {
         </div>
       ) : (
         <div style={{ marginTop: '1rem' }}>
-          <p style={{ fontSize: '9pt', color: '#595959', marginBottom: '0.5rem' }}>
+          <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
             (Schreibbereich – ca. {umfang.min}–{umfang.max} Wörter)
           </p>
           {Array.from({ length: 8 }, (_, i) => (
             <div key={i} style={{
-              height: lineHeightPx, borderBottom: '1px solid #BFBFBF',
+              height: lineHeightPx, borderBottom: '1px solid var(--color-border)',
               marginBottom: '0.125rem',
             }} />
           ))}
