@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, CheckCircle2, Check, Circle, Pencil, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Check, Circle, Pencil, RefreshCw, FileText, KeyRound } from 'lucide-react';
 import type { Block } from '@lehrunterlagen/schema';
 import type { AppState, AppAction } from '../lib/types';
 import { BlockPreview } from './BlockPreview';
@@ -31,7 +31,15 @@ function useWindowWidth() {
   return width;
 }
 
+/* ── Konstanten für Papier-Look ── */
+const PAPER_BG = '#ffffff';
+const PAPER_TEXT = '#000000';
+const PAPER_MUTED = '#333333';
+const PAPER_BORDER = '#000000';
+const PAPER_SECONDARY = '#555555';
+
 export function PreviewTwoColumn({ state, dispatch }: Props) {
+  const [activeTab, setActiveTab] = useState<'schueler' | 'loesung'>('schueler');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [regenId, setRegenId] = useState<string | null>(null);
   const windowWidth = useWindowWidth();
@@ -52,17 +60,6 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
     }
   };
 
-  const headerStyle: React.CSSProperties = {
-    fontFamily: 'var(--font)',
-    fontSize: '10pt',
-    color: 'var(--color-text-secondary)',
-    borderBottom: '1px solid var(--color-border)',
-    paddingBottom: '0.375rem',
-    marginBottom: '0.75rem',
-    display: 'flex',
-    justifyContent: 'space-between',
-  };
-
   const resolveQuelleTitel = (id?: string) => {
     if (!id) return undefined;
     const qt = quelltexte.find((q) => q.id === id);
@@ -75,40 +72,41 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
   const renderKopf = () => (
     <>
       <div style={{
-        border: '1px solid var(--color-text-primary)', padding: '0.4rem 0.6rem', fontSize: '10pt',
+        border: `1px solid ${PAPER_BORDER}`, padding: '0.4rem 0.6rem', fontSize: '10pt',
         marginBottom: '0.75rem', display: 'flex', gap: '1.25rem', flexWrap: 'wrap',
+        color: PAPER_TEXT,
       }}>
-        <span><strong>Name:</strong> <span style={{ borderBottom: '1px solid var(--color-text-primary)', display: 'inline-block', minWidth: '8rem' }}>&nbsp;</span></span>
+        <span><strong>Name:</strong> <span style={{ borderBottom: `1px solid ${PAPER_BORDER}`, display: 'inline-block', minWidth: '8rem' }}>&nbsp;</span></span>
         <span><strong>Klasse:</strong> {meta.klasse || '—'}</span>
         <span><strong>Datum:</strong> {meta.datum ? formatDatum(meta.datum) : '—'}</span>
       </div>
       {bloecke.length > 0 && (
         <div style={{ marginBottom: '1rem' }}>
-          <p style={{ fontWeight: 600, fontSize: '11pt', marginBottom: '0.25rem' }}>Aufgabenübersicht</p>
+          <p style={{ fontWeight: 600, fontSize: '11pt', marginBottom: '0.25rem', color: PAPER_TEXT }}>Aufgabenübersicht</p>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
             <thead>
-              <tr style={{ background: 'var(--color-border)' }}>
-                <th style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'left', width: '10%' }}>Nr.</th>
-                <th style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'left' }}>Aufgabe</th>
-                <th style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'right', width: '22%' }}>Punkte</th>
+              <tr style={{ background: '#e8e8e8' }}>
+                <th style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'left', width: '10%' }}>Nr.</th>
+                <th style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'left' }}>Aufgabe</th>
+                <th style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right', width: '22%' }}>Punkte</th>
               </tr>
             </thead>
             <tbody>
               {bloecke.map((b, i) => (
                 <tr key={b.id}>
-                  <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px' }}>{i + 1}</td>
-                  <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px' }}>{BLOCK_LABELS[b.typ] ?? b.typ}</td>
-                  <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'right' }}>____ / {b.punkte}</td>
+                  <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}>{i + 1}</td>
+                  <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}>{BLOCK_LABELS[b.typ] ?? b.typ}</td>
+                  <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right' }}>____ / {b.punkte}</td>
                 </tr>
               ))}
-              <tr style={{ background: 'var(--color-bg-hover)', fontWeight: 700 }}>
-                <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px' }}></td>
-                <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px' }}>GESAMT</td>
-                <td style={{ border: '1px solid var(--color-text-primary)', padding: '2px 6px', textAlign: 'right' }}>____ / {gesamtPunkte}</td>
+              <tr style={{ background: '#f0f0f0', fontWeight: 700 }}>
+                <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}></td>
+                <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}>GESAMT</td>
+                <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right' }}>____ / {gesamtPunkte}</td>
               </tr>
             </tbody>
           </table>
-          <p style={{ fontSize: '10pt', marginTop: '0.4rem' }}>
+          <p style={{ fontSize: '10pt', marginTop: '0.4rem', color: PAPER_TEXT }}>
             <strong>Note:</strong> ________   <strong>Unterschrift:</strong> ____________
           </p>
         </div>
@@ -119,16 +117,17 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
   const renderQuelltexte = () =>
     quelltexte.length > 0 ? (
       <div style={{ marginBottom: '1.5rem' }}>
-        <strong style={{ fontSize: '12pt' }}>Quelltext{quelltexte.length > 1 ? 'e' : ''}</strong>
+        <strong style={{ fontSize: '12pt', color: PAPER_TEXT }}>Quelltext{quelltexte.length > 1 ? 'e' : ''}</strong>
         {quelltexte.map((qt, i) => (
           <div key={qt.id} style={{ marginTop: '0.5rem' }}>
-            <p style={{ fontWeight: 600, fontSize: '11pt' }}>Text {i + 1}: {qt.titel || `Quelltext ${i + 1}`}</p>
+            <p style={{ fontWeight: 600, fontSize: '11pt', color: PAPER_TEXT }}>Text {i + 1}: {qt.titel || `Quelltext ${i + 1}`}</p>
             {qt.herkunft?.ref && (
-              <p style={{ fontSize: '9pt', fontStyle: 'italic', color: 'var(--color-text-secondary)', margin: '0.1rem 0' }}>nach: {qt.herkunft.ref}</p>
+              <p style={{ fontSize: '9pt', fontStyle: 'italic', color: PAPER_SECONDARY, margin: '0.1rem 0' }}>nach: {qt.herkunft.ref}</p>
             )}
             <p style={{
               fontSize: '10pt', lineHeight: 1.5, whiteSpace: 'pre-wrap',
-              borderLeft: '3px solid var(--color-border)', paddingLeft: '0.6rem', marginTop: '0.25rem',
+              borderLeft: '3px solid #cccccc', paddingLeft: '0.6rem', marginTop: '0.25rem',
+              color: PAPER_TEXT,
             }}>
               {qt.inhalt}
             </p>
@@ -148,6 +147,163 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
   }
   const fehlendeLernziele = gewuenschteLernziele.filter((lz) => !abgedeckteLernziele.has(lz));
   const zeigeCoverage = gewuenschteLernziele.length > 0 && doc; // Nur bei generiertem Dokument + vorhandenen Lernzielen
+
+  // ── Schülerfassung ──
+  const renderSchuelerFassung = () => (
+    <div style={{ fontFamily: 'var(--font)', fontSize: '11pt', color: PAPER_TEXT }}>
+      <h2 style={{ fontSize: '14pt', fontWeight: 700, marginBottom: '0.5rem', color: PAPER_TEXT }}>
+        {meta.thema || '(Thema)'}
+      </h2>
+      <p style={{ fontSize: '9pt', color: PAPER_SECONDARY, marginBottom: '0.5rem' }}>
+        {meta.fach === 'deutsch' ? 'Deutsch' : 'Englisch'} ·{' '}
+        {meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe'}
+        {meta.schwierigkeit ? ` · ${meta.schwierigkeit.charAt(0).toUpperCase() + meta.schwierigkeit.slice(1)}` : ''}
+      </p>
+      {meta.lernziele && meta.lernziele.length > 0 && (
+        <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+          {meta.lernziele.map((lz) => (
+            <span key={lz} style={{
+              fontSize: '8pt',
+              background: '#f3e5f5',
+              color: '#6a1b9a',
+              padding: '0.125rem 0.5rem',
+              borderRadius: 'var(--radius)',
+              border: '1px solid #ce93d8',
+            }}>
+              {lz}
+            </span>
+          ))}
+        </div>
+      )}
+      {renderKopf()}
+      {renderQuelltexte()}
+      {bloecke.map((block) => (
+        <div key={block.id}
+          style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid #cccccc', cursor: 'pointer' }}
+          onClick={() => setEditingId(editingId === block.id ? null : block.id)}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: PAPER_SECONDARY }}>
+            <span>{block.punkte} Punkte</span>
+            {block.quelleId && <span>Quelle: {resolveQuelleTitel(block.quelleId)}</span>}
+            {editingId === block.id && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#6a1b9a' }}><Pencil size={12} /> Bearbeitung</span>}
+          </div>
+          <BlockPreview block={block} showSolution={false}
+            onUpdate={editingId === block.id ? handleUpdate : undefined} />
+          {/* Block-Regenerieren — nur bei generiertem Dokument */}
+          {doc && (
+            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {generating && regenId === block.id ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: '#5b5bd6' }}>
+                  <RefreshCw size={13} className="spin" /> Wird regeneriert… {stage}
+                </span>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setRegenId(regenId === block.id ? null : block.id)}
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: 'var(--radius)',
+                      border: '1px solid #cccccc',
+                      background: '#ffffff',
+                      cursor: 'pointer',
+                      color: PAPER_SECONDARY,
+                      display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+                    }}
+                  >
+                    <RefreshCw size={13} /> Neu generieren
+                  </button>
+                  {regenId === block.id && (
+                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                      {['Kürzer', 'Schwieriger', 'Andere Formulierung'].map((hint) => (
+                        <button
+                          key={hint}
+                          onClick={async () => {
+                            setRegenId(null);
+                            await regenerateBlock(state, block.id, hint);
+                          }}
+                          style={{
+                            fontSize: '0.6875rem',
+                            padding: '0.15rem 0.4rem',
+                            borderRadius: 'var(--radius)',
+                            border: '1px solid #5b5bd6',
+                            background: '#f3e5f5',
+                            cursor: 'pointer',
+                            color: '#5b5bd6',
+                          }}
+                        >
+                          {hint}
+                        </button>
+                      ))}
+                      <button
+                        onClick={async () => {
+                          setRegenId(null);
+                          await regenerateBlock(state, block.id);
+                        }}
+                        style={{
+                          fontSize: '0.6875rem',
+                          padding: '0.15rem 0.4rem',
+                          borderRadius: 'var(--radius)',
+                          border: '1px solid #cccccc',
+                          background: '#ffffff',
+                          cursor: 'pointer',
+                          color: PAPER_SECONDARY,
+                        }}
+                      >
+                        Standard
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  // ── Lösungsfassung ──
+  const renderLoesungsFassung = () => (
+    <div style={{ fontFamily: 'var(--font)', fontSize: '11pt', color: PAPER_TEXT }}>
+      <h2 style={{ fontSize: '14pt', fontWeight: 700, marginBottom: '0.5rem', color: PAPER_TEXT }}>
+        {meta.thema || '(Thema)'}
+      </h2>
+      <p style={{ fontSize: '9pt', color: PAPER_SECONDARY, marginBottom: '0.5rem' }}>
+        {meta.fach === 'deutsch' ? 'Deutsch' : 'Englisch'} ·{' '}
+        {meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe'} · Lösung
+        {meta.schwierigkeit ? ` · ${meta.schwierigkeit.charAt(0).toUpperCase() + meta.schwierigkeit.slice(1)}` : ''}
+      </p>
+      {meta.lernziele && meta.lernziele.length > 0 && (
+        <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+          {meta.lernziele.map((lz) => (
+            <span key={lz} style={{
+              fontSize: '8pt',
+              background: '#f3e5f5',
+              color: '#6a1b9a',
+              padding: '0.125rem 0.5rem',
+              borderRadius: 'var(--radius)',
+              border: '1px solid #ce93d8',
+            }}>
+              {lz}
+            </span>
+          ))}
+        </div>
+      )}
+      {renderKopf()}
+      {renderQuelltexte()}
+      {bloecke.map((block) => (
+        <div key={block.id}
+          style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid #cccccc' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: PAPER_SECONDARY }}>
+            <span>{block.punkte} Punkte</span>
+            {block.quelleId && <span>Quelle: {resolveQuelleTitel(block.quelleId)}</span>}
+          </div>
+          <BlockPreview block={block} showSolution={true} />
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div>
@@ -181,7 +337,6 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
             {gewuenschteLernziele.map((lz) => {
               const istAbgedeckt = abgedeckteLernziele.has(lz);
-              // Welche Blöcke decken dieses Lernziel ab?
               const deckendeBloecke = bloecke
                 .filter((b) => (b.lernziele ?? []).includes(lz))
                 .map((b) => BLOCK_LABELS[b.typ] ?? b.typ);
@@ -215,171 +370,45 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
-        {/* Schülerfassung */}
-        <div style={{ borderRight: isNarrow ? 'none' : '1px solid var(--color-border)', paddingRight: isNarrow ? '0' : '1.5rem', marginBottom: isNarrow ? '1.5rem' : '0' }}>
-          <div style={headerStyle}>
-            <strong>Schüler*innenfassung</strong>
-            <span>{meta.klasse} · {meta.datum}</span>
-          </div>
-          <div style={{ fontFamily: 'var(--font)', fontSize: '11pt' }}>
-            <h2 style={{ fontSize: '14pt', fontWeight: 700, marginBottom: '0.5rem' }}>
-              {meta.thema || '(Thema)'}
-            </h2>
-            <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-              {meta.fach === 'deutsch' ? 'Deutsch' : 'Englisch'} ·{' '}
-              {meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe'}
-              {meta.schwierigkeit ? ` · ${meta.schwierigkeit.charAt(0).toUpperCase() + meta.schwierigkeit.slice(1)}` : ''}
-            </p>
-            {meta.lernziele && meta.lernziele.length > 0 && (
-              <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                {meta.lernziele.map((lz) => (
-                  <span key={lz} style={{
-                    fontSize: '8pt',
-                    background: 'var(--color-highlight-bg)',
-                    color: 'var(--color-highlight)',
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: 'var(--radius)',
-                    border: '1px solid var(--color-highlight)',
-                  }}>
-                    {lz}
-                  </span>
-                ))}
-              </div>
-            )}
-            {renderKopf()}
-            {renderQuelltexte()}
-            {bloecke.map((block) => (
-              <div key={block.id}
-                style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
-                onClick={() => setEditingId(editingId === block.id ? null : block.id)}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: 'var(--color-text-secondary)' }}>
-                  <span>{block.punkte} Punkte</span>
-                  {block.quelleId && <span>Quelle: {resolveQuelleTitel(block.quelleId)}</span>}
-                  {editingId === block.id && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-accent)' }}><Pencil size={12} /> Bearbeitung</span>}
-                </div>
-                <BlockPreview block={block} showSolution={false}
-                  onUpdate={editingId === block.id ? handleUpdate : undefined} />
-                {/* Block-Regenerieren — nur bei generiertem Dokument */}
-                {doc && (
-                  <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {generating && regenId === block.id ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--color-accent)' }}>
-                        <RefreshCw size={13} className="spin" /> Wird regeneriert… {stage}
-                      </span>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setRegenId(regenId === block.id ? null : block.id)}
-                          style={{
-                            fontSize: '0.75rem',
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: 'var(--radius)',
-                            border: '1px solid var(--color-border)',
-                            background: 'var(--color-bg-surface)',
-                            cursor: 'pointer',
-                            color: 'var(--color-text-secondary)',
-                            display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-                          }}
-                        >
-                          <RefreshCw size={13} /> Neu generieren
-                        </button>
-                        {regenId === block.id && (
-                          <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                            {['Kürzer', 'Schwieriger', 'Andere Formulierung'].map((hint) => (
-                              <button
-                                key={hint}
-                                onClick={async () => {
-                                  setRegenId(null);
-                                  await regenerateBlock(state, block.id, hint);
-                                }}
-                                style={{
-                                  fontSize: '0.6875rem',
-                                  padding: '0.15rem 0.4rem',
-                                  borderRadius: 'var(--radius)',
-                                  border: '1px solid var(--color-accent)',
-                                  background: 'var(--color-highlight-bg)',
-                                  cursor: 'pointer',
-                                  color: 'var(--color-accent)',
-                                }}
-                              >
-                                {hint}
-                              </button>
-                            ))}
-                            <button
-                              onClick={async () => {
-                                setRegenId(null);
-                                await regenerateBlock(state, block.id);
-                              }}
-                              style={{
-                                fontSize: '0.6875rem',
-                                padding: '0.15rem 0.4rem',
-                                borderRadius: 'var(--radius)',
-                                border: '1px solid var(--color-border)',
-                                background: 'var(--color-bg-surface)',
-                                cursor: 'pointer',
-                                color: 'var(--color-text-secondary)',
-                              }}
-                            >
-                              Standard
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Tab-Bar */}
+      <div
+        role="tablist"
+        style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}
+      >
+        <button
+          role="tab"
+          aria-selected={activeTab === 'schueler'}
+          onClick={() => setActiveTab('schueler')}
+          className={activeTab === 'schueler' ? 'btn-primary' : 'btn-secondary'}
+          style={{ flex: 1, justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
+        >
+          <FileText size={16} /> Schülerfassung
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'loesung'}
+          onClick={() => setActiveTab('loesung')}
+          className={activeTab === 'loesung' ? 'btn-primary' : 'btn-secondary'}
+          style={{ flex: 1, justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
+        >
+          <KeyRound size={16} /> Lösungsfassung
+        </button>
+      </div>
 
-        {/* Lösungsfassung */}
-        <div>
-          <div style={headerStyle}>
-            <strong>Lösungsfassung</strong>
-            <span>zur {meta.fach === 'deutsch' ? 'Deutsch' : 'Englisch'}-Schularbeit</span>
-          </div>
-          <div style={{ fontFamily: 'var(--font)', fontSize: '11pt' }}>
-            <h2 style={{ fontSize: '14pt', fontWeight: 700, marginBottom: '0.5rem' }}>
-              {meta.thema || '(Thema)'}
-            </h2>
-            <p style={{ fontSize: '9pt', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-              {meta.fach === 'deutsch' ? 'Deutsch' : 'Englisch'} ·{' '}
-              {meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe'} · Lösung
-              {meta.schwierigkeit ? ` · ${meta.schwierigkeit.charAt(0).toUpperCase() + meta.schwierigkeit.slice(1)}` : ''}
-            </p>
-            {meta.lernziele && meta.lernziele.length > 0 && (
-              <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                {meta.lernziele.map((lz) => (
-                  <span key={lz} style={{
-                    fontSize: '8pt',
-                    background: 'var(--color-highlight-bg)',
-                    color: 'var(--color-highlight)',
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: 'var(--radius)',
-                    border: '1px solid var(--color-highlight)',
-                  }}>
-                    {lz}
-                  </span>
-                ))}
-              </div>
-            )}
-            {renderKopf()}
-            {renderQuelltexte()}
-            {bloecke.map((block) => (
-              <div key={block.id}
-                style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: 'var(--color-text-secondary)' }}>
-                  <span>{block.punkte} Punkte</span>
-                  {block.quelleId && <span>Quelle: {resolveQuelleTitel(block.quelleId)}</span>}
-                </div>
-                <BlockPreview block={block} showSolution={true} />
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Papier-Container */}
+      <div
+        role="tabpanel"
+        style={{
+          maxWidth: 800,
+          margin: '0 auto',
+          background: PAPER_BG,
+          padding: '2rem',
+          borderRadius: 2,
+          boxShadow: '0 2px 12px var(--color-shadow)',
+          color: PAPER_TEXT,
+        }}
+      >
+        {activeTab === 'schueler' ? renderSchuelerFassung() : renderLoesungsFassung()}
       </div>
     </div>
   );
