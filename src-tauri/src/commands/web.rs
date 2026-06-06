@@ -1,7 +1,9 @@
+use std::net::{IpAddr, Ipv4Addr};
 use std::time::Duration;
 
 const TIMEOUT_SECS: u64 = 15;
 const MAX_LEN: usize = 50_000;
+const MAX_REDIRECTS: usize = 5;
 /// Realistischer Browser-User-Agent — viele (News-)Seiten blocken generische
 /// Bot-User-Agents mit 403.
 const USER_AGENT: &str =
@@ -16,22 +18,52 @@ pub async fn fetch_url(url: String) -> Result<String, String> {
         return Err("Bitte eine vollständige URL mit http:// oder https:// angeben.".to_string());
     }
 
+    // Redirects manuell verfolgen, damit jeder Hop gegen die SSRF-Denylist
+    // geprüft werden kann (lokale/interne Adressen, Cloud-Metadaten).
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(TIMEOUT_SECS))
         .user_agent(USER_AGENT)
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|e| format!("HTTP-Client-Fehler: {}", e))?;
 
-    let resp = client
-        .get(&url)
-        .header(
-            reqwest::header::ACCEPT,
-            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        )
-        .header(reqwest::header::ACCEPT_LANGUAGE, "de-AT,de;q=0.9,en;q=0.8")
-        .send()
-        .await
-        .map_err(|e| format!("Seite konnte nicht geladen werden: {}", e))?;
+    let mut current = reqwest::Url::parse(&url).map_err(|_| "Ungültige URL.".to_string())?;
+    let mut redirects = 0usize;
+    let resp = loop {
+        if current.scheme() != "http" && current.scheme() != "https" {
+            return Err("Nur http(s)-URLs werden unterstützt.".to_string());
+        }
+        // SSRF-Schutz: Host auflösen und interne/lokale Ziele ablehnen.
+        validate_public_host(&current).await?;
+
+        let r = client
+            .get(current.clone())
+            .header(
+                reqwest::header::ACCEPT,
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            )
+            .header(reqwest::header::ACCEPT_LANGUAGE, "de-AT,de;q=0.9,en;q=0.8")
+            .send()
+            .await
+            .map_err(|e| format!("Seite konnte nicht geladen werden: {}", e))?;
+
+        if r.status().is_redirection() {
+            if redirects >= MAX_REDIRECTS {
+                return Err("Zu viele Weiterleitungen.".to_string());
+            }
+            let location = r
+                .headers()
+                .get(reqwest::header::LOCATION)
+                .and_then(|v| v.to_str().ok())
+                .ok_or_else(|| "Weiterleitung ohne Zieladresse.".to_string())?;
+            current = current
+                .join(location)
+                .map_err(|_| "Ungültige Weiterleitungs-URL.".to_string())?;
+            redirects += 1;
+            continue;
+        }
+        break r;
+    };
 
     if !resp.status().is_success() {
         return Err(format!("Server antwortete mit Status {}.", resp.status().as_u16()));
@@ -82,6 +114,61 @@ pub async fn fetch_url(url: String) -> Result<String, String> {
 fn looks_like_url(url: &str) -> bool {
     let u = url.to_lowercase();
     (u.starts_with("http://") || u.starts_with("https://")) && url.len() > 10
+}
+
+/// SSRF-Schutz: Löst den Host auf und lehnt ab, wenn (irgend)eine Zieladresse
+/// im lokalen/internen Netz liegt (Loopback, privat, Link-local inkl.
+/// Cloud-Metadaten 169.254.169.254, Multicast, unspecified, CGNAT, ULA …).
+async fn validate_public_host(url: &reqwest::Url) -> Result<(), String> {
+    let host = url.host_str().ok_or_else(|| "URL ohne Host.".to_string())?;
+    let port = url.port_or_known_default().unwrap_or(80);
+
+    let addrs: Vec<IpAddr> = match host.parse::<IpAddr>() {
+        // Host ist bereits eine IP-Literal-Adresse.
+        Ok(ip) => vec![ip],
+        // Hostname → DNS-Auflösung.
+        Err(_) => tokio::net::lookup_host((host, port))
+            .await
+            .map_err(|_| "Host konnte nicht aufgelöst werden.".to_string())?
+            .map(|sa| sa.ip())
+            .collect(),
+    };
+
+    if addrs.is_empty() {
+        return Err("Host konnte nicht aufgelöst werden.".to_string());
+    }
+    if addrs.iter().any(is_blocked_ip) {
+        return Err(
+            "Adresse aus Sicherheitsgründen blockiert (lokales oder internes Netz).".to_string(),
+        );
+    }
+    Ok(())
+}
+
+fn is_blocked_ip(ip: &IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v4) => is_blocked_v4(v4),
+        IpAddr::V6(v6) => {
+            v6.is_loopback()
+                || v6.is_unspecified()
+                || v6.is_multicast()
+                || (v6.segments()[0] & 0xffc0) == 0xfe80 // fe80::/10 link-local
+                || (v6.segments()[0] & 0xfe00) == 0xfc00 // fc00::/7 unique-local
+                || v6.to_ipv4_mapped().map_or(false, |m| is_blocked_v4(&m))
+        }
+    }
+}
+
+fn is_blocked_v4(v4: &Ipv4Addr) -> bool {
+    let o = v4.octets();
+    v4.is_loopback()
+        || v4.is_private()
+        || v4.is_link_local() // 169.254.0.0/16 (inkl. Cloud-Metadaten 169.254.169.254)
+        || v4.is_broadcast()
+        || v4.is_unspecified()
+        || v4.is_multicast()
+        || v4.is_documentation()
+        || (o[0] == 100 && (o[1] & 0xc0) == 64) // 100.64.0.0/10 CGNAT
 }
 
 fn cap(s: &str, max: usize) -> String {
@@ -371,6 +458,35 @@ mod tests {
     async fn rejects_empty_url() {
         let r = fetch_url("".to_string()).await;
         assert!(r.is_err());
+    }
+
+    #[test]
+    fn blocks_internal_ips() {
+        let blocked = [
+            "127.0.0.1", "10.0.0.1", "192.168.1.1", "172.16.0.1",
+            "169.254.169.254", // Cloud-Metadaten
+            "0.0.0.0", "100.64.0.1", // CGNAT
+            "::1", "fe80::1", "fc00::1",
+            "::ffff:127.0.0.1", // IPv4-mapped Loopback
+        ];
+        for s in blocked {
+            let ip: IpAddr = s.parse().unwrap();
+            assert!(is_blocked_ip(&ip), "{s} sollte blockiert sein");
+        }
+    }
+
+    #[test]
+    fn allows_public_ips() {
+        for s in ["1.1.1.1", "8.8.8.8", "93.184.216.34", "2606:2800:220:1::1"] {
+            let ip: IpAddr = s.parse().unwrap();
+            assert!(!is_blocked_ip(&ip), "{s} sollte erlaubt sein");
+        }
+    }
+
+    #[tokio::test]
+    async fn validate_public_host_rejects_loopback() {
+        let url = reqwest::Url::parse("http://127.0.0.1:8080/admin").unwrap();
+        assert!(validate_public_host(&url).await.is_err());
     }
 
     #[test]
