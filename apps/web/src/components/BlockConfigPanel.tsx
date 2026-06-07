@@ -701,99 +701,97 @@ export function BlockConfigPanel({ block, stufe, onConfigChange }: Props) {
   }
 
   if (block.typ === 'kreuzwortraetsel') {
-    const eintraege = (config.eintraege as { wort: string; hinweis: string }[] | undefined) ?? [];
-    const setEintraege = (next: { wort: string; hinweis: string }[]) => set('eintraege', next);
-    const updateEintrag = (i: number, key: 'wort' | 'hinweis', value: string) => {
-      setEintraege(eintraege.map((e, idx) => (idx === i ? { ...e, [key]: value } : e)));
+    const anzahl = (config.anzahlWoerter as number) ?? 6;
+    const syncArray = (n: number) => {
+      const current = (config.eintraege as { wort: string; hinweis: string }[] | undefined) ?? [];
+      if (n > current.length) {
+        set('eintraege', [...current, ...Array.from({ length: n - current.length }, () => ({ wort: '', hinweis: '' }))]);
+      } else if (n < current.length) {
+        set('eintraege', current.slice(0, n));
+      }
     };
 
     return (
       <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Kreuzworträtsel</h3>
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-          Beim Generieren zieht die KI die Wörter + Hinweise automatisch aus dem Quelltext —
-          diese Liste legt nur die <strong>Anzahl</strong> fest und dient als Vorschau.
-          Du kannst die Beispiele stehen lassen. Das Gitter wird automatisch gebaut.
+        <ConfigField label="Anzahl Wörter">
+          <input type="number" min={3} max={20} value={anzahl}
+            onChange={(e) => {
+              const n = Math.max(3, Math.min(20, parseInt(e.target.value) || 6));
+              set('anzahlWoerter', n);
+              syncArray(n);
+            }} />
+        </ConfigField>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+          Beim Generieren zieht die KI {anzahl} Wörter + Hinweise automatisch aus dem Quelltext.
         </p>
-
-        {eintraege.map((e, i) => (
-          <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
-            <input
-              type="text"
-              value={e.wort ?? ''}
-              placeholder="Wort"
-              style={{ flex: '0 0 30%' }}
-              onChange={(ev) => updateEintrag(i, 'wort', ev.target.value)}
-            />
-            <input
-              type="text"
-              value={e.hinweis ?? ''}
-              placeholder="Hinweis"
-              style={{ flex: 1 }}
-              onChange={(ev) => updateEintrag(i, 'hinweis', ev.target.value)}
-            />
-            <button
-              className="btn-danger"
-              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-              aria-label={`Eintrag ${i + 1} entfernen`}
-              onClick={() => setEintraege(eintraege.filter((_, idx) => idx !== i))}
-            >
-              <X size={13} />
-            </button>
-          </div>
-        ))}
-
-        <button
-          className="btn-secondary"
-          style={{ marginTop: '0.25rem', fontSize: '0.8125rem' }}
-          onClick={() => setEintraege([...eintraege, { wort: '', hinweis: '' }])}
-        >
-          + Eintrag hinzufügen
-        </button>
       </div>
     );
   }
 
   if (block.typ === 'wortgitter') {
-    const woerter = (config.woerter as string[] | undefined) ?? [];
-    const setWoerter = (next: string[]) => set('woerter', next);
+    const anzahl = (config.anzahlWoerter as number) ?? 6;
+    const syncArray = (n: number) => {
+      const current = (config.woerter as string[] | undefined) ?? [];
+      if (n > current.length) {
+        set('woerter', [...current, ...Array.from({ length: n - current.length }, () => '')]);
+      } else if (n < current.length) {
+        set('woerter', current.slice(0, n));
+      }
+    };
 
     return (
       <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
         <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Wortgitter</h3>
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-          Beim Generieren zieht die KI die Wörter automatisch aus dem Quelltext —
-          diese Liste legt nur die <strong>Anzahl</strong> fest und dient als Vorschau.
-          Du kannst die Beispiele stehen lassen. Das Buchstabengitter wird automatisch gebaut.
+        <ConfigField label="Anzahl Wörter">
+          <input type="number" min={3} max={20} value={anzahl}
+            onChange={(e) => {
+              const n = Math.max(3, Math.min(20, parseInt(e.target.value) || 6));
+              set('anzahlWoerter', n);
+              syncArray(n);
+            }} />
+        </ConfigField>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+          Beim Generieren zieht die KI {anzahl} Wörter automatisch aus dem Quelltext.
         </p>
+      </div>
+    );
+  }
 
-        {woerter.map((w, i) => (
-          <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
-            <input
-              type="text"
-              value={w ?? ''}
-              placeholder="Wort"
-              style={{ flex: 1 }}
-              onChange={(ev) => setWoerter(woerter.map((x, idx) => (idx === i ? ev.target.value : x)))}
-            />
-            <button
-              className="btn-danger"
-              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-              aria-label={`Wort ${i + 1} entfernen`}
-              onClick={() => setWoerter(woerter.filter((_, idx) => idx !== i))}
-            >
-              <X size={13} />
-            </button>
-          </div>
-        ))}
+  if (block.typ === 'vokabeluebung') {
+    const richtung = (config.richtung as 'de_fremd' | 'fremd_de') ?? 'de_fremd';
+    const anzahl = (config.anzahlVokabeln as number) ?? 6;
+    const syncArray = (n: number) => {
+      const current = (config.vokabeln as Array<{ deutsch: string; fremdsprache: string; kontextsatz?: string }> | undefined) ?? [];
+      if (n > current.length) {
+        set('vokabeln', [...current, ...Array.from({ length: n - current.length }, () => ({ deutsch: '', fremdsprache: '' }))]);
+      } else if (n < current.length) {
+        set('vokabeln', current.slice(0, n));
+      }
+    };
 
-        <button
-          className="btn-secondary"
-          style={{ marginTop: '0.25rem', fontSize: '0.8125rem' }}
-          onClick={() => setWoerter([...woerter, ''])}
-        >
-          + Wort hinzufügen
-        </button>
+    return (
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+        <h3 style={{ marginBottom: '0.75rem', fontSize: '0.8125rem' }}>Vokabelübung</h3>
+
+        <ConfigField label="Richtung">
+          <select value={richtung} onChange={(e) => set('richtung', e.target.value)}>
+            <option value="de_fremd">Deutsch → Fremdsprache</option>
+            <option value="fremd_de">Fremdsprache → Deutsch</option>
+          </select>
+        </ConfigField>
+
+        <ConfigField label="Anzahl Vokabeln">
+          <input type="number" min={3} max={20} value={anzahl}
+            onChange={(e) => {
+              const n = Math.max(3, Math.min(20, parseInt(e.target.value) || 6));
+              set('anzahlVokabeln', n);
+              syncArray(n);
+            }} />
+        </ConfigField>
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+          Beim Generieren zieht die KI {anzahl} Vokabeln automatisch aus dem Quelltext.
+        </p>
       </div>
     );
   }

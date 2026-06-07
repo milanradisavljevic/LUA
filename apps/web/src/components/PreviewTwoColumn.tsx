@@ -88,7 +88,7 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
               <tr style={{ background: '#e8e8e8' }}>
                 <th style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'left', width: '10%' }}>Nr.</th>
                 <th style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'left' }}>Aufgabe</th>
-                <th style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right', width: '22%' }}>Punkte</th>
+                {gesamtPunkte > 0 && <th style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right', width: '22%' }}>Punkte</th>}
               </tr>
             </thead>
             <tbody>
@@ -96,19 +96,23 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
                 <tr key={b.id}>
                   <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}>{i + 1}</td>
                   <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}>{BLOCK_LABELS[b.typ] ?? b.typ}</td>
-                  <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right' }}>____ / {b.punkte}</td>
+                  {gesamtPunkte > 0 && <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right' }}>____ / {b.punkte}</td>}
                 </tr>
               ))}
-              <tr style={{ background: '#f0f0f0', fontWeight: 700 }}>
-                <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}></td>
-                <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}>GESAMT</td>
-                <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right' }}>____ / {gesamtPunkte}</td>
-              </tr>
+              {gesamtPunkte > 0 && (
+                <tr style={{ background: '#f0f0f0', fontWeight: 700 }}>
+                  <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}></td>
+                  <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px' }}>GESAMT</td>
+                  <td style={{ border: `1px solid ${PAPER_BORDER}`, padding: '2px 6px', textAlign: 'right' }}>____ / {gesamtPunkte}</td>
+                </tr>
+              )}
             </tbody>
           </table>
-          <p style={{ fontSize: '10pt', marginTop: '0.4rem', color: PAPER_TEXT }}>
-            <strong>Note:</strong> ________   <strong>Unterschrift:</strong> ____________
-          </p>
+          {gesamtPunkte > 0 && (
+            <p style={{ fontSize: '10pt', marginTop: '0.4rem', color: PAPER_TEXT }}>
+              <strong>Note:</strong> ________   <strong>Unterschrift:</strong> ____________
+            </p>
+          )}
         </div>
       )}
     </>
@@ -124,13 +128,21 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
             {qt.herkunft?.ref && (
               <p style={{ fontSize: '9pt', fontStyle: 'italic', color: PAPER_SECONDARY, margin: '0.1rem 0' }}>nach: {qt.herkunft.ref}</p>
             )}
-            <p style={{
-              fontSize: '10pt', lineHeight: 1.5, whiteSpace: 'pre-wrap',
-              borderLeft: '3px solid #cccccc', paddingLeft: '0.6rem', marginTop: '0.25rem',
-              color: PAPER_TEXT,
+            <div style={{
+              fontSize: '10pt', lineHeight: 1.5, marginTop: '0.25rem',
+              borderLeft: '3px solid #cccccc', paddingLeft: '0.6rem',
+              color: PAPER_TEXT, fontFamily: 'var(--font)',
             }}>
-              {qt.inhalt}
-            </p>
+              {qt.inhalt.split('\n').map((zeile, zi) => (
+                <div key={zi} style={{ display: 'flex', gap: '0.5rem' }}>
+                  <span style={{
+                    minWidth: '1.5rem', textAlign: 'right', color: '#888888',
+                    fontSize: '9pt', userSelect: 'none', fontFamily: 'monospace',
+                  }}>{zi + 1}</span>
+                  <span>{zeile || '\u00A0'}</span>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -183,7 +195,7 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
           onClick={() => setEditingId(editingId === block.id ? null : block.id)}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: PAPER_SECONDARY }}>
-            <span>{block.punkte} Punkte</span>
+            {gesamtPunkte > 0 && <span>{block.punkte} Punkte</span>}
             {block.quelleId && <span>Quelle: {resolveQuelleTitel(block.quelleId)}</span>}
             {editingId === block.id && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#6a1b9a' }}><Pencil size={12} /> Bearbeitung</span>}
           </div>
@@ -296,7 +308,7 @@ export function PreviewTwoColumn({ state, dispatch }: Props) {
         <div key={block.id}
           style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid #cccccc' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', fontSize: '9pt', color: PAPER_SECONDARY }}>
-            <span>{block.punkte} Punkte</span>
+            {gesamtPunkte > 0 && <span>{block.punkte} Punkte</span>}
             {block.quelleId && <span>Quelle: {resolveQuelleTitel(block.quelleId)}</span>}
           </div>
           <BlockPreview block={block} showSolution={true} />

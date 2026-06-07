@@ -218,6 +218,7 @@ export function getEmptyLoesung(typ: string): Record<string, unknown> {
     case 'tabelle': return { zellen: {} };
     case 'stiluebung': return { umformulierung: '', begruendung: '' };
     case 'songanalyse': return { ergebnis: '', zitate: [], analysepunkte: [] };
+    case 'vokabeluebung': return { antworten: {} };
     default: return {};
   }
 }

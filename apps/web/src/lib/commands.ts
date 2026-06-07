@@ -157,6 +157,7 @@ function getDefaultConfig(typ: string): Record<string, unknown> {
     case 'offeneVerstaendnisfrage': return { fragen: [{ nr: 1, frage: '', zeilen: 4 }] };
     case 'offeneSchreibaufgabe': return { situation: '', textsorte: '', umfangWorte: { min: 200, max: 300 }, aspekte: [''] };
     case 'markieraufgabe': return { quelleId: '', anweisung: '' };
+    case 'vokabeluebung': return { richtung: 'de_fremd', vokabeln: [{ deutsch: '', fremdsprache: '' }] };
     default: return {};
   }
 }
@@ -169,6 +170,7 @@ function getEmptyLoesung(typ: string): Record<string, unknown> {
     case 'offeneVerstaendnisfrage': return { antworten: {} };
     case 'offeneSchreibaufgabe': return { musterloesung: '', erwartungshorizont: { inhalt: '', struktur: '', ausdruck: '', sprachrichtigkeit: '' } };
     case 'markieraufgabe': return { stellen: [] };
+    case 'vokabeluebung': return { antworten: {} };
     default: return {};
   }
 }

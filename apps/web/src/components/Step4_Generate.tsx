@@ -9,7 +9,7 @@ import { PreviewTwoColumn } from './PreviewTwoColumn';
 import { useGenerate } from '../hooks/useGenerate';
 import { useExport } from '../hooks/useExport';
 import { usePdfExport } from '../hooks/usePdfExport';
-import { beispielBloecke } from '../lib/beispieldaten';
+
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
@@ -46,9 +46,7 @@ export function Step4_Generate({ state, dispatch }: Props) {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
-  const exampleBlockIds = beispielBloecke(state.bloecke);
-  const hasExampleBlocks = exampleBlockIds.length > 0;
-  const canGenerate = state.quelltexte.length > 0 && state.bloecke.length > 0 && !!state.llmProvider && !hasExampleBlocks;
+  const canGenerate = state.quelltexte.length > 0 && state.bloecke.length > 0 && !!state.llmProvider;
   const canExport = !!state.generiertesDokument;
   const error = generateError ?? exportError ?? pdfExport.error;
 
@@ -199,11 +197,7 @@ export function Step4_Generate({ state, dispatch }: Props) {
               Quelltexte, Aufgabenblöcke und KI-Modell erforderlich.
             </p>
           )}
-          {hasExampleBlocks && (
-            <p style={{ color: 'var(--color-warning)', fontSize: '0.75rem', textAlign: 'center', margin: 0 }}>
-              {exampleBlockIds.length} Aufgabenblock{exampleBlockIds.length === 1 ? '' : 'e'} enthalten noch Beispieldaten. Bitte im Baukasten ersetzen.
-            </p>
-          )}
+
         </div>
       </div>
 

@@ -28,6 +28,7 @@ function waehleKatalog(block: Block, fach: string): KriterienKatalog[] {
     case 'wordScramble':
     case 'kreuzwortraetsel':
     case 'wortgitter':
+    case 'vokabeluebung':
       // Geschlossene Blocks: eine Zeile "Richtig/Falsch"
       return [{ kriterium: 'Richtig/Falsch', beschreibung: 'Volle Punkte bei richtiger Antwort, 0 bei falsch', maxPunkte: block.punkte }];
 

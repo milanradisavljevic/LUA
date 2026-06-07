@@ -148,10 +148,8 @@ export function createDefaultBlock(typ: Block['typ'], meta?: Meta): Block {
         ...base,
         typ: 'kreuzwortraetsel',
         config: {
-          eintraege: [
-            { wort: 'HAUS', hinweis: 'Gebäude zum Wohnen' },
-            { wort: 'BAUM', hinweis: 'Pflanze mit Stamm und Krone' },
-          ],
+          anzahlWoerter: 6,
+          eintraege: Array.from({ length: 6 }, () => ({ wort: '', hinweis: '' })),
         },
       } as Block;
     case 'wortgitter':
@@ -159,7 +157,17 @@ export function createDefaultBlock(typ: Block['typ'], meta?: Meta): Block {
         ...base,
         typ: 'wortgitter',
         punkte: 5,
-        config: { woerter: ['HAUS', 'GARTEN', 'BAUM', 'BLUME'] },
+        config: { anzahlWoerter: 6, woerter: Array.from({ length: 6 }, () => '') },
+      } as Block;
+    case 'vokabeluebung':
+      return {
+        ...base,
+        typ: 'vokabeluebung',
+        config: {
+          richtung: 'de_fremd',
+          anzahlVokabeln: 6,
+          vokabeln: Array.from({ length: 6 }, () => ({ deutsch: '', fremdsprache: '' })),
+        },
       } as Block;
   }
 }
@@ -178,6 +186,7 @@ export const BLOCK_ARBEITSANWEISUNG_PLACEHOLDER: Record<Block['typ'], string> = 
   songanalyse: 'Analysiere den Songtext.',
   kreuzwortraetsel: 'Löse das Kreuzworträtsel mithilfe der Hinweise.',
   wortgitter: 'Finde die versteckten Wörter im Buchstabengitter und markiere sie.',
+  vokabeluebung: 'Übersetze die Vokabeln.',
 };
 
 const BLOCK_LABELS: Record<Block['typ'], string> = {
@@ -194,6 +203,7 @@ const BLOCK_LABELS: Record<Block['typ'], string> = {
   songanalyse: 'Songanalyse',
   kreuzwortraetsel: 'Kreuzworträtsel',
   wortgitter: 'Wortgitter',
+  vokabeluebung: 'Vokabelübung',
 };
 
 export function getBlockLabel(typ: Block['typ']): string {

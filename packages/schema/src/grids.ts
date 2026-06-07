@@ -97,9 +97,9 @@ export function baueKreuzwortgitter(eintraege: KreuzwortEintrag[]): Kreuzwortgit
 
   for (let i = 1; i < uniq.length; i++) {
     const { wort, hinweis } = uniq[i]!;
-    let found: { r: number; c: number; dir: Dir } | null = null;
-    // Erste gültige kreuzende Platzierung in deterministischer Scan-Reihenfolge.
-    outer:
+    // Alle gültigen Kandidaten sammeln und nach Kreuzungsanzahl sortieren
+    // (absteigend), damit das Gitter möglichst dicht wird.
+    const kandidaten: { r: number; c: number; dir: Dir; crossings: number }[] = [];
     for (const p of placed) {
       for (let pk = 0; pk < p.wort.length; pk++) {
         const pr = p.r + p.dir.dr * pk;
@@ -111,12 +111,16 @@ export function baueKreuzwortgitter(eintraege: KreuzwortEintrag[]): Kreuzwortgit
           const r = pr - dir.dr * k;
           const c = pc - dir.dc * k;
           const res = canPlace(wort, r, c, dir);
-          if (res.ok && res.crossings >= 1) { found = { r, c, dir }; break outer; }
+          if (res.ok && res.crossings >= 1) {
+            kandidaten.push({ r, c, dir, crossings: res.crossings });
+          }
         }
       }
     }
-    if (found) {
-      doPlace(wort, hinweis, found.r, found.c, found.dir);
+    if (kandidaten.length > 0) {
+      kandidaten.sort((a, b) => b.crossings - a.crossings);
+      const best = kandidaten[0]!;
+      doPlace(wort, hinweis, best.r, best.c, best.dir);
     } else {
       // Kein Kreuz möglich → unterhalb von allem separat platzieren (Wort geht nicht verloren).
       let maxR = -Infinity;

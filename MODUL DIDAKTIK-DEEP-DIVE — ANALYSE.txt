@@ -1,0 +1,272 @@
+MODUL: DIDAKTIK-DEEP-DIVE — ANALYSE
+═══════════════════════════════════════════════════════════════
+I. PROMPT-ENGINEERING-QUALITÄT
+═══════════════════════════════════════════════════════════════
+Hauptfundstelle: packages/llm/src/prompt.ts (gesamte Datei, 477 Zeilen)
+1. Bloom'sche Taxonomie — ⚠️ TEILWEISE
+Vorhanden: System-Prompt Zeilen 13–23 enthalten eine explizite Bloom-Steuerung mit drei Stufen, die an meta.schwierigkeit koppelt:
+- "leicht" → Bloom 1-2 (Erinnern, Verstehen)
+- "mittel" → Bloom 3-4 (Anwenden, Analysieren)  
+- "schwierig" → Bloom 5-6 (Bewerten, Erschaffen)
+Schwächen:
+- Aufgabentyp-Auflösung fehlt: Die Bloom-Stufe wird nur an "Wortschatz, Satzkomplexität, Abstraktionsgrad" gekoppelt. Ein multipleChoice bleibt aber IMMER Bloom 1-2, unabhängig von schwierigkeit=schwer. Der Mismatch wird im Prompt nicht thematisiert.
+- Kein Blocktyp-Mapping: Es gibt keine Regel "wenn schwer UND multipleChoice, dann generiere stattdessen offeneVerstaendnisfrage oder offeneSchreibaufgabe".
+- Defekte Konstruktion: Die Steuerung ist Selbstwiderspruch-anfällig: "schweres Multiple Choice" → LLM kann nur Items mit längeren Texten liefern, das ist formal keine höhere Taxonomie.
+2. Quellen-Treue (Grounding) — ✅ STARK mit kleinen Lücken
+Vorhanden: Zeile 27: "Leite alle Inhalte strikt aus den gegebenen Quelltexten ab. Erfinde keine Fakten."
+Stärken:
+- INJECTION_PATTERNS (Z. 408–417) entschärfen Prompt-Injection
+- sanitizeQuelltext (Z. 420–429) kappt + filtert
+- checkGrounding in quality.ts (Z. 145–194) validiert Lückenwörter wortwörtlich + Markierstellen wortwörtlich + Musterantworten via Paraphrase-Ratio
+Lücken:
+- Keine explizite Anti-Halluzinations-Standardformel wie "Wenn der Input keine Antwort enthält, schreibe 'Nicht aus dem Material ableitbar'". Bei Verständnisfragen kann das LLM ungefragt Weltwissen einschleusen.
+- offeneSchreibaufgabe.musterloesung ist BEWUSST vom Grounding-Check ausgenommen (Z. 134–136) — das ist riskant: ein LLM kann eine perfekt strukturierte, aber inhaltlich am Quelltext vorbei formulierte Musterlösung liefern, ohne dass checkGrounding anschlägt.
+3. Fachliche Terminologie — ⚠️ SCHWACH
+Fehlt: Im gesamten prompt.ts (Z. 7–400) gibt es KEINE Anweisung, die Original-Terminologie des Inputs beizubehalten. Konkret: kein "Übernimm Fachbegriffe aus dem Quelltext wortwörtlich; synonymisiere NICHT (z. B. 'Maische' bleibt 'Maische', nicht 'Ansatz')."
+Das ist für Brauwesen / Handwerk / Medizin / Recht kritisch. Für AHS Deutsch/Englisch weniger, aber für künftige Fächer (geplant laut User-Erwähnung) ein latentes Problem.
+4. Kontextbewusstsein — ⚠️ NUR STUFE/FACH, KEINE ZIELGRUPPE
+Vorhanden: stufe (oberstufe/unterstufe) und fach (deutsch/englisch) werden im Meta übermittelt.
+Fehlt:
+- Keine Anweisung "Du schreibst für AHS 7. Klasse Oberstufe, Maturaniveau" o.ä. — klasse ist im Meta-Schema vorhanden (apps/web/src/lib/types.ts + packages/schema/src/index.ts:25), wird aber NICHT in den Prompt gepropagiert.
+- Keine Alters-/Reifegrad-Adressierung. Ein "leichter" Lückentext für eine 4. Klasse AHS müsste kürzere Sätze + einfachere Wörter verwenden als für 7. Klasse — die Differenzierung fehlt.
+- Lehrberufs-Zielgruppen wie Lehrling/Meister/Quereinsteiger werden in keinem Prompt berücksichtigt (auch wenn aktuell nur AHS — die Architektur ist nicht zukunftssicher).
+═══════════════════════════════════════════════════════════════
+II. AUFGABENTYPEN — DIDAKTISCHE TIEFE
+═══════════════════════════════════════════════════════════════
+A) Lückentext — ⚠️ MITTEL
+prompt.ts:37–44 + quality.ts:121–124
+Stärken:
+- Eindeutigkeit explizit gefordert: "Jede Luecke muss eindeutig loesbar sein"
+- Distraktoren als Zahl (mit Wortbank-Modus)
+- Lösungswörter wortwörtlich aus Quelltext (verifiziert in checkGrounding)
+Schwächen:
+- Keine Vorgabe zur Distraktor-Qualität: Der Prompt sagt nur "wenn wortbank=true, dann anzahl Distraktoren", aber NICHT "Distraktoren müssen thematisch aus demselben Wortfeld stammen (z. B. 'Photosynthese' → Distraktor 'Atmung', nicht 'Schwamm')". Generische Distraktoren sind didaktisch wertlos.
+- Keine Wortlängen-Kontrolle: Eine Lücke mit "drei" vs. "Bundesrepublik" hat völlig andere Anforderungen an die Wortbank-Reihenfolge.
+- Keine Kontextlücke vs. Lexiklücke: Der Prompt unterscheidet nicht "Lücke prüft Wortschatz" (lexikalisch) vs. "Lücke prüft Grammatik" (morphosyntaktisch, z. B. "Die Schüler\_\_ (gehen)").
+B) Markieraufgabe — ✅ KONZEPT STARK, PROMPT SCHWACH
+docs/markieraufgabe-semantik.md (55 Zeilen, exzellente Spezifikation) vs. prompt.ts:72–73 (3 Zeilen)
+Stärken:
+- Semantik-Dokument definiert exakt: wortwörtlich, vollständig, granular
+- checkGrounding in quality.ts:129–132 validiert Verbatim
+Schwächen:
+- Der Prompt selbst sagt nur: loesung: { "stellen": ["...", "..."] } — KEINE Anweisung "mindestens 2 Stellen", "Anweisung muss mit den Stellen konsistent sein (Anweisung: 'Adjektive' → stellen: tatsächlich Adjektive)", "stellen müssen kleinste sinnvolle Einheiten sein".
+- Die Misconception-Prüfung fehlt: Was passiert, wenn das LLM Stellen markiert, die der Anweisung nur entfernt entsprechen? Aktuell: keine Prüfung.
+C) Matching — ⚠️ GUT IN STRUKTUR, SCHWACH IN PROMPT-ANWEISUNGEN
+prompt.ts:46–49 + quality.ts:200–240 (Duplikate-Check)
+Stärken:
+- Schema erzwingt optionen > items (Distraktoren)
+- Verbot der "parallelen Reihenfolge" (Items Nr.1 → Option A; Items Nr.2 → Option B; …) — gute didaktische Regel
+- checkDuplicates fängt identische Optionen ab
+Schwächen:
+- Keine Anweisung zu Distraktor-Homogenität: Distraktor-Optionen sollen thematisch aus demselben Begriffsfeld stammen. Ein Distraktor "Klangmalerei durch Vokale" passt zu "Alliteration", aber ein Distraktor "Sonntagsbraten" wäre trivial.
+- Keine Anweisung zur Paar-Eindeutigkeit: Was, wenn zwei Optionen für ein Item passend wären? Schema verhindert das nicht.
+- Standard 3–7 Paare ist nicht erzwungen: Default blockDefaults.ts:32 setzt 2 Items + 3 Optionen — zu wenig für eine sinnvolle Aufgabe.
+D) Multiple Choice — ✅ STÄRKSTER TYP
+prompt.ts:51–60
+Stärken:
+- Distraktor-Anweisung explizit: "plausible, aber eindeutig falsch... typische Fehlvorstellungen" — genau die richtige Didaktik
+- VERBOT "alle der genannten" / "keine der genannten" / "A und B" — gut
+- Position-Randomisierung: "Verteile die richtige Antwort gleichmaessig"
+- korrekt: string[] (Array) ermöglicht spätere Mehrfachauswahl
+Schwächen:
+- 4 Optionen sind das Maximum, im Schema min(4), nicht 4-5. Bei komplexen Inhalten wären 5 Optionen oft besser (höhere Trennschärfe).
+- Keine Regel zur Position des "Best Distractor": In der klassischen Didaktik (Haladyna) ist die korrekte Antwort NICHT der Längste/Wortreichste Distraktor. Prompt erwähnt das nicht.
+- Keine Anweisung "Distraktoren sollen ungefähr gleich lang sein wie die korrekte Antwort" — sonst verrät die Antwortlänge die Lösung.
+E) Schreibaufgabe — ✅ STARK, KLEINE LÜCKE
+prompt.ts:66–71
+Stärken:
+- Vier-Felder-Erwartungshorizont (inhalt/struktur/ausdruck/sprachrichtigkeit) — entspricht SRDP-Standard für Englisch-Matura (packages/qa/src/korrekturraster/kataloge.ts:50–55 zeigt das gleiche Schema)
+- Musterlösung auf "Sehr-gut-Niveau einer Schuelerin der Zielstufe"
+- Kataloge in kataloge.ts:11–55 sind 6 Kriterien pro Textsorte — sehr solide
+Schwächen:
+- Keine Anweisung "halte dich an config.umfangWorte" — LLM kann 500 statt 300 Wörter liefern. Es gibt KEINE Längen-Validierung.
+- quality.ts:134–136 schließt Musterlösung explizit vom Grounding-Check aus — eine Musterlösung kann inhaltlich komplett am Quelltext vorbei sein und niemand merkt es.
+- Keine Wortzählung im Renderer: Ich habe in packages/renderer nicht explizit nachgeprüft, aber der BlockPreviewSchreibaufgabe.tsx hat vermutlich keine Wortzählung der generierten Musterlösung.
+F) Verständnisfrage — ⚠️ GERADE SO AUSREICHEND
+prompt.ts:62–64 + quality.ts:125–128
+Stärken:
+- Musterantwort vorhanden
+- checkGrounding mit PARAPHRASE_MAX_UNGROUNDED_RATIO = 0.6 (Z. 143) — Musterantwort muss mind. 40 % Tokens aus Quelltext enthalten
+Schwächen:
+- Kein Hinweis "Frage soll über Reproduktion hinausgehen" — d. h. das LLM kann rein reproduktive "Was sagt der Autor im 2. Absatz?"-Fragen liefern statt Transfer-/Analysefragen.
+- zeilen wird im Prompt nicht erwähnt — LLM weiß nicht, wie viele Zeilen Antwortraum es für die Musterantwort vorsehen soll.
+═══════════════════════════════════════════════════════════════
+III. OUTPUT-VALIDIERUNG
+═══════════════════════════════════════════════════════════════
+packages/llm/src/quality.ts (321 Zeilen) — der gesamte Validierungs-Layer
+Check
+Grounding (Lückenwörter wortwörtlich)
+Grounding (Markierstellen wortwörtlich)
+Grounding (Musterantwort Paraphrase >40 %)
+Textlich identische Optionen (MC, Matching)
+Identische Fragen über Blöcke
+Terminologie-Konsistenz zwischen Blöcken
+Progressions-Check (leicht → schwer)
+Topic-Coverage (deckt das Set den Quelltext ab?)
+Wortzahl-Validierung Schreibaufgabe
+Distraktor-Themenhomogenität
+LLM-as-Judge
+Kritische Lücke Topic-Coverage: Bei einem 500-Wort-Quelltext zu "Photosynthese" generiert das LLM typischerweise Fragen zum ERSTEN Absatz. Es gibt keinen Mechanismus, der prüft, ob auch der letzte Absatz (z. B. "Sauerstoff-Abgabe", "Zellatmung") abgedeckt ist. Konsequenz: Lernziele wie "Photosynthese in ihrer Gesamtheit verstehen" werden mechanisch nie vollständig erreicht.
+Kritische Lücke LLM-as-Judge: llmJudgeHook ist ein Stub (Z. 293–298). Die Doku sagt "Beispielhafte spaetere Anbindung" — implementiert ist nichts. Die Phase-E-Architektur (docs/produktvision.md:81) plant KI-Bewertung, aber für die ERSTELLUNGS-phase gibt es kein LLM, das die andere LLM-Ausgabe prüft.
+═══════════════════════════════════════════════════════════════
+IV. LEHRER-WORKFLOW & EDITIERBARKEIT
+═══════════════════════════════════════════════════════════════
+Feature	Status
+Einzelne Aufgabe editieren nach Generierung	✅
+Aufgabe löschen	✅
+Per-Block Reroll mit Hint	✅ EXZELLENT
+Schwierigkeitsgrad PRO Aufgabe	❌ FEHLT
+Provenance-Anzeige im UI	⚠️ NUR TITEL
+Eigene Aufgaben manuell hinzufügen	✅
+Hinweis an LLM bei Edit: "Lehrer hat X manuell geändert"	❌ FEHLT
+Stärke: Der Reroll-Workflow mit kontextsensitiven Hints ist didaktisch sehr wertvoll und ein Differenzierungsmerkmal.
+Schwäche: Wenn der Lehrer in BlockConfigPanel manuell die Musterlösung einer offenen Frage editiert, dann auf "Neu generieren" klickt, geht die manuelle Edits verloren. Es gibt keine "preserve user edits"-Logik.
+═══════════════════════════════════════════════════════════════
+V. LERNZIEL-ORIENTIERUNG
+═══════════════════════════════════════════════════════════════
+Lernziele-Feld pro Lehrdokument: ✅ MetaSchema.lernziele: z.array(z.string().min(1)).optional() (packages/schema/src/index.ts:29) + UI-Eingabe in Step0_Absicht.tsx:401–422 (Kommagetrenntes Textfeld)
+Block-Level Tagging durch LLM: ✅ Prompt Zeile 396: "LERNZIELE: ... ergaenze bei JEDEM Block ein Feld 'lernziele': ein Array mit genau den meta.lernziele-Strings (WORTGLEICH)"
+Coverage-Anzeige: ✅ PreviewTwoColumn.tsx:329–379 zeigt {abgedeckt}/{gewünscht} pro Lernziel mit Ampelfarben
+ABER — drei kritische Lücken:
+1. Coverage ist nur Anzeige, nicht Erzwungenheit. Wenn meta.lernziele = ["A", "B", "C"] und das LLM taggt nur Block 1 mit "A", decken B und C nichts ab. Die UI zeigt es rot — aber es passiert nichts. Keine Regenerierung, kein Hinweis an die Lehrkraft außer "Überprüfe die Aufgaben".
+2. kategorisierung und tabelle haben KEINEN Lernziel-Support: Schau in prompt.ts — nur die explizit gelisteten Blocktypen werden vom LLM instruiert, lernziele zu setzen. In quality.ts:639–650 (coerceLernziele) wird zwar auf Block-Ebene jeder Wert normalisiert, aber es gibt keine Erzwingung, dass ALLE 14 Blocktypen Lernziele setzen.
+3. Keine Lernziel-Hierarchie: Eine Aufgabe kann "Hauptgedanke erfassen" abdecken UND "Stilmittel erkennen" — der UI-Coverage-Counter zählt aber binär. Kein Mapping von "welche Items der Aufgabe decken welches Lernziel ab" — das wäre für formative Diagnostik wertvoll.
+═══════════════════════════════════════════════════════════════
+DIDAKTIK-SCORECARD
+═══════════════════════════════════════════════════════════════
+Kriterium	Status	Fundstelle
+Bloom-Integration	⚠️	prompt.ts:13–23; ignoriert Blocktyp-Inkompatibilität
+Distraktor-Qualität	⚠️	MC: prompt.ts:55–57 (gut); Matching/Lückentext: keine Anweisung
+Quellen-Treue	✅	prompt.ts:27 + quality.ts:145–194 + INJECTION_PATTERNS:408–417
+Output-Validierung	⚠️	quality.ts:1–321; Lücken: Topic-Coverage, Progression, Längen, LLM-Judge-Stub
+Lehrer-Kontrolle	✅	Reroll + Edit + Delete + Manual — siehe IV.
+Lernziel-Mapping	⚠️	Schema: ✅; Prompt-Coverage: ⚠️; UI: ✅; Erzwingung: ❌
+═══════════════════════════════════════════════════════════════
+TOP-5-VERBESSERUNGEN FÜR LEHRMATERIALQUALITÄT
+═══════════════════════════════════════════════════════════════
+#1 Topic-Coverage-Validierung Aufwand: M | Steigerung: HOCH
+Problem: LLM behandelt typischerweise nur den ersten Absatz eines Quelltexts. Lernziel-Coverage sinkt, ohne dass jemand es merkt.
+Implementierung in packages/llm/src/quality.ts (nach Z. 318, vor runQualityChecks):
+function buildAbsatzIndex(quelltexte: QuellText[]): { index: number; absatz: string }[] {
+  const absaetze: { index: number; absatz: string }[] = [];
+  for (const q of quelltexte) {
+    const teile = q.inhalt.split(/\n\s*\n+/).filter((p) => p.trim().length > 30);
+    teile.forEach((absatz, i) => absaetze.push({ index: i, absatz }));
+  }
+  return absaetze;
+}
+
+export function checkTopicCoverage(doc: DocumentV1, quelltexte: QuellText[]): QualityIssue[] {
+  const absaetze = buildAbsatzIndex(quelltexte);
+  if (absaetze.length < 2) return []; // Ein-Absatz-Text: keine Coverage prüfbar
+  const abgedeckt = new Set<number>();
+  for (const block of doc.bloecke) {
+    const blockText = JSON.stringify(block);
+    for (const { index, absatz } of absaetze) {
+      const sample = tokenize(absatz).filter(isContentToken).slice(0, 8);
+      if (sample.length >= 4 && sample.filter((t) => blockText.toLowerCase().includes(t)).length >= 3) {
+        abgedeckt.add(index);
+      }
+    }
+  }
+  const issues: QualityIssue[] = [];
+  const fehlend = absaetze.filter((_, i) => !abgedeckt.has(i));
+  if (fehlend.length > 0) {
+    issues.push({
+      blockId: 'doc',
+      severity: 'warning',
+      message: `${fehlend.length}/${absaetze.length} Abschnitte des Quelltexts werden von keiner Aufgabe abgedeckt.`,
+    });
+  }
+  return issues;
+}
+In runQualityChecks (Z. 314) ergänzen:
+const issues = [
+  ...checkGrounding(doc, quelltexte),
+  ...checkDuplicates(doc),
+  ...checkDuplicateQuestions(doc),
+  ...checkTopicCoverage(doc, quelltexte),  // NEU
+];
+Warum hoch: Ein 500-Wort-Text mit nur 2 Absätzen Coverage hat 50 % verschwendeten Lernstoff. Lehrkräfte merken das nicht, weil der Output "formal gut" aussieht.
+#2 Bloom-kongruente Aufgabentyp-Wahl Aufwand: S | Steigerung: HOCH
+Problem: "Schweres Multiple Choice" ist ein Widerspruch in sich. Der Prompt versucht, durch Wortwahl mehr Taxonomie-Tiefe in einen prinzipiell geschlossenen Typ zu pressen.
+Patch in packages/llm/src/prompt.ts Z. 13–23 (Austausch):
+KOGNITIVES NIVEAU (Bloom-Steuerung):
+Das Feld "schwierigkeit" im Meta-Objekt bestimmt das kognitive Niveau:
+- "leicht": Erinnern und Verstehen (Bloom 1-2). Erlaubte Aufgabentypen: lueckentext, multipleChoice (einfach), matching, wordScramble, markieraufgabe (einfach).
+- "mittel": Anwenden und Analysieren (Bloom 3-4). Erlaubte Aufgabentypen: multipleChoice (mit Distraktor-Analyse), offeneVerstaendnisfrage, kategorisierung, tabelle, markieraufgabe (Begruendung verlangt), stiluebung.
+- "schwer": Bewerten und Erschaffen (Bloom 5-6). Erlaubte Aufgabentypen: offeneSchreibaufgabe, songanalyse, offeneVerstaendnisfrage mit eigenem Urteil.
+Wenn der angeforderte Typ nicht zur Schwierigkeit passt, generiere den passenden Typ stattdessen und erklaere es knapp im arbeitsanweisung-Feld ("Transferaufgabe: ...") — niemals "leeres" Bloom-Niveau simulieren.
+Warum hoch: Didaktisch sind geschlossene Aufgaben für "schwer" didaktisch ungeeignet. Der Lehrer fordert "schweres MC" und bekommt faktisch "leichtes MC mit längeren Texten". Mit dieser Regel wird der LLM-Aufgabentyp dem Lehrziel angepasst.
+#3 Thematische Distraktor-Regel für ALLE geschlossenen Typen Aufwand: S | Steigerung: MITTEL
+Patch in packages/llm/src/prompt.ts — neue Sektion nach Z. 49 (matching) und nach Z. 60 (multipleChoice):
+// Für alle geschlossenen Aufgabentypen (multipleChoice, matching, lueckentext mit Wortbank):
+// DISTRAKTOR-QUALITAET:
+// Distraktoren muessen aus demselben thematischen Wortfeld stammen wie die korrekte Antwort
+// und dieselbe ungefaehre Laenge haben (keine Loesungsverratung durch Textlaenge).
+// Beispiele:
+//   korrekt "Photosynthese" → Distraktor "Zellatmung" (thematisch verwandt) — NICHT "Tisch".
+//   korrekt "Hyperbel"      → Distraktor "Ironie"    (beides Stilmittel)     — NICHT "Verb".
+// Distraktoren MUESSEN typische Schuelerfehler abbilden, nicht absurd falsche Optionen sein.
+Warum mittel: "Drei zufällige Wörter als Distraktoren" ist das häufigste LLM-Versagen. Thematische Distraktoren unterscheiden ein brauchbares Arbeitsblatt von einem, das jeder Schüler mit 10 Sekunden Logik löst.
+#4 Längen- und Grounding-Validierung für Schreibaufgabe Aufwand: S | Steigerung: MITTEL
+Patch in packages/llm/src/quality.ts — neue Funktion nach Z. 132:
+} else if (block.typ === 'offeneSchreibaufgabe') {
+  const ml = block.loesung.musterloesung;
+  const woerter = ml.trim().split(/\s+/).length;
+  const { min, max } = block.config.umfangWorte;
+  if (woerter < min * 0.7 || woerter > max * 1.3) {
+    issues.push({
+      blockId: block.id,
+      severity: 'warning',
+      message: `Musterloesung ${woerter} Woerter, gefordert ${min}-${max}.`,
+    });
+  }
+  // NEU: leichter Grounding-Check — mind. 30 % der Inhaltstokens aus Quelltext
+  const index = buildQuelltextIndex(quelltexte);
+  const tokens = tokenize(ml).filter(isContentToken);
+  if (tokens.length > 0) {
+    const ungrounded = tokens.filter((t) => !index.has(t));
+    const ratio = ungrounded.length / tokens.length;
+    if (ratio > 0.7) {
+      issues.push({
+        blockId: block.id,
+        severity: 'warning',
+        message: `Musterloesung kaum quellengestuetzt (${Math.round(ratio * 100)}% ungegruendet).`,
+      });
+    }
+  }
+}
+(Anmerkung: aktuell buildQuelltextIndex ist block-scoped zu checkGrounding; bei Bedarf aus Z. 145 herausziehen.)
+Warum mittel: Eine 800-Wort-Musterlösung auf eine 300-Wort-Aufgabe ist ein häufiger LLM-Fail. Lehrer müssen manuell kürzen, was den ganzen "Zeitspar-Vorteil" der App zunichtemacht.
+#5 Terminologie-Konservierung + Lernziel-Coverage-Pflicht Aufwand: S/M | Steigerung: MITTEL-HOCH
+Patch A — Terminologie in packages/llm/src/prompt.ts, nach Z. 27:
+- Uebernehme Fachbegriffe, Eigennamen und Fachtermini WORTWOERTLICH aus dem Quelltext.
+  Synonymisiere NICHT: "Maische" bleibt "Maische" (nicht "Ansatz"), "Habitat" bleibt "Habitat" (nicht "Lebensraum").
+  Nur bei Alltagswoertern ist eine quelltextferne Umformulierung erlaubt.
+Patch B — Lernziel-Coverage-Erzwingung in packages/llm/src/quality.ts, neue Funktion:
+export function checkLernzielCoverage(doc: DocumentV1, meta: Meta): QualityIssue[] {
+  const lernziele = meta.lernziele ?? [];
+  if (lernziele.length === 0) return [];
+  const abgedeckt = new Set<string>();
+  for (const block of doc.bloecke) {
+    for (const lz of block.lernziele ?? []) abgedeckt.add(lz);
+  }
+  const fehlend = lernziele.filter((lz) => !abgedeckt.has(lz));
+  if (fehlend.length === 0) return [];
+  return [{
+    blockId: 'doc',
+    severity: 'error',  // <-- error statt warning: blockiert Export
+    message: `Lernziele nicht abgedeckt: ${fehlend.join(', ')}. Aufgaben erweitern oder Lernziele anpassen.`,
+  }];
+}
+In validate.ts:108–112 (runQualityChecks Konsument) wird bereits errors.filter zu ok:false führen. → Lehrer kann nicht exportieren, wenn Lernziele nicht abgedeckt sind. Zusätzlich: in PreviewTwoColumn.tsx:328–379 einen "Aufgaben für fehlende Lernziele ergänzen"-Button mit Regenerate-Scope.
+Warum mittel-hoch: Lernziele sind das Kernversprechen der App. Wenn das LLM sie ignoriert und die UI es nur rot anzeigt, ist das didaktisch wirkungslos. Erzwingung ist der einzige Weg, der tatsächlich Lehrmaterialqualität sichert.
+Zusammenfassung der 5 Maßnahmen
+#	Maßnahme
+1	Topic-Coverage-Validierung
+2	Bloom-kongruente Typ-Wahl
+3	Thematische Distraktor-Regel
+4	Längen- und Grounding-Check Schreibaufgabe
+5	Terminologie-Konservierung + Lernziel-Pflicht
+Soll ich mit der Umsetzung einer oder mehrerer dieser Maßnahmen beginnen, oder möchtest du erst eine andere Priorisierung?

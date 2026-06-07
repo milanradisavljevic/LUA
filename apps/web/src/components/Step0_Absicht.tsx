@@ -13,6 +13,7 @@ interface Props {
 const UNTERLAGENTYPEN = [
   { id: 'hausuebung' as const, label: 'Hausübung', beschreibung: 'Kurz, niedrige Stakes, ~15 Min, ~12 Pkte' },
   { id: 'test' as const, label: 'Test / Stundenwiederholung', beschreibung: 'Mittel, Punkte + einfacher Schlüssel, ~25 Min, ~24 Pkte' },
+  { id: 'schuluebung' as const, label: 'Schulübung', beschreibung: 'Übungsaufgaben ohne Punkte/Noten, ~20 Min' },
   { id: 'schularbeit' as const, label: 'Schularbeit / Klassenarbeit', beschreibung: 'Lang, hohe Stakes, Maturastruktur, ~50 Min, ~48 Pkte' },
 ];
 

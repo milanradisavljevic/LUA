@@ -9,7 +9,7 @@ interface Props {
 
 export function BlockPreviewKreuzwortraetsel({ block, showSolution }: Props) {
   if (block.typ !== 'kreuzwortraetsel') return null;
-  const gitter = baueKreuzwortgitter(block.config.eintraege);
+  const gitter = baueKreuzwortgitter(block.config.eintraege ?? []);
 
   const waag = gitter.platzierungen.filter((p) => p.richtung === 'waagrecht');
   const senk = gitter.platzierungen.filter((p) => p.richtung === 'senkrecht');

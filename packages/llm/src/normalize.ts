@@ -539,6 +539,54 @@ function normalizeWortgitter(block: AnyObj): AnyObj {
   return { ...block, config };
 }
 
+// vokabeluebung
+// ---------------------------------------------------------------------------
+
+function normalizeVokabeluebung(block: AnyObj): AnyObj {
+  const config = isObject(block.config) ? { ...block.config } : {};
+  const loesung = isObject(block.loesung) ? { ...block.loesung } : {};
+
+  // vokabeln normalisieren: Array sicherstellen
+  if (!Array.isArray(config.vokabeln)) {
+    const roh: unknown = config.vokabeln ?? config.woerter ?? config.items;
+    if (Array.isArray(roh)) {
+      config.vokabeln = roh.map((e: unknown) => {
+        if (isObject(e)) {
+          return {
+            deutsch: String(e.deutsch ?? e.wort ?? e.text ?? ''),
+            fremdsprache: String(e.fremdsprache ?? e.uebersetzung ?? e.bedeutung ?? ''),
+            kontextsatz: typeof e.kontextsatz === 'string' ? e.kontextsatz : undefined,
+          };
+        }
+        if (typeof e === 'string') {
+          const parts = e.split(/[:=]/, 2);
+          return { deutsch: parts[0]?.trim() ?? e, fremdsprache: parts[1]?.trim() ?? '' };
+        }
+        return { deutsch: '', fremdsprache: '' };
+      }).filter((v: AnyObj) => v.deutsch && v.fremdsprache);
+    } else {
+      config.vokabeln = [];
+    }
+  }
+  delete (config as AnyObj).woerter;
+  delete (config as AnyObj).items;
+
+  // richtung normalisieren
+  const r = String(config.richtung ?? '');
+  config.richtung = r.includes('fremd') && r.includes('de') ? 'fremd_de' : 'de_fremd';
+
+  // loesung.antworten normalisieren
+  if (isObject(loesung.antworten)) {
+    const normalized: Record<string, string> = {};
+    for (const [k, v] of Object.entries(loesung.antworten)) {
+      normalized[String(k)] = String(v);
+    }
+    loesung.antworten = normalized;
+  }
+
+  return { ...block, config, loesung };
+}
+
 export function normalizeDocument(data: unknown): unknown {
   if (!isObject(data)) return data;
 
@@ -576,6 +624,8 @@ export function normalizeDocument(data: unknown): unknown {
         normalized = normalizeKreuzwortraetsel(block); break;
       case 'wortgitter':
         normalized = normalizeWortgitter(block); break;
+      case 'vokabeluebung':
+        normalized = normalizeVokabeluebung(block); break;
       default:
         normalized = block;
     }

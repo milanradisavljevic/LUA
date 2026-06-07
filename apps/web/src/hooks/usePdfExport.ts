@@ -1,6 +1,15 @@
 import { useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
+const LAST_DOCX_PATH_KEY = 'lehrunterlagen-last-docx-path';
+
+function getLastDocxPath(): string {
+  try { return localStorage.getItem(LAST_DOCX_PATH_KEY) || ''; } catch { return ''; }
+}
+function setLastDocxPath(path: string) {
+  try { localStorage.setItem(LAST_DOCX_PATH_KEY, path); } catch { /* ignore */ }
+}
+
 interface PdfExportState {
   converting: boolean;
   pdfPath: string | null;
@@ -15,7 +24,7 @@ export function usePdfExport() {
     pdfPath: null,
     error: null,
     showPathInput: false,
-    docxPath: '',
+    docxPath: getLastDocxPath(),
   });
 
   const startPdfExport = useCallback(() => {
@@ -40,9 +49,11 @@ export function usePdfExport() {
     setState((prev) => ({ ...prev, converting: true, error: null, pdfPath: null }));
 
     try {
+      const trimmed = state.docxPath.trim();
       const pdfPath = await invoke<string>('convert_pdf', {
-        docxPath: state.docxPath.trim(),
+        docxPath: trimmed,
       });
+      setLastDocxPath(trimmed);
       setState((prev) => ({ ...prev, converting: false, pdfPath }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'PDF-Erstellung fehlgeschlagen';

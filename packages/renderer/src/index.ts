@@ -31,7 +31,7 @@ import { baueWortbank, shuffle, baueKreuzwortgitter, baueWortgitter } from '@leh
 const FONT = 'Arial';
 
 // Font sizes in half-points (docx unit)
-const SZ = { body: 22, h1: 28, h2: 24, h3: 22 } as const;
+const SZ = { body: 22, h1: 28, h2: 24, h3: 22, small: 18 } as const;
 
 // Margins in twips (1 cm = 566.93 twips)
 const MARGIN = {
@@ -620,31 +620,32 @@ function buildPunkteUebersicht(bloecke: Block[]): (Paragraph | Table)[] {
 // Absatz-Paragraphen um. docx ignoriert \n innerhalb einer TextRun — Zeilenumbrüche
 // brauchen TextRun({ break: 1 }), Strophen-/Absatzabstand kommt über eigene Paragraphen.
 function quelltextAbsaetze(inhalt: string): Paragraph[] {
-  const absaetze = inhalt
-    .replace(/\r\n/g, '\n')
-    .split(/\n{2,}/)
-    .map((a) => a.replace(/\s+$/g, ''))
-    .filter((a) => a.trim().length > 0);
+  const zeilen = inhalt.replace(/\r\n/g, '\n').split('\n');
 
-  // Fallback: kein verwertbarer Inhalt → ein leerer Absatz, damit die Struktur stimmt.
-  if (absaetze.length === 0) {
+  // Fallback: kein verwertbarer Inhalt → ein leerer Absatz.
+  if (zeilen.length === 0 || zeilen.every((z) => z.trim().length === 0)) {
     return [new Paragraph({ children: [run('', { font: FONT, size: SZ.body })] })];
   }
 
-  return absaetze.map((absatz) => {
-    const zeilen = absatz.split('\n');
-    const children = zeilen.map(
-      (zeile, i) =>
-        new TextRun({
-          text: zeile,
-          font: FONT,
-          size: SZ.body,
-          ...(i > 0 ? { break: 1 } : {}),
-        }),
-    );
+  return zeilen.map((zeile, i) => {
+    const text = zeile.replace(/\s+$/g, '');
+    const nr = i + 1;
+    if (text.trim().length === 0) {
+      return new Paragraph({ children: [run('', { font: FONT, size: SZ.body })], spacing: { after: 60 } });
+    }
     return new Paragraph({
-      children,
-      spacing: { after: 160 },
+      children: [
+        new TextRun({
+          text: `${nr}.`,
+          font: FONT,
+          size: SZ.small,
+          color: COLOR.gray,
+          bold: false,
+        }),
+        new TextRun({ text: '  ', font: FONT, size: SZ.body }),
+        new TextRun({ text, font: FONT, size: SZ.body }),
+      ],
+      spacing: { after: 40 },
       indent: { left: 360 },
       border: {
         left: { style: BorderStyle.SINGLE, size: 8, color: COLOR.lightGray },
@@ -713,6 +714,7 @@ const BLOCK_LABELS: Record<Block['typ'], string> = {
   songanalyse: 'Songanalyse',
   kreuzwortraetsel: 'Kreuzworträtsel',
   wortgitter: 'Wortgitter',
+  vokabeluebung: 'Vokabelübung',
 };
 
 function buildBlock(
@@ -722,17 +724,21 @@ function buildBlock(
   quelltextMap: Map<string, QuellText>,
 ): (Paragraph | Table)[] {
   const label = BLOCK_LABELS[block.typ];
+  // Kreuzworträtsel und Wortgitter sollen auf einer eigenen Seite beginnen,
+  // damit sie nicht durch Seitenumbrüche zerrissen werden.
+  const needsPageBreak = block.typ === 'kreuzwortraetsel' || block.typ === 'wortgitter';
   const result: (Paragraph | Table)[] = [
     // Gerahmtes Abschnitts-Banner: Titel links, Punkte-Eintragefeld rechtsbündig (___ / X).
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
       keepNext: true,
+      pageBreakBefore: needsPageBreak,
       tabStops: [{ type: TabStopType.RIGHT, position: CONTENT_WIDTH }],
       border: {
         top:    { style: BorderStyle.SINGLE, size: 6, color: COLOR.black },
         bottom: { style: BorderStyle.SINGLE, size: 6, color: COLOR.black },
       },
-      spacing: { before: 280, after: 120 },
+      spacing: { before: needsPageBreak ? 0 : 280, after: 120 },
       children: [
         run(`Aufgabe ${index}  –  ${label}`, {
           font: FONT, size: SZ.h2, bold: true,
@@ -800,6 +806,9 @@ function buildBlock(
       break;
     case 'wortgitter':
       result.push(...buildWortgitter(block, mode));
+      break;
+    case 'vokabeluebung':
+      result.push(...buildVokabeluebung(block, mode));
       break;
   }
 
@@ -943,7 +952,7 @@ function buildMatching(
                     run(`${opt.key}  `, { font: FONT, size: SZ.body, bold: true }),
                     run(opt.text, { font: FONT, size: SZ.body }),
                   ],
-                  spacing: { after: 60 },
+                  spacing: { after: 160 },
                 }),
               ],
             }),
@@ -965,7 +974,7 @@ function buildMatching(
                 run(`${item.nr}.  `, { font: FONT, size: SZ.body, bold: true }),
                 run(item.prompt, { font: FONT, size: SZ.body }),
               ],
-              spacing: { after: 60 },
+              spacing: { after: 160 },
             }),
           ],
         }),
@@ -981,7 +990,7 @@ function buildMatching(
                 mode === 'loesung' && solutionKey
                   ? [run(`→  ${solutionKey}`, { font: FONT, size: SZ.body, italics: true })]
                   : [run('→  ', { font: FONT, size: SZ.body })],
-              spacing: { after: 60 },
+              spacing: { after: 160 },
             }),
           ],
         }),
@@ -1358,18 +1367,21 @@ function buildKategorisierung(
     top: THIN_BORDER, bottom: THIN_BORDER,
     left: THIN_BORDER, right: THIN_BORDER,
   };
+  const cellMargins = { top: 100, bottom: 100, left: 80, right: 80 };
 
   const headerRow = new TableRow({
     tableHeader: true,
     children: [
       new TableCell({
         borders: cellBorder,
+        margins: cellMargins,
         width: { size: 50, type: WidthType.PERCENTAGE },
         shading: { fill: 'D9D9D9' },
         children: [new Paragraph({ children: [run('Begriff', { font: FONT, size: SZ.body, bold: true })] })],
       }),
       new TableCell({
         borders: cellBorder,
+        margins: cellMargins,
         width: { size: 50, type: WidthType.PERCENTAGE },
         shading: { fill: 'D9D9D9' },
         children: [new Paragraph({ children: [run('Kategorie', { font: FONT, size: SZ.body, bold: true })] })],
@@ -1385,10 +1397,12 @@ function buildKategorisierung(
         children: [
           new TableCell({
             borders: cellBorder,
+            margins: cellMargins,
             children: [new Paragraph({ children: [run(item.text, { font: FONT, size: SZ.body })] })],
           }),
           new TableCell({
             borders: cellBorder,
+            margins: cellMargins,
             children: [new Paragraph({ children: [run(kategorieName, { font: FONT, size: SZ.body, italics: mode === 'loesung' })] })],
           }),
         ],
@@ -1429,12 +1443,14 @@ function buildTabelle(
     top: THIN_BORDER, bottom: THIN_BORDER,
     left: THIN_BORDER, right: THIN_BORDER,
   };
+  const cellMargins = { top: 100, bottom: 100, left: 80, right: 80 };
 
   const headerRow = new TableRow({
     tableHeader: true,
     children: block.config.spalten.map((s) =>
       new TableCell({
         borders: cellBorder,
+        margins: cellMargins,
         width: { size: s.breiteProzent, type: WidthType.PERCENTAGE },
         shading: { fill: 'D9D9D9' },
         children: [new Paragraph({ children: [run(s.titel, { font: FONT, size: SZ.body, bold: true })] })],
@@ -1460,6 +1476,7 @@ function buildTabelle(
           }
           return new TableCell({
             borders: cellBorder,
+            margins: cellMargins,
             children: [new Paragraph({ children: [run(text, { font: FONT, size: SZ.body, italics: istLuecke && mode === 'loesung' })] })],
           });
         }),
@@ -1649,7 +1666,7 @@ function buildKreuzwortraetsel(
   mode: Mode,
 ): (Paragraph | Table)[] {
   const result: (Paragraph | Table)[] = [];
-  const gitter = baueKreuzwortgitter(block.config.eintraege);
+  const gitter = baueKreuzwortgitter(block.config.eintraege ?? []);
   if (gitter.zeilen === 0) return result;
 
   const CELL = 460; // twips (~0.8 cm) je Zelle
@@ -1729,7 +1746,7 @@ function buildWortgitter(
   mode: Mode,
 ): (Paragraph | Table)[] {
   const result: (Paragraph | Table)[] = [];
-  const gitter = baueWortgitter(block.config.woerter);
+  const gitter = baueWortgitter(block.config.woerter ?? []);
   if (gitter.zeilen === 0) return result;
 
   // Zellen, die zu einem versteckten Wort gehören (für die Lösungs-Hervorhebung).
@@ -1846,6 +1863,100 @@ function writingLine(keepNext = false): Paragraph {
   });
 }
 
+
+// Vokabelübung
+// ---------------------------------------------------------------------------
+
+function buildVokabeluebung(
+  block: Extract<Block, { typ: 'vokabeluebung' }>,
+  mode: Mode,
+): (Paragraph | Table)[] {
+  const { vokabeln, richtung } = block.config;
+  const quelleSpalte = richtung === 'de_fremd' ? 'deutsch' : 'fremdsprache';
+  const zielSpalte = richtung === 'de_fremd' ? 'fremdsprache' : 'deutsch';
+  const antworten = block.loesung?.antworten as Record<string, string> | undefined;
+  const quelleLabel = richtung === 'de_fremd' ? 'Deutsch' : 'Fremdsprache';
+  const zielLabel = richtung === 'de_fremd' ? 'Fremdsprache' : 'Deutsch';
+
+  const cellMargins = { top: 80, bottom: 80, left: 60, right: 60 };
+
+  const headerRow = new TableRow({
+    children: [
+      new TableCell({
+        width: { size: 10, type: WidthType.PERCENTAGE },
+        margins: cellMargins,
+        children: [new Paragraph({ children: [run('Nr.', { font: FONT, size: SZ.body, bold: true })], alignment: AlignmentType.CENTER })],
+        borders: { top: NO_BORDER, bottom: THIN_BORDER, left: NO_BORDER, right: NO_BORDER },
+      }),
+      new TableCell({
+        width: { size: 45, type: WidthType.PERCENTAGE },
+        margins: cellMargins,
+        children: [new Paragraph({ children: [run(quelleLabel, { font: FONT, size: SZ.body, bold: true })], spacing: { after: 40 } })],
+        borders: { top: NO_BORDER, bottom: THIN_BORDER, left: NO_BORDER, right: NO_BORDER },
+      }),
+      new TableCell({
+        width: { size: 45, type: WidthType.PERCENTAGE },
+        margins: cellMargins,
+        children: [new Paragraph({ children: [run(zielLabel, { font: FONT, size: SZ.body, bold: true })], spacing: { after: 40 } })],
+        borders: { top: NO_BORDER, bottom: THIN_BORDER, left: NO_BORDER, right: NO_BORDER },
+      }),
+    ],
+  });
+
+  const dataRows = (vokabeln ?? []).map((v, i) => {
+    const nr = i + 1;
+    const quellText = v[quelleSpalte];
+    const zielText = v[zielSpalte];
+    const loesungText = antworten?.[String(nr)] ?? zielText;
+
+    return new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 10, type: WidthType.PERCENTAGE },
+          margins: cellMargins,
+          children: [new Paragraph({ children: [run(`${nr}.`, { font: FONT, size: SZ.body })], alignment: AlignmentType.CENTER })],
+          borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+        }),
+        new TableCell({
+          width: { size: 45, type: WidthType.PERCENTAGE },
+          margins: cellMargins,
+          children: [
+            new Paragraph({ children: [run(quellText, { font: FONT, size: SZ.body })], spacing: { after: 40 } }),
+            v.kontextsatz
+              ? new Paragraph({ children: [run(`„${v.kontextsatz}"`, { font: FONT, size: SZ.small, italics: true, color: COLOR.gray })], spacing: { after: 40 } })
+              : new Paragraph({ children: [] }),
+          ],
+          borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+        }),
+        new TableCell({
+          width: { size: 45, type: WidthType.PERCENTAGE },
+          margins: cellMargins,
+          children: [
+            new Paragraph({
+              children:
+                mode === 'loesung'
+                  ? [run(loesungText, { font: FONT, size: SZ.body, italics: true, color: '#2e7d32' })]
+                  : [run('_____________________', { font: FONT, size: SZ.body, color: COLOR.lightGray })],
+              spacing: { after: 40 },
+            }),
+          ],
+          borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+        }),
+      ],
+    });
+  });
+
+  return [
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: {
+        top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER,
+        insideHorizontal: NO_BORDER, insideVertical: NO_BORDER,
+      },
+      rows: [headerRow, ...dataRows],
+    }),
+  ];
+}
 
 function formatDatum(iso: string): string {
   const [y, m, d] = iso.split('-');

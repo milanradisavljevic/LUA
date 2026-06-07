@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { AppState } from '../lib/types';
-import { beispielBloecke } from '../lib/beispieldaten';
+
 import { getBlockLabel } from '../lib/blockDefaults';
 import { appendHistoryEntry } from '../lib/storage';
 
@@ -19,18 +19,6 @@ export function useExport() {
     setError(null);
     setWarnung(null);
     setLastSavedPaths(null);
-
-    // Nicht-blockierende Warnung: noch unveränderte Beispieldaten im Dokument?
-    const beispielIds = beispielBloecke(state.generiertesDokument.bloecke);
-    if (beispielIds.length > 0) {
-      const labels = state.generiertesDokument.bloecke
-        .filter((b) => beispielIds.includes(b.id))
-        .map((b) => getBlockLabel(b.typ));
-      setWarnung(
-        `Achtung: ${beispielIds.length} Block/Blöcke enthalten noch Beispieldaten (${labels.join(', ')}). ` +
-        'Bitte generieren oder bearbeiten, bevor du das Dokument an Schüler:innen ausgibst.',
-      );
-    }
 
     try {
       const { renderDocumentToBlobs } = await import('@lehrunterlagen/renderer');

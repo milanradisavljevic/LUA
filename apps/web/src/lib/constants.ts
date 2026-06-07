@@ -21,6 +21,7 @@ export const BLOCK_TYPE_DEFS: {
   { id: 'songanalyse', label: 'Songanalyse', description: 'Songtext interpretieren', Icon: Music, color: '#4dd0e1' },
   { id: 'kreuzwortraetsel', label: 'Kreuzworträtsel', description: 'Wörter über Hinweise ins Gitter eintragen', Icon: Puzzle, color: '#a1887f' },
   { id: 'wortgitter', label: 'Wortgitter', description: 'Versteckte Wörter im Buchstabengitter finden', Icon: Grid3x3, color: '#90a4ae' },
+  { id: 'vokabeluebung', label: 'Vokabelübung', description: 'Vokabeln übersetzen oder zuordnen', Icon: Pencil, color: '#4caf50' },
 ];
 
 export const STUFE_RULES = {
@@ -29,16 +30,16 @@ export const STUFE_RULES = {
       'lueckentext', 'matching', 'multipleChoice',
       'offeneVerstaendnisfrage', 'offeneSchreibaufgabe', 'markieraufgabe',
       'wordScramble', 'kategorisierung', 'tabelle', 'stiluebung', 'songanalyse',
-      'kreuzwortraetsel', 'wortgitter',
+      'kreuzwortraetsel', 'wortgitter', 'vokabeluebung',
     ] as const,
-    wortbankAllowed: false,
+    wortbankAllowed: true,
   },
   unterstufe: {
     allowedBlockTypes: [
       'lueckentext', 'matching', 'multipleChoice',
       'offeneVerstaendnisfrage', 'markieraufgabe',
       'wordScramble', 'kategorisierung', 'tabelle',
-      'kreuzwortraetsel', 'wortgitter',
+      'kreuzwortraetsel', 'wortgitter', 'vokabeluebung',
     ] as const,
     wortbankAllowed: true,
   },

@@ -36,7 +36,8 @@ export type BlockRequest =
   | { typ: 'stiluebung'; punkte: number; quelleId?: string; zielniveau: string; transformation: string }
   | { typ: 'songanalyse'; punkte: number; quelleId?: string; aufgabe: string }
   | { typ: 'kreuzwortraetsel'; punkte: number; quelleId?: string; anzahlWoerter: number }
-  | { typ: 'wortgitter'; punkte: number; quelleId?: string; anzahlWoerter: number };
+  | { typ: 'wortgitter'; punkte: number; quelleId?: string; anzahlWoerter: number }
+  | { typ: 'vokabeluebung'; punkte: number; quelleId?: string; anzahlVokabeln: number; richtung: 'de_fremd' | 'fremd_de' };
 
 export type BlockTyp = Block['typ'];
 

@@ -277,7 +277,7 @@ export default function App() {
       {/* Zoom-Anzeige */}
       {zoom !== 1.0 && (
         <div style={{
-          position: 'fixed', bottom: 12, right: 12,
+          position: 'fixed', top: 52, right: 12,
           padding: '4px 10px', borderRadius: 'var(--radius)',
           background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)',
           fontSize: '0.75rem', color: 'var(--color-text-secondary)',

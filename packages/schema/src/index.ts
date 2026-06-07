@@ -7,7 +7,7 @@ export * from './grids.js';
 // Meta
 // ---------------------------------------------------------------------------
 
-export const UnterlagentypSchema = z.enum(['hausuebung', 'test', 'schularbeit']);
+export const UnterlagentypSchema = z.enum(['hausuebung', 'test', 'schuluebung', 'schularbeit']);
 export type Unterlagentyp = z.infer<typeof UnterlagentypSchema>;
 
 export const StufeSchema = z.enum(['oberstufe', 'unterstufe']);
@@ -56,7 +56,7 @@ export type QuellText = z.infer<typeof QuellTextSchema>;
 
 const BlockBaseSchema = z.object({
   id: z.string().min(1),
-  punkte: z.number().int().positive(),
+  punkte: z.number().int().min(0),
   quelleId: z.string().min(1).optional(),
   arbeitsanweisung: z.string().min(1),
   clue: z.string().optional(),
@@ -358,12 +358,13 @@ export type SonganalyseBlock = z.infer<typeof SonganalyseBlockSchema>;
 export const KreuzwortraetselBlockSchema = BlockBaseSchema.extend({
   typ: z.literal('kreuzwortraetsel'),
   config: z.object({
+    anzahlWoerter: z.number().int().positive().optional(),
     eintraege: z.array(
       z.object({
         wort: z.string().min(2),   // ein einzelnes Wort, mind. 2 Buchstaben
         hinweis: z.string().min(1), // Definition/Frage, ohne das Wort zu nennen
       }),
-    ).min(2),
+    ).optional(),
   }),
 });
 
@@ -378,11 +379,36 @@ export type KreuzwortraetselBlock = z.infer<typeof KreuzwortraetselBlockSchema>;
 export const WortgitterBlockSchema = BlockBaseSchema.extend({
   typ: z.literal('wortgitter'),
   config: z.object({
-    woerter: z.array(z.string().min(2)).min(2),
+    anzahlWoerter: z.number().int().positive().optional(),
+    woerter: z.array(z.string().min(2)).optional(),
   }),
 });
 
 export type WortgitterBlock = z.infer<typeof WortgitterBlockSchema>;
+
+// ---------------------------------------------------------------------------
+// Block: vokabeluebung
+// ---------------------------------------------------------------------------
+
+export const VokabeluebungBlockSchema = BlockBaseSchema.extend({
+  typ: z.literal('vokabeluebung'),
+  config: z.object({
+    richtung: z.enum(['de_fremd', 'fremd_de']),
+    anzahlVokabeln: z.number().int().positive().optional(),
+    vokabeln: z.array(
+      z.object({
+        deutsch: z.string().min(1),
+        fremdsprache: z.string().min(1),
+        kontextsatz: z.string().optional(),
+      })
+    ).optional(),
+  }),
+  loesung: z.object({
+    antworten: z.record(z.string(), z.string()),
+  }).optional(),
+});
+
+export type VokabeluebungBlock = z.infer<typeof VokabeluebungBlockSchema>;
 
 // ---------------------------------------------------------------------------
 // Discriminated union of all block types
@@ -402,6 +428,7 @@ export const BlockSchema = z.discriminatedUnion('typ', [
   SonganalyseBlockSchema,
   KreuzwortraetselBlockSchema,
   WortgitterBlockSchema,
+  VokabeluebungBlockSchema,
 ]);
 
 export type Block = z.infer<typeof BlockSchema>;
@@ -417,18 +444,7 @@ export const DocumentSchema = z
     quelltexte: z.array(QuellTextSchema).min(1),
     bloecke: z.array(BlockSchema).min(1),
   })
-  .refine(
-    (doc) => {
-      // wortbank=true darf nur bei unterstufe vorkommen
-      for (const block of doc.bloecke) {
-        if (block.typ === 'lueckentext' && block.config.wortbank && doc.meta.stufe !== 'unterstufe') {
-          return false;
-        }
-      }
-      return true;
-    },
-    { message: 'wortbank=true ist nur bei stufe=unterstufe erlaubt' },
-  );
+;
 
 export type DocumentV1 = z.infer<typeof DocumentSchema>;
 
@@ -489,6 +505,7 @@ export const BlockTypSchema = z.enum([
   'songanalyse',
   'kreuzwortraetsel',
   'wortgitter',
+  'vokabeluebung',
 ]);
 export type BlockTyp = z.infer<typeof BlockTypSchema>;
 
@@ -553,6 +570,19 @@ export const PROFILE: Record<Unterlagentyp, TypProfil> = {
     defaultGesamtpunkte: 24,
     strukturhinweis: 'Test mit Multiple Choice, Verstaendnisfrage und kurzer Schreibaufgabe.',
   },
+  schuluebung: {
+    typ: 'schuluebung',
+    standardAufgabenarten: [
+      { typ: 'lueckentext', punkteAnteil: 0.3 },
+      { typ: 'matching', punkteAnteil: 0.3 },
+      { typ: 'multipleChoice', punkteAnteil: 0.4 },
+    ],
+    rasterErzeugen: false,
+    notenschluesselErzeugen: false,
+    defaultDauerMinuten: 20,
+    defaultGesamtpunkte: 0,
+    strukturhinweis: 'Schuluebung ohne Notenvergabe: Uebungsaufgaben wie Lueckentext, Matching und Multiple Choice. Keine Punkte, keine Noten.',
+  },
   schularbeit: {
     typ: 'schularbeit',
     standardAufgabenarten: [
@@ -583,7 +613,7 @@ export function buildSkelett(auftrag: Auftrag): Block[] {
   const blocks: Block[] = aufgabenarten.map((typ, index) => {
     const anteil = gewaehlteAnteile.find((a) => a.typ === typ)?.punkteAnteil ?? (1 / aufgabenarten.length);
     const normierterAnteil = anteilSum > 0 ? anteil / anteilSum : 1 / aufgabenarten.length;
-    const punkte = Math.max(1, Math.round(normierterAnteil * gesamtpunkte));
+    const punkte = gesamtpunkte > 0 ? Math.max(1, Math.round(normierterAnteil * gesamtpunkte)) : 0;
 
     const base = {
       id: `b${index + 1}`,
@@ -727,12 +757,14 @@ export function buildSkelett(auftrag: Auftrag): Block[] {
     }
   });
 
-  // Punkte auf Gesamtpunkte normieren (Rundungsfehler ausgleichen)
-  const currentSum = blocks.reduce((sum, b) => sum + b.punkte, 0);
-  const diff = gesamtpunkte - currentSum;
-  const lastBlock = blocks[blocks.length - 1];
-  if (diff !== 0 && lastBlock) {
-    lastBlock.punkte = Math.max(1, lastBlock.punkte + diff);
+  // Punkte auf Gesamtpunkte normieren (Rundungsfehler ausgleichen) — nur wenn Gesamtpunkte > 0
+  if (gesamtpunkte > 0) {
+    const currentSum = blocks.reduce((sum, b) => sum + b.punkte, 0);
+    const diff = gesamtpunkte - currentSum;
+    const lastBlock = blocks[blocks.length - 1];
+    if (diff !== 0 && lastBlock) {
+      lastBlock.punkte = Math.max(1, lastBlock.punkte + diff);
+    }
   }
 
   return blocks;

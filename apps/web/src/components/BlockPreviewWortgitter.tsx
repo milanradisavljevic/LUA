@@ -11,7 +11,7 @@ const DELTA = { waagrecht: [0, 1], senkrecht: [1, 0], diagonal: [1, 1] } as cons
 
 export function BlockPreviewWortgitter({ block, showSolution }: Props) {
   if (block.typ !== 'wortgitter') return null;
-  const gitter = baueWortgitter(block.config.woerter);
+  const gitter = baueWortgitter(block.config.woerter ?? []);
 
   const loesungsZellen = new Set<string>();
   if (showSolution) {

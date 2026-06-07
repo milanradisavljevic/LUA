@@ -90,10 +90,13 @@ function blockToRequest(block: Block): BlockRequest {
         aufgabe: block.config.aufgabe };
     case 'kreuzwortraetsel':
       return { typ: 'kreuzwortraetsel', punkte: block.punkte, quelleId: block.quelleId,
-        anzahlWoerter: block.config.eintraege.length };
+        anzahlWoerter: block.config.anzahlWoerter ?? block.config.eintraege?.length ?? 6 };
     case 'wortgitter':
       return { typ: 'wortgitter', punkte: block.punkte, quelleId: block.quelleId,
-        anzahlWoerter: block.config.woerter.length };
+        anzahlWoerter: block.config.anzahlWoerter ?? block.config.woerter?.length ?? 6 };
+    case 'vokabeluebung':
+      return { typ: 'vokabeluebung', punkte: block.punkte, quelleId: block.quelleId,
+        anzahlVokabeln: block.config.anzahlVokabeln ?? block.config.vokabeln?.length ?? 6, richtung: block.config.richtung };
   }
 }
 

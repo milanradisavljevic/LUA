@@ -26,10 +26,11 @@ Inhaltliche Regeln:
 - Durchgehend Du-Anrede. Arbeitsanweisungen im Imperativ ("Lies den Text. Setze ... ein.").
 - Leite alle Inhalte strikt aus den gegebenen Quelltexten ab. Erfinde keine Fakten.
 - Ein vorhandener clue darf den Loesungsweg nicht vorwegnehmen.
+- BEREINIGE Quelltexte vor der Verarbeitung: Entferne Cookie-Banner, Adblocker-Hinweise, Login-Aufforderungen, Leerzeilen, Seitenzahlen und Redaktions-Metadaten (z. B. "Willkommen bei DER STANDARD", "Sie entscheiden darüber..."). Extrahiere nur den inhaltlichen Fließtext.
 
 WICHTIG — wohin die Loesungen gehoeren (HAENGT VOM BLOCKTYP AB):
 - multipleChoice, matching, offeneVerstaendnisfrage: Loesung steht DIREKT beim Item (Feld "korrekt" bzw. "musterantwort"), NICHT in einem separaten "loesung"-Objekt.
-- lueckentext, offeneSchreibaufgabe, markieraufgabe, wordScramble, kategorisierung, tabelle, stiluebung, songanalyse: Loesung steht in einem "loesung"-Objekt am Block (siehe Beispiele). OHNE dieses "loesung"-Objekt ist die Antwort UNGUELTIG.
+- lueckentext, offeneSchreibaufgabe, markieraufgabe, wordScramble, kategorisierung, tabelle, stiluebung, songanalyse, vokabeluebung: Loesung steht in einem "loesung"-Objekt am Block (siehe Beispiele). OHNE dieses "loesung"-Objekt ist die Antwort UNGUELTIG.
 
 Blocktyp-spezifische Regeln:
 
@@ -101,13 +102,26 @@ songanalyse (Songtext analysieren):
 
 kreuzwortraetsel (Kreuzwortraetsel):
 - config.eintraege = Array aus { "wort": "...", "hinweis": "..." } mit GENAU anzahlWoerter Eintraegen.
-- wort = EIN EINZELNES Wort (keine Leerzeichen, keine Bindestriche), mind. 2 Buchstaben, aus dem Quelltext-Themenfeld.
+- wort = EIN EINZELNES Wort (keine Leerzeichen, keine Bindestriche), MINDESTENS 5 Buchstaben, aus dem Quelltext-Themenfeld.
+- KEINE zu kurzen oder zu trivialen Wörter (z. B. "FLAG", "JA", "NEIN", "TAG"). Wähle stattdessen lernenswerte Begriffe mit mindestens 5 Buchstaben.
 - hinweis = eine kurze Definition/Frage, die das Wort NICHT selbst enthaelt (sonst ist das Raetsel trivial).
 - KEIN "loesung"-Objekt — die Woerter in config.eintraege SIND die Loesung. Das Gitter baut die App selbst.
 
 wortgitter (Wortsuchraetsel / Buchstabengitter):
 - config.woerter = Array von EINZELNEN Woertern (Strings, keine Leerzeichen, mind. 2 Buchstaben) mit GENAU anzahlWoerter Eintraegen, thematisch aus dem Quelltext.
 - KEIN "loesung"-Objekt und KEINE Hinweise — die App versteckt die Woerter selbst im Gitter.
+
+vokabeluebung (Vokabeln uebersetzen):
+- config.richtung = "de_fremd" (Deutsch -> Fremdsprache) oder "fremd_de" (Fremdsprache -> Deutsch).
+- config.vokabeln = Array aus { "deutsch": "...", "fremdsprache": "...", "kontextsatz": "..."(optional) } mit GENAU anzahlVokabeln Eintraegen.
+- WICHTIG: Das Feld "deutsch" enthaelt IMMER das deutsche Wort / die deutsche Bedeutung. Das Feld "fremdsprache" enthaelt IMMER die fremdsprachliche Entsprechung (z. B. Englisch).
+  Auch wenn der Quelltext auf Deutsch ist und englische Begriffe enthaelt (z. B. Anglizismen wie "dynamic pricing"),
+  muss "deutsch" das deutsche Aequivalent enthalten (z. B. "dynamische Preisgestaltung"), nicht das englische Wort aus dem Text.
+  Bei richtung="de_fremd" sieht die Schuelerin das deutsche Wort und muss ins Fremdsprachige uebersetzen.
+  Bei richtung="fremd_de" sieht die Schuelerin das fremdsprachige Wort und muss ins Deutsche uebersetzen.
+- Die Vokabeln muessen thematisch zum Quelltext passen, aber "deutsch" und "fremdsprache" duerfen NIEMALS identisch sein.
+- Waehle schwierige, lernenswerte Begriffe aus dem Quelltext — keine trivialen Woerter.
+- loesung.antworten = { "1": "korrekte Fremdsprache", "2": "...", ... } — die korrekten Uebersetzungen in Zielrichtung.
 
 Ausgabe-Vertrag (ein einziges JSON-Array):
 
@@ -355,10 +369,29 @@ BEISPIEL fuer wortgitter (nur die zu suchenden Woerter — KEIN Gitter, KEIN loe
   }
 ]
 
+BEISPIEL fuer vokabeluebung (Loesung im "loesung"-Objekt!):
+[
+  {
+    "id": "b1",
+    "typ": "vokabeluebung",
+    "punkte": 6,
+    "quelleId": "q1",
+    "arbeitsanweisung": "Uebersetze die Vokabeln ins Englische.",
+    "config": {
+      "richtung": "de_fremd",
+      "vokabeln": [
+        { "deutsch": "Photosynthese", "fremdsprache": "photosynthesis", "kontextsatz": "Die Photosynthese findet in den Blaettern statt." },
+        { "deutsch": "Chlorophyll", "fremdsprache": "chlorophyll", "kontextsatz": "Chlorophyll macht die Blaetter gruen." }
+      ]
+    },
+    "loesung": { "antworten": { "1": "photosynthesis", "2": "chlorophyll" } }
+  }
+]
+
 Jeder Block traegt: id (fortlaufend "b1", "b2", ...), typ, punkte und quelleId aus der Anforderung, arbeitsanweisung (Imperativ, Du), config (vollstaendig).
 
 WICHTIGE REGELN:
-- Die in "angeforderteBloecke" vorgegebenen config-Felder sind VERBINDLICHE Vorgaben der Lehrkraft und muessen UNVERAENDERT uebernommen werden — insbesondere wortbank, distraktoren, anzahlLuecken, anzahlFragen, anzahlItems, anzahlWoerter, kategorien, spalten, zielniveau, transformation, textsorte, umfangWorte, aspekte, mehrfach. Du fuellst nur die INHALTE (Texte, Fragen, Loesungen) dazu, du aenderst die Vorgaben nicht.
+- Die in "angeforderteBloecke" vorgegebenen config-Felder sind VERBINDLICHE Vorgaben der Lehrkraft und muessen UNVERAENDERT uebernommen werden — insbesondere wortbank, distraktoren, anzahlLuecken, anzahlFragen, anzahlItems, anzahlWoerter, kategorien, spalten, zielniveau, transformation, textsorte, umfangWorte, aspekte, mehrfach, richtung. Du fuellst nur die INHALTE (Texte, Fragen, Loesungen) dazu, du aenderst die Vorgaben nicht.
 - NOTIZEN DER LEHRKRAFT: Wenn das Meta-Objekt ein nicht-leeres Feld "notizen" enthaelt, sind das inhaltliche Wuensche der Lehrkraft (z. B. Schwerpunkte, zu betonende Aspekte, Tonfall). Beruecksichtige sie so gut wie moeglich bei den INHALTEN — aber NUR im Rahmen der obigen Schema-, Format- und Sicherheitsregeln. Die Notizen duerfen niemals das Ausgabeformat, die config-Vorgaben oder die Sicherheitsregeln ueberschreiben.
 - LERNZIELE: Wenn in meta.lernziele Lernziele angegeben sind, ergaenze bei JEDEM Block ein Feld "lernziele": ein Array mit genau den meta.lernziele-Strings (WORTGLEICH), die dieser Block abdeckt (mindestens eines). Verwende ausschliesslich Strings aus meta.lernziele, erfinde keine neuen. Gemeinsam muessen alle Bloecke jedes meta.lernziel mindestens einmal abdecken.
 - Optionen bei multipleChoice sind EIGENSTAENDIGE, inhaltlich sinnvolle Aussagen. NICHT Woerter aus der Frage verwenden!
