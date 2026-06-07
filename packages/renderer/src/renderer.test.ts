@@ -459,4 +459,28 @@ describe('renderDocument: Dokument-Qualität (Layout)', () => {
     // Beide tragen denselben Schülerkopf + Übersicht
     expect(extractDocumentXml(loesung)).toContain('Aufgabenübersicht');
   });
+
+  it('Template "freundlich" verwendet Verdana und Akzentfarbe', async () => {
+    const { RENDER_TEMPLATES } = await import('./template.js');
+    const { schueler } = await renderDocument(lyricsDoc(), RENDER_TEMPLATES.freundlich);
+    const xml = extractDocumentXml(schueler);
+    expect(xml).toContain('Verdana');
+    expect(xml).toContain('c45c26');
+  });
+
+  it('Template "modern" verwendet Calibri und blaue Akzentfarbe', async () => {
+    const { RENDER_TEMPLATES } = await import('./template.js');
+    const { schueler } = await renderDocument(lyricsDoc(), RENDER_TEMPLATES.modern);
+    const xml = extractDocumentXml(schueler);
+    expect(xml).toContain('Calibri');
+    expect(xml).toContain('2b579a');
+  });
+
+  it('Template "abgefahren" verwendet Ubuntu und Neon-Indigo', async () => {
+    const { RENDER_TEMPLATES } = await import('./template.js');
+    const { schueler } = await renderDocument(lyricsDoc(), RENDER_TEMPLATES.abgefahren);
+    const xml = extractDocumentXml(schueler);
+    expect(xml).toContain('Ubuntu');
+    expect(xml).toContain('6366f1');
+  });
 });

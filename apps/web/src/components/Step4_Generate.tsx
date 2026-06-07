@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Loader2, Sparkles, FileDown, ClipboardList, FileType, CheckCircle2,
-  AlertTriangle, Timer, Bot, X,
+  AlertTriangle, Timer, Bot, X, Palette,
 } from 'lucide-react';
 import type { AppState, AppAction } from '../lib/types';
 import { getBlockLabel } from '../lib/blockDefaults';
@@ -9,6 +9,7 @@ import { PreviewTwoColumn } from './PreviewTwoColumn';
 import { useGenerate } from '../hooks/useGenerate';
 import { useExport } from '../hooks/useExport';
 import { usePdfExport } from '../hooks/usePdfExport';
+import { RENDER_TEMPLATES } from '@lehrunterlagen/renderer';
 
 
 function isTauri(): boolean {
@@ -55,6 +56,51 @@ export function Step4_Generate({ state, dispatch }: Props) {
   return (
     <div>
       <h2 style={{ marginBottom: '1.25rem' }}>Generieren &amp; Export</h2>
+
+      {/* Formatvorlage */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+          <Palette size={14} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 4 }} />
+          Formatvorlage
+        </label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.5rem' }}>
+          {Object.values(RENDER_TEMPLATES).map((tpl) => {
+            const aktiv = state.renderTemplate === tpl.id;
+            return (
+              <button
+                key={tpl.id}
+                onClick={() => dispatch({ type: 'SET_RENDER_TEMPLATE', template: tpl.id })}
+                style={{
+                  textAlign: 'left',
+                  padding: '0.75rem 1rem',
+                  borderRadius: 'var(--radius)',
+                  border: aktiv ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+                  background: aktiv ? 'var(--color-highlight-bg)' : 'var(--color-bg-surface)',
+                  cursor: 'pointer',
+                  fontSize: '0.8125rem',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-accent)';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-highlight-bg)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = aktiv ? 'var(--color-accent)' : 'var(--color-border)';
+                  (e.currentTarget as HTMLButtonElement).style.background = aktiv ? 'var(--color-highlight-bg)' : 'var(--color-bg-surface)';
+                }}
+              >
+                <strong style={{ fontSize: '0.875rem' }}>{tpl.label}</strong>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.125rem' }}>
+                  {tpl.description}
+                </span>
+                <span style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--color-accent)', marginTop: '0.25rem' }}>
+                  {tpl.font} · {tpl.color.accent !== '000000' ? 'Akzentfarbe' : 'Schwarz-Weiß'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Zusammenfassung + Aktionen */}
       <div style={{

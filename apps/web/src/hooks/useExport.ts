@@ -3,6 +3,7 @@ import type { AppState } from '../lib/types';
 
 import { getBlockLabel } from '../lib/blockDefaults';
 import { appendHistoryEntry } from '../lib/storage';
+import { RENDER_TEMPLATES } from '@lehrunterlagen/renderer';
 
 export function useExport() {
   const [exporting, setExporting] = useState(false);
@@ -22,7 +23,8 @@ export function useExport() {
 
     try {
       const { renderDocumentToBlobs } = await import('@lehrunterlagen/renderer');
-      const { schueler, loesung } = await renderDocumentToBlobs(state.generiertesDokument);
+      const template = RENDER_TEMPLATES[state.renderTemplate];
+      const { schueler, loesung } = await renderDocumentToBlobs(state.generiertesDokument, template);
 
       const thema = sanitizeFilename(state.generiertesDokument.meta.thema).slice(0, 40);
       const datum = state.generiertesDokument.meta.datum;
@@ -77,7 +79,8 @@ export function useExport() {
       const { renderRaster } = await import('@lehrunterlagen/renderer');
 
       const raster = buildRaster(state.generiertesDokument);
-      const buffer = await renderRaster(raster);
+      const template = RENDER_TEMPLATES[state.renderTemplate];
+      const buffer = await renderRaster(raster, template);
       const blob = new Blob([new Uint8Array(buffer)], {
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       });

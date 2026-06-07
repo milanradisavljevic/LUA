@@ -107,5 +107,6 @@ export function snapshotFromState(state: AppState): DocumentSnapshot {
     modelName: state.modelName,
     kreativitaet: state.kreativitaet,
     ausgabeSprache: state.ausgabeSprache,
+    renderTemplate: state.renderTemplate,
   };
 }

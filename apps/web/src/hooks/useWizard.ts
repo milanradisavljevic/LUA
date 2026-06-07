@@ -1,6 +1,7 @@
 import { useReducer, useCallback } from 'react';
 import type { AppState, AppAction, StepId } from '../lib/types';
 import { getDefaultMeta } from '../lib/constants';
+import { getDefaultTemplate } from '@lehrunterlagen/renderer';
 import { loadSettings } from '../lib/storage';
 
 const STEPS_ORDER: StepId[] = ['absicht', 'input', 'baukasten', 'llm', 'generate'];
@@ -53,6 +54,8 @@ function wizardReducer(state: AppState, action: AppAction): AppState {
       return { ...state, ausgabeSprache: action.value };
     case 'SET_GENERIERTES_DOKUMENT':
       return { ...state, generiertesDokument: action.dokument };
+    case 'SET_RENDER_TEMPLATE':
+      return { ...state, renderTemplate: action.template };
     case 'UPDATE_GENERIERTER_BLOCK':
       if (!state.generiertesDokument) return state;
       return {
@@ -71,6 +74,7 @@ function wizardReducer(state: AppState, action: AppAction): AppState {
         ...action.snapshot,
         step: action.snapshot.generiertesDokument ? 'generate' : 'baukasten',
         aktuelleDokumentId: action.documentId,
+        renderTemplate: action.snapshot.renderTemplate ?? getDefaultTemplate(action.snapshot.meta.stufe).id,
       };
     case 'SET_DOCUMENT_ID':
       return { ...state, aktuelleDokumentId: action.id };
@@ -81,10 +85,11 @@ function wizardReducer(state: AppState, action: AppAction): AppState {
 
 function createInitialState(): AppState {
   const settings = loadSettings();
+  const meta = getDefaultMeta();
   return {
     step: 'absicht',
     auftrag: null,
-    meta: getDefaultMeta(),
+    meta,
     quelltexte: [],
     bloecke: [],
     generiertesDokument: null,
@@ -93,6 +98,7 @@ function createInitialState(): AppState {
     kreativitaet: settings.defaultKreativitaet,
     ausgabeSprache: settings.defaultAusgabeSprache,
     aktuelleDokumentId: null,
+    renderTemplate: getDefaultTemplate(meta.stufe).id,
   };
 }
 

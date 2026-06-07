@@ -45,6 +45,7 @@ function makeDoc(id: string, overrides: Partial<SavedDocument> = {}): SavedDocum
       modelName: '',
       kreativitaet: 0.4,
       ausgabeSprache: 'de',
+      renderTemplate: 'klassisch',
     },
     ...overrides,
   };

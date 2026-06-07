@@ -5,6 +5,7 @@ import { BLOCK_TYPE_DEFS, SCHWIERIGKEIT_RULES } from '../lib/constants';
 import { buildSkelett, type Auftrag } from '@lehrunterlagen/schema';
 import { EXAMPLE_ABSICHTEN } from '../lib/exampleAbsichten';
 import { loadDocuments } from '../lib/storage';
+import { getDefaultTemplate } from '@lehrunterlagen/renderer';
 
 interface Props {
   state: AppState;
@@ -219,6 +220,7 @@ export function Step0_Absicht({ state, dispatch, onNavigateToTemplates }: Props)
                 setTyp(ex.auftrag.typ);
                 setFach(ex.auftrag.fach);
                 setStufe(ex.auftrag.stufe);
+                dispatch({ type: 'SET_RENDER_TEMPLATE', template: getDefaultTemplate(ex.auftrag.stufe).id });
                 setThema(ex.auftrag.thema);
                 setDauerMinuten(ex.auftrag.dauerMinuten ?? '');
                 setSchwierigkeit(ex.auftrag.schwierigkeit ?? 'mittel');
@@ -330,7 +332,10 @@ export function Step0_Absicht({ state, dispatch, onNavigateToTemplates }: Props)
             {(['unterstufe', 'oberstufe'] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => setStufe(s)}
+                onClick={() => {
+                  setStufe(s);
+                  dispatch({ type: 'SET_RENDER_TEMPLATE', template: getDefaultTemplate(s).id });
+                }}
                 style={{
                   flex: 1,
                   padding: '0.5rem',
