@@ -264,7 +264,7 @@ describe('LueckentextBlockSchema', () => {
     expect(LueckentextBlockSchema.safeParse(block).success).toBe(true);
   });
 
-  it('rejects punkte <= 0', () => {
+  it('accepts punkte = 0', () => {
     const result = LueckentextBlockSchema.safeParse({
       id: 'b1',
       typ: 'lueckentext',
@@ -273,7 +273,7 @@ describe('LueckentextBlockSchema', () => {
       config: { anzahlLuecken: 3, wortbank: false, distraktoren: 0 },
       loesung: { luecken: [] },
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('accepts optional clue', () => {
@@ -859,7 +859,7 @@ describe('DocumentSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects wortbank=true in oberstufe document', () => {
+  it('accepts wortbank=true in oberstufe document', () => {
     const doc: DocumentV1 = {
       ...validDoc,
       meta: { ...validDoc.meta, stufe: 'oberstufe' },
@@ -872,7 +872,7 @@ describe('DocumentSchema', () => {
         loesung: { luecken: [{ nr: 1, wort: 'Wort' }] },
       }],
     };
-    expect(DocumentSchema.safeParse(doc).success).toBe(false);
+    expect(DocumentSchema.safeParse(doc).success).toBe(true);
   });
 
   it('accepts wortbank=true in unterstufe document', () => {

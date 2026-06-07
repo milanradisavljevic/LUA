@@ -1,4 +1,6 @@
 import type { DocumentV1, QuellText, Block } from '@lehrunterlagen/schema';
+import type { ChatMessage } from './types.js';
+import { runJudge } from './judge.js';
 
 export interface QualityIssue {
   blockId: string;
@@ -276,7 +278,88 @@ export function checkDuplicateQuestions(doc: DocumentV1): QualityIssue[] {
 }
 
 // ---------------------------------------------------------------------------
-// 4) LLM-Judge-Hook (Stub fuer spaetere Anbindung)
+// 4) Schreibaufgabe — Laengen- und Grounding-Check
+// ---------------------------------------------------------------------------
+
+const SCHRIFTLICH_MAX_LENGENTOLERANZ = 0.30;
+const SCHRIFTLICH_MAX_UNGROUNDED_RATIO = 0.70;
+
+export function checkSchreibaufgabe(doc: DocumentV1, quelltexte: QuellText[]): QualityIssue[] {
+  const issues: QualityIssue[] = [];
+  const index = buildQuelltextIndex(quelltexte);
+
+  for (const block of doc.bloecke) {
+    if (block.typ !== 'offeneSchreibaufgabe') continue;
+
+    const cfg = block.config;
+    const loesung = block.loesung;
+    if (!cfg || !loesung) continue;
+
+    // 1) Laengencheck
+    const min = cfg.umfangWorte?.min;
+    const max = cfg.umfangWorte?.max;
+    const muster = loesung.musterloesung ?? '';
+    const wortzahl = tokenize(muster).length;
+
+    if (min != null && max != null && wortzahl > 0) {
+      const mitte = (min + max) / 2;
+      const toleranz = mitte * SCHRIFTLICH_MAX_LENGENTOLERANZ;
+      if (wortzahl < mitte - toleranz || wortzahl > mitte + toleranz) {
+        issues.push({
+          blockId: block.id,
+          severity: 'warning',
+          message: `Musterloesung (${wortzahl} Worte) weicht vom vorgegebenen Umfang (${min}–${max}) ab.`,
+        });
+      }
+    }
+
+    // 2) Weicher Grounding-Check (Musterloesung ist Paraphrase — darf kreativ sein,
+    //    aber komplett themenfremd sollte geflaggt werden)
+    const uniqueContent = [...new Set(tokenize(muster).filter(isContentToken))];
+    if (uniqueContent.length > 0) {
+      const ungrounded = uniqueContent.filter((t) => !index.has(t));
+      const ratio = ungrounded.length / uniqueContent.length;
+      if (ratio > SCHRIFTLICH_MAX_UNGROUNDED_RATIO) {
+        const sample = ungrounded.slice(0, 3).map((t) => `"${t}"`).join(', ');
+        issues.push({
+          blockId: block.id,
+          severity: 'warning',
+          message: `Musterloesung kaum quellengestuetzt (${Math.round(ratio * 100)}% fremde Begriffe: ${sample}).`,
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
+// ---------------------------------------------------------------------------
+// 5) Lernziel-Coverage (WARNING, nie error)
+// ---------------------------------------------------------------------------
+
+export function checkLernzielCoverage(doc: DocumentV1, meta: { lernziele?: string[] }): QualityIssue[] {
+  const ziele = meta.lernziele ?? [];
+  if (ziele.length === 0) return [];
+
+  const abgedeckt = new Set<string>();
+  for (const block of doc.bloecke) {
+    for (const z of block.lernziele ?? []) {
+      abgedeckt.add(z);
+    }
+  }
+
+  const fehlend = ziele.filter((z) => !abgedeckt.has(z));
+  if (fehlend.length === 0) return [];
+
+  return [{
+    blockId: doc.bloecke[0]?.id ?? 'global',
+    severity: 'warning',
+    message: `Lernziele nicht abgedeckt: ${fehlend.join(', ')}. Aufgaben erweitern oder Lernziele anpassen.`,
+  }];
+}
+
+// ---------------------------------------------------------------------------
+// 6) LLM-Judge-Hook (Stub fuer spaetere Anbindung)
 // ---------------------------------------------------------------------------
 
 /**
@@ -291,10 +374,17 @@ export function checkDuplicateQuestions(doc: DocumentV1): QualityIssue[] {
  *   return { score: parsed.score ?? 0, issues: parsed.issues ?? [] };
  */
 export async function llmJudgeHook(
-  _doc: DocumentV1,
-  _cfg?: { provider: string; model?: string; apiKey?: string },
+  doc: DocumentV1,
+  quelltexte: QuellText[],
+  cfg?: { provider: string; model?: string; apiKey?: string; enabled?: boolean },
+  complete?: (messages: ChatMessage[]) => Promise<string>,
 ): Promise<LlmJudgeResult> {
-  return { score: 1, issues: [] };
+  if (cfg?.enabled === false || !complete) {
+    return { score: 1, issues: [] };
+  }
+  const issues = await runJudge(doc, quelltexte, complete);
+  const score = issues.length === 0 ? 1 : Math.max(0, 1 - issues.length * 0.2);
+  return { score, issues: issues.map((i) => i.message) };
 }
 
 // ---------------------------------------------------------------------------
@@ -309,13 +399,17 @@ export interface QualityCheckResult {
 export async function runQualityChecks(
   doc: DocumentV1,
   quelltexte: QuellText[],
-  judgeCfg?: { provider: string; model?: string; apiKey?: string },
+  meta?: { lernziele?: string[] },
+  judgeCfg?: { provider: string; model?: string; apiKey?: string; enabled?: boolean },
+  complete?: (messages: ChatMessage[]) => Promise<string>,
 ): Promise<QualityCheckResult> {
   const issues = [
     ...checkGrounding(doc, quelltexte),
     ...checkDuplicates(doc),
     ...checkDuplicateQuestions(doc),
+    ...checkSchreibaufgabe(doc, quelltexte),
+    ...checkLernzielCoverage(doc, meta ?? {}),
   ];
-  const judge = await llmJudgeHook(doc, judgeCfg);
+  const judge = await llmJudgeHook(doc, quelltexte, judgeCfg, complete);
   return { issues, judge };
 }

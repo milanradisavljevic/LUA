@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-07 — Claude (Didaktik Runde 1: Prompt-Chirurgie + Coverage-Prävention)
+
+System-Prompt (`packages/llm/src/prompt.ts`) und Quelltext-Anreichierung in `buildMessages` chirurgisch überarbeitet — Didaktik-Fundament (F1–F5 aus Master-Plan `docs/didaktik-roundtable-plan.md`).
+
+- **Didaktik #5a — Terminologie-Konservierung:** Neue Sektion `TERMINOLOGIE-KONSERVIERUNG` nach „Erfinde keine Fakten". Verbietet Synonymisierung von Fachbegriffen/Eigennamen/Fachtermini (Beispiele „Maische"→nicht „Ansatz", „Habitat"→nicht „Lebensraum"). Ausnahme für Stilübung „in eigenen Worten" formuliert.
+- **Didaktik #3 — Distraktor-Qualität:** Neue globale Sektion `DISTRAKTOR-QUALITAET` (gilt für `multipleChoice`, `matching`, `lueckentext`-Wortbank) mit drei Mindeststandards: thematische Nähe, Längen-Ähnlichkeit, typische Schülerfehler. Positiv-/Negativbeispiele (Photosynthese→Zellatmung vs. →Tischlerarbeit).
+- **Didaktik #2 (redesign) — Bloom-Typ-Logik:** Bestehende Sektion „KOGNITIVES NIVEAU" umgebaut. Explizites `VERBOT DES STILLEN TYP-TAUSCHS` (würde `buildSkelett`/`PROFILE` desynchronisieren). Stattdessen: kognitive Tiefe INNERHALB des angeforderten Typs anheben, mit drei Beispielen (schweres MC, leichtes/schweres Matching, leichtes/schwere Verständnisfrage).
+- **Didaktik F5 — CEFR-Mapping Englisch:** Neue Sektion `ENGLISCH-SPEZIFISCH`. Mapping `leicht ≈ A2`, `mittel ≈ B1`, `schwer ≈ B2` mit Wortschatz-, Tempus- und Textlängen-Vorgaben. Deutsch bleibt bei Bloom.
+- **Didaktik #4 (Prävention) — Coverage:** Neue Sektion `COVERAGE` im System-Prompt + neue exportierte Helper-Funktion `nummeriereAbsaetze(inhalt)`. `buildMessages` nummeriert Quelltext-Absätze deterministisch (`[Absatz 1] ...`, `[Absatz 2] ...`) ab 2 Absätzen UND ≥200 Zeichen. Schwelle verhindert Mehraufwand bei kurzen Quellen.
+- **Tests:** 9 neue Test-Cases in `prompt.test.ts` decken alle 5 Regeln + `nummeriereAbsaetze` (4 Edge Cases) ab. LLM-Paket jetzt 105/106 grün (1 pre-existing failure in `validate.test.ts:56`, nicht durch diese Änderungen verursacht — mit `git stash` reproduziert). Web 28/28, QA 96/96, `pnpm -r typecheck` grün.
+
 ## 2026-06-06 — Claude (URL-Import-Qualität + Rebranding „LUA")
 
 **URL-Import liefert jetzt den Hauptinhalt** statt Navigations-/„Skip to content"-Müll (`src-tauri/src/commands/web.rs`):

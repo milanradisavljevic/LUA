@@ -21,6 +21,9 @@ src-tauri/~$*
 session-*.md
 kimi-export-*.md
 offene Punkte.txt
+chat-*.txt
+chat-*.json
+MODUL *.txt
 
 # Vorlagen und Assets (nicht Code)
 *.docx

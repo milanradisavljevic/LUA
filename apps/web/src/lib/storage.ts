@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultModel: 'Sonnet 4.6',
   defaultKreativitaet: 0.4,
   defaultAusgabeSprache: 'de',
+  judgeEnabled: true,
 };
 
 // --- Dokumente -------------------------------------------------------------

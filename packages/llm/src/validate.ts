@@ -2,6 +2,7 @@ import { DocumentSchema, type DocumentV1, type QuellText } from '@lehrunterlagen
 import { normalizeDocument } from './normalize.js';
 import { transformToSchema } from './transform.js';
 import { runQualityChecks, type QualityIssue, type LlmJudgeResult } from './quality.js';
+import type { ChatMessage } from './types.js';
 
 export interface ValidationResult {
   ok: boolean;
@@ -53,7 +54,9 @@ export function extractJson(raw: string): string {
 export async function parseAndValidate(
   raw: string,
   meta?: any,
-  quelltexte?: any[]
+  quelltexte?: any[],
+  judgeCfg?: { provider: string; model?: string; apiKey?: string; enabled?: boolean },
+  complete?: (messages: ChatMessage[]) => Promise<string>,
 ): Promise<ValidationResult> {
   let parsed: unknown;
   try {
@@ -104,7 +107,7 @@ export async function parseAndValidate(
     return { ok: true, document, qualityIssues: [], judge: { score: 1, issues: [] } };
   }
 
-  const { issues: qualityIssues, judge } = await runQualityChecks(document, quelltexte as QuellText[]);
+  const { issues: qualityIssues, judge } = await runQualityChecks(document, quelltexte as QuellText[], meta, judgeCfg, complete);
   const errors = qualityIssues.filter((i) => i.severity === 'error');
   if (errors.length > 0) {
     const fehler = errors.map((i) => `- ${i.blockId}: ${i.message}`).join('\n');

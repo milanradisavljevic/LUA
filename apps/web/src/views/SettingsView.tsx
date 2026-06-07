@@ -121,6 +121,42 @@ export function SettingsView() {
             })}
           </div>
         </div>
+
+        <div style={{ marginTop: '1.25rem' }}>
+          <label style={labelStyle}>KI-Gegenprüfung der Aufgaben</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              onClick={() => update({ judgeEnabled: !settings.judgeEnabled })}
+              style={{
+                position: 'relative',
+                width: 44,
+                height: 24,
+                borderRadius: 12,
+                border: 'none',
+                background: settings.judgeEnabled ? 'var(--color-accent)' : 'var(--color-border)',
+                cursor: 'pointer',
+                transition: 'background 0.2s ease',
+              }}
+            >
+              <span style={{
+                position: 'absolute',
+                top: 2,
+                left: settings.judgeEnabled ? 22 : 2,
+                width: 20,
+                height: 20,
+                borderRadius: '50%',
+                background: 'white',
+                transition: 'left 0.2s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }} />
+            </button>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>
+              {settings.judgeEnabled ? 'Aktiviert' : 'Deaktiviert'}
+              {' — '}
+              Prüft generierte Aufgaben per KI auf Mehrdeutigkeiten. Erhöht Generierungszeit leicht.
+            </span>
+          </div>
+        </div>
       </section>
 
       {/* Abschnitt 2: API-Schlüssel */}

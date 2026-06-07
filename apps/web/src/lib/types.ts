@@ -21,6 +21,7 @@ export interface AppSettings {
   defaultModel: string;
   defaultKreativitaet: number;
   defaultAusgabeSprache: string;
+  judgeEnabled?: boolean;
 }
 
 export interface AppState {

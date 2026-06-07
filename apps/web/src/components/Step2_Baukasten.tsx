@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/sortable';
 import type { Block } from '@lehrunterlagen/schema';
 import type { AppState, AppAction } from '../lib/types';
-import { BLOCK_TYPE_DEFS, STUFE_RULES } from '../lib/constants';
+import { BLOCK_TYPE_DEFS, STUFE_RULES, SCHWIERIGKEIT_RULES } from '../lib/constants';
 import { createDefaultBlock } from '../lib/blockDefaults';
 import { useBlocks } from '../hooks/useBlocks';
 import { BlockCard } from './BlockCard';
@@ -36,6 +36,10 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
   const availableBlocks = BLOCK_TYPE_DEFS.filter((bt) =>
     (allowedTypes as readonly string[]).includes(bt.id),
   );
+
+  const schwierigkeit = state.meta.schwierigkeit ?? 'mittel';
+  const discouragedSet = new Set<string>(SCHWIERIGKEIT_RULES[schwierigkeit].discouraged as readonly string[]);
+  const schwierigkeitHinweis = SCHWIERIGKEIT_RULES[schwierigkeit].hinweis;
 
   const handleAddBlock = (typ: Block['typ']) => {
     const block = createDefaultBlock(typ, state.meta);
@@ -75,11 +79,13 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
           {availableBlocks.map((bt) => {
             const count = countByType.get(bt.id) ?? 0;
             const hasAny = count > 0;
+            const isDiscouraged = discouragedSet.has(bt.id);
             return (
               <button
                 key={bt.id}
                 onClick={() => handleAddBlock(bt.id)}
                 className="btn-secondary"
+                title={isDiscouraged ? schwierigkeitHinweis : undefined}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -95,6 +101,8 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
                   position: 'relative',
                   transition: 'all 0.2s ease',
                   cursor: 'pointer',
+                  opacity: isDiscouraged ? 0.5 : 1,
+                  filter: isDiscouraged ? 'grayscale(0.4)' : 'none',
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
@@ -133,6 +141,16 @@ export function Step2_Baukasten({ state, dispatch }: Props) {
                 <bt.Icon size={28} style={{ color: bt.color }} />
                 <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{bt.label}</span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{bt.description}</span>
+                {isDiscouraged && (
+                  <span style={{
+                    fontSize: '0.6875rem',
+                    color: 'var(--color-warning, #f59e0b)',
+                    fontWeight: 600,
+                    marginTop: '0.125rem',
+                  }}>
+                    {schwierigkeitHinweis}
+                  </span>
+                )}
 
 
                 {/* Mini-Hinweis wenn vorhanden */}

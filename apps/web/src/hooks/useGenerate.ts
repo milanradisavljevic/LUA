@@ -4,6 +4,7 @@ import type { GenerateInput, BlockRequest, ChatMessage } from '@lehrunterlagen/l
 import { buildMessages, buildRepairMessage, parseAndValidate } from '@lehrunterlagen/llm';
 import { invoke } from '@tauri-apps/api/core';
 import type { AppState, AppAction } from '../lib/types';
+import { loadSettings } from '../lib/storage';
 
 // Phasen der Generierung — die UI (Kimi) zeigt daraus eine Fortschrittsanzeige.
 export type GenerateStage = 'idle' | 'sende' | 'validiere' | 'korrigiere' | 'fertig' | 'fehler';
@@ -137,6 +138,7 @@ export function useGenerate(dispatch: React.Dispatch<AppAction>) {
   // Ein Anbieter, 2 Versuche (mit Reparaturrunde). Wirft bei Transportfehler mit TRANSPORT-Prefix.
   const runAttempts = useCallback(async (
     providerId: string, apiModel: string, input: GenerateInput, state: AppState, extraHinweis?: string,
+    judgeCfg?: { provider: string; model?: string; enabled?: boolean },
   ): Promise<DocumentV1> => {
     const messages = buildMessages(input);
     const systemMessage = messages.find((m) => m.role === 'system');
@@ -160,7 +162,7 @@ export function useGenerate(dispatch: React.Dispatch<AppAction>) {
       if (cancelRef.current) throw new Error('__CANCELLED__');
 
       setStage('validiere');
-      const validiert = await parseAndValidate(rohText, state.meta, state.quelltexte);
+      const validiert = await parseAndValidate(rohText, state.meta, state.quelltexte, judgeCfg);
       if (validiert.ok && validiert.document) return validiert.document;
       if (cancelRef.current) throw new Error('__CANCELLED__');
 
@@ -211,10 +213,16 @@ export function useGenerate(dispatch: React.Dispatch<AppAction>) {
 
     try {
       const { providerId, apiModel } = resolveProvider(state);
+      const settings = loadSettings();
       const input: GenerateInput = {
         meta: state.meta, quelltexte: state.quelltexte,
         bloecke: state.bloecke.map(blockToRequest),
       };
+      const judgeCfg = settings.judgeEnabled !== false ? {
+        provider: 'anthropic',
+        model: 'claude-haiku-4-5-20251001',
+        enabled: true,
+      } : { provider: 'anthropic', model: 'claude-haiku-4-5-20251001', enabled: false as const };
 
       // Anbieter-Kette: gewählter Anbieter, dann bei TRANSPORTfehler ein westlicher Ersatz.
       const chain: Array<{ providerId: string; apiModel: string }> = [{ providerId, apiModel }];
@@ -226,7 +234,7 @@ export function useGenerate(dispatch: React.Dispatch<AppAction>) {
         const cand = chain[i]!;
         setAktiverProvider(cand.providerId);
         try {
-          const document = await runAttempts(cand.providerId, cand.apiModel, input, state);
+          const document = await runAttempts(cand.providerId, cand.apiModel, input, state, undefined, judgeCfg);
           dispatch({ type: 'SET_GENERIERTES_DOKUMENT', dokument: document });
           setStage('fertig');
           return true;

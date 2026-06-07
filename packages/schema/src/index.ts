@@ -3,6 +3,9 @@ import { z } from 'zod';
 // Deterministischer Gitter-Generator (Kreuzworträtsel) — von Renderer + Web genutzt.
 export * from './grids.js';
 
+// Heuristische Quelltext-Säuberung — von Renderer + Web + Input genutzt.
+export * from './clean.js';
+
 // ---------------------------------------------------------------------------
 // Meta
 // ---------------------------------------------------------------------------
@@ -508,6 +511,48 @@ export const BlockTypSchema = z.enum([
   'vokabeluebung',
 ]);
 export type BlockTyp = z.infer<typeof BlockTypSchema>;
+
+// ---------------------------------------------------------------------------
+// Bloom-Eignung von Aufgabentypen je Schwierigkeit
+// ---------------------------------------------------------------------------
+// EINZIGE QUELLE DER WAHRHEIT fuer UI-Typ-Gating (apps/web) UND Prompt-Steuerung
+// (packages/llm). Beide Seiten muessen identisch entscheiden, welche Typen zu welchem
+// kognitiven Niveau passen — sonst driften Baukasten und LLM auseinander.
+//
+// "abgeraten" = der Typ widerspricht dem kognitiven Niveau (z. B. geschlossenes Multiple
+// Choice bei "schwer" = Bewerten/Erschaffen). NICHT verboten: die UI graut aus und warnt,
+// der Prompt hebt die kognitive Tiefe innerhalb des Typs. Der Blocktyp wird NIEMALS
+// eigenmaechtig vom LLM getauscht (das wuerde buildSkelett/PROFILE desynchronisieren).
+// Diese Matrix ist bewusst justierbar — paedagogische Feinjustierung erwuenscht.
+
+export type Schwierigkeit = 'leicht' | 'mittel' | 'schwer';
+export type TypEignung = 'geeignet' | 'abgeraten';
+
+export const BLOOM_TYP_ABGERATEN: Record<Schwierigkeit, { typ: BlockTyp; grund: string }[]> = {
+  leicht: [
+    { typ: 'offeneSchreibaufgabe', grund: 'Produktives Schreiben (Bloom 5–6) ueberfordert das Niveau "leicht".' },
+    { typ: 'songanalyse', grund: 'Interpretation (Bloom 4–5) ist fuer "leicht" zu anspruchsvoll.' },
+    { typ: 'stiluebung', grund: 'Umformulierung im Zielstil setzt Analyse/Synthese voraus.' },
+  ],
+  mittel: [],
+  schwer: [
+    { typ: 'lueckentext', grund: 'Geschlossener Reproduktionstyp (Bloom 1–2) — ungeeignet fuer Bewerten/Erschaffen.' },
+    { typ: 'matching', grund: 'Geschlossener Zuordnungstyp — kein Urteil, keine Synthese moeglich.' },
+    { typ: 'multipleChoice', grund: 'Geschlossener Typ; "schweres MC" bleibt faktisch Bloom 1–2. Besser offene Typen.' },
+    { typ: 'wordScramble', grund: 'Reine Reproduktion.' },
+    { typ: 'kreuzwortraetsel', grund: 'Reine Reproduktion/Spielform.' },
+    { typ: 'wortgitter', grund: 'Reine Reproduktion/Spielform.' },
+    { typ: 'vokabeluebung', grund: 'Reine Reproduktion.' },
+  ],
+};
+
+export function getTypEignung(typ: BlockTyp, schwierigkeit: Schwierigkeit): TypEignung {
+  return BLOOM_TYP_ABGERATEN[schwierigkeit].some((e) => e.typ === typ) ? 'abgeraten' : 'geeignet';
+}
+
+export function getAbratungsgrund(typ: BlockTyp, schwierigkeit: Schwierigkeit): string | undefined {
+  return BLOOM_TYP_ABGERATEN[schwierigkeit].find((e) => e.typ === typ)?.grund;
+}
 
 // ---------------------------------------------------------------------------
 // Auftrag — die Absicht der Lehrkraft (Primaerweg)

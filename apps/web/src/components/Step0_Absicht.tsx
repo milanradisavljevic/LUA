@@ -1,13 +1,15 @@
-import { useState, useCallback } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { ArrowRight, Clock, FolderOpen, BookOpen } from 'lucide-react';
 import type { AppState, AppAction } from '../lib/types';
-import { BLOCK_TYPE_DEFS } from '../lib/constants';
+import { BLOCK_TYPE_DEFS, SCHWIERIGKEIT_RULES } from '../lib/constants';
 import { buildSkelett, type Auftrag } from '@lehrunterlagen/schema';
 import { EXAMPLE_ABSICHTEN } from '../lib/exampleAbsichten';
+import { loadDocuments } from '../lib/storage';
 
 interface Props {
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
+  onNavigateToTemplates?: () => void;
 }
 
 const UNTERLAGENTYPEN = [
@@ -23,20 +25,37 @@ const SCHWIERIGKEITEN = [
   { id: 'schwer' as const, label: 'Schwer' },
 ];
 
-export function Step0_Absicht({ state, dispatch }: Props) {
-  const [typ, setTyp] = useState<NonNullable<Auftrag['typ']>>('schularbeit');
-  const [fach, setFach] = useState<NonNullable<Auftrag['fach']>>('deutsch');
-  const [stufe, setStufe] = useState<NonNullable<Auftrag['stufe']>>('oberstufe');
-  const [thema, setThema] = useState('');
-  const [datum, setDatum] = useState(new Date().toISOString().slice(0, 10));
-  const [klasse, setKlasse] = useState('');
+function getLastDocumentDefaults() {
+  const docs = loadDocuments();
+  if (docs.length === 0) return null;
+  const last = docs.reduce((a, b) =>
+    new Date(a.updatedAt) > new Date(b.updatedAt) ? a : b
+  );
+  return last;
+}
+
+export function Step0_Absicht({ state, dispatch, onNavigateToTemplates }: Props) {
+  const lastDoc = useMemo(() => getLastDocumentDefaults(), []);
+  const lastMeta = lastDoc?.snapshot.meta;
+
+  const [typ, setTyp] = useState<NonNullable<Auftrag['typ']>>(lastMeta?.typ ?? 'schularbeit');
+  const [fach, setFach] = useState<NonNullable<Auftrag['fach']>>(lastMeta?.fach ?? 'deutsch');
+  const [stufe, setStufe] = useState<NonNullable<Auftrag['stufe']>>(lastMeta?.stufe ?? 'oberstufe');
+  const [thema, setThema] = useState(lastMeta?.thema ?? '');
+  const [datum, setDatum] = useState(lastMeta?.datum ?? new Date().toISOString().slice(0, 10));
+  const [klasse, setKlasse] = useState(lastMeta?.klasse ?? '');
   const [dauerMinuten, setDauerMinuten] = useState<number | ''>('');
-  const [schwierigkeit, setSchwierigkeit] = useState<NonNullable<Auftrag['schwierigkeit']>>('mittel');
+  const [schwierigkeit, setSchwierigkeit] = useState<NonNullable<Auftrag['schwierigkeit']>>(lastMeta?.schwierigkeit ?? 'mittel');
   const [gewuenschteAufgabenarten, setGewuenschteAufgabenarten] = useState<string[]>([]);
   const [gesamtpunkteZiel, setGesamtpunkteZiel] = useState<number | ''>('');
-  const [notizen, setNotizen] = useState('');
-  const [lernzieleRaw, setLernzieleRaw] = useState('');
+  const [notizen, setNotizen] = useState(lastMeta?.notizen ?? '');
+  const [lernzieleRaw, setLernzieleRaw] = useState(lastMeta?.lernziele?.join(', ') ?? '');
   const [fehler, setFehler] = useState<string | null>(null);
+
+  const handleContinueLast = useCallback(() => {
+    if (!lastDoc) return;
+    dispatch({ type: 'LOAD_SNAPSHOT', snapshot: lastDoc.snapshot, documentId: lastDoc.id });
+  }, [lastDoc, dispatch]);
 
   const toggleAufgabenart = useCallback((id: string) => {
     setGewuenschteAufgabenarten((prev) =>
@@ -108,6 +127,84 @@ export function Step0_Absicht({ state, dispatch }: Props) {
       <p style={{ color: 'var(--color-text-secondary)', margin: '0 0 1.25rem', fontSize: '0.875rem' }}>
         Beschreibe, was du brauchst. Die App baut daraus automatisch das passende Skelett.
       </p>
+
+      {/* Kontinuität — Weitermachen & Vorlagen */}
+      {(lastDoc || onNavigateToTemplates) && (
+        <section style={{ marginBottom: '1.25rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
+          {lastDoc && (
+            <button
+              onClick={handleContinueLast}
+              style={{
+                textAlign: 'left',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius)',
+                border: '2px solid var(--color-accent)',
+                background: 'var(--color-highlight-bg)',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px var(--color-shadow)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--color-accent)', fontWeight: 600 }}>
+                <Clock size={16} /> Weitermachen
+              </span>
+              <span style={{ fontWeight: 600 }}>{lastDoc.title}</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                {lastDoc.snapshot.meta.fach === 'deutsch' ? 'Deutsch' : 'Englisch'} · {lastDoc.snapshot.meta.stufe === 'oberstufe' ? 'Oberstufe' : 'Unterstufe'} · zuletzt {new Date(lastDoc.updatedAt).toLocaleDateString('de-AT')}
+              </span>
+            </button>
+          )}
+          {onNavigateToTemplates && (
+            <button
+              onClick={onNavigateToTemplates}
+              style={{
+                textAlign: 'left',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-surface)',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-accent)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-highlight-bg)';
+                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px var(--color-shadow)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-bg-surface)';
+                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--color-accent)', fontWeight: 600 }}>
+                <FolderOpen size={16} /> Aus Vorlage starten
+              </span>
+              <span style={{ fontWeight: 600 }}>Gespeicherte Vorlagen</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                Wähle aus deinen gespeicherten Konfigurationen.
+              </span>
+            </button>
+          )}
+        </section>
+      )}
 
       {/* Schnellstart — Beispiel-Absichten */}
       <section style={{ marginBottom: '1.25rem' }}>
@@ -374,24 +471,30 @@ export function Step0_Absicht({ state, dispatch }: Props) {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
           {BLOCK_TYPE_DEFS.map((bt) => {
             const aktiv = gewuenschteAufgabenarten.includes(bt.id);
+            const isDiscouraged = (SCHWIERIGKEIT_RULES[schwierigkeit].discouraged as readonly string[]).includes(bt.id);
             return (
               <button
                 key={bt.id}
                 onClick={() => toggleAufgabenart(bt.id)}
+                title={isDiscouraged ? SCHWIERIGKEIT_RULES[schwierigkeit].hinweis : undefined}
                 style={{
                   padding: '0.375rem 0.75rem',
                   borderRadius: 'var(--radius)',
-                  border: aktiv ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+                  border: aktiv ? '2px solid var(--color-accent)' : isDiscouraged ? '1px dashed var(--color-text-secondary)' : '1px solid var(--color-border)',
                   background: aktiv ? 'var(--color-highlight-bg)' : 'var(--color-bg-surface)',
                   cursor: 'pointer',
                   fontSize: '0.8125rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.25rem',
+                  opacity: isDiscouraged && !aktiv ? 0.6 : 1,
                 }}
               >
-                <bt.Icon size={15} style={{ color: bt.color }} />
+                <bt.Icon size={15} style={{ color: bt.color, opacity: isDiscouraged && !aktiv ? 0.5 : 1 }} />
                 <span>{bt.label}</span>
+                {isDiscouraged && !aktiv && (
+                  <span style={{ fontSize: '0.625rem', color: 'var(--color-warning, #f59e0b)' }}>⚠</span>
+                )}
               </button>
             );
           })}

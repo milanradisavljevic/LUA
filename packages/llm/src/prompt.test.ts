@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildMessages } from './prompt.js';
+import { buildMessages, nummeriereAbsaetze } from './prompt.js';
 import type { Meta } from '@lehrunterlagen/schema';
 
 const baseMeta: Meta = {
@@ -106,5 +106,96 @@ describe('buildMessages — Notizen der Lehrkraft (A)', () => {
     const messages = buildMessages(input({ notizen: '   ' }));
     const user = messages.find((m) => m.role === 'user');
     expect(user!.content).not.toContain('Beruecksichtige die Notizen der Lehrkraft bei den Inhalten');
+  });
+});
+
+describe('buildMessages — Didaktik Runde 1 Regeln', () => {
+  it('System-Prompt enthaelt Terminologie-Konservierungs-Regel (Didaktik #5a)', () => {
+    const messages = buildMessages(input());
+    const system = messages.find((m) => m.role === 'system')!;
+    expect(system.content).toContain('TERMINOLOGIE-KONSERVIERUNG');
+    expect(system.content).toContain('Maische');
+    expect(system.content).toContain('Habitat');
+    expect(system.content).toContain('wortwoertlich');
+  });
+
+  it('System-Prompt enthaelt Distraktor-Qualitaets-Regel mit allen drei Mindeststandards (Didaktik #3)', () => {
+    const messages = buildMessages(input());
+    const system = messages.find((m) => m.role === 'system')!;
+    expect(system.content).toContain('DISTRAKTOR-QUALITAET');
+    expect(system.content).toContain('THEMATISCHE NAeHE');
+    expect(system.content).toContain('LaeNGEN- ae HNLIChKEIT');
+    expect(system.content).toContain('TYPISCHE SCHUeLERFEHLER');
+    expect(system.content).toContain('Photosynthese');
+    expect(system.content).toContain('Zellatmung');
+  });
+
+  it('System-Prompt enthaelt Verbot des stillen Typ-Tauschs (Didaktik #2 redesign)', () => {
+    const messages = buildMessages(input());
+    const system = messages.find((m) => m.role === 'system')!;
+    expect(system.content).toContain('VERBOT DES STILLEN TYP-TAUSCHS');
+    expect(system.content).toContain('NICHT eigenmaechtig');
+    expect(system.content).toMatch(/desynchronisier/);
+  });
+
+  it('System-Prompt enthaelt CEFR-Mapping fuer Englisch (Didaktik F5)', () => {
+    const messages = buildMessages(input({ fach: 'englisch' }));
+    const system = messages.find((m) => m.role === 'system')!;
+    expect(system.content).toContain('CEFR');
+    expect(system.content).toContain('A2');
+    expect(system.content).toContain('B1');
+    expect(system.content).toContain('B2');
+  });
+
+  it('System-Prompt enthaelt Coverage-Präventions-Regel (Didaktik #4)', () => {
+    const messages = buildMessages(input());
+    const system = messages.find((m) => m.role === 'system')!;
+    expect(system.content).toContain('COVERAGE');
+    expect(system.content).toContain('ALLE Abschnitte');
+    expect(system.content).toContain('Absatz');
+  });
+});
+
+describe('nummeriereAbsaetze (Coverage-Prävention)', () => {
+  it('nummeriert Mehrabsatz-Text ab 200 Zeichen', () => {
+    const text = 'Erster Absatz ueber Medienkonsum bei Jugendlichen in der heutigen Zeit. ' +
+      'Er enthaelt viele wichtige Details und Fakten, die man kennen sollte.\n\n' +
+      'Zweiter Absatz ueber die Auswirkungen auf Schlaf und Konzentration. ' +
+      'Auch dieser Absatz ist lang genug, um die 200-Zeichen-Schwelle zu ueberschreiten.\n\n' +
+      'Dritter Absatz ueber moegliche Loesungsansaetze und Praeventionsstrategien.';
+    const out = nummeriereAbsaetze(text);
+    expect(out).toContain('[Absatz 1]');
+    expect(out).toContain('[Absatz 2]');
+    expect(out).toContain('[Absatz 3]');
+  });
+
+  it('lässt Einabsatz-Text unveraendert (kein Mehraufwand fuer kurze Quellen)', () => {
+    const text = 'Nur ein einzelner Absatz ohne Trennung.';
+    const out = nummeriereAbsaetze(text);
+    expect(out).toBe(text);
+    expect(out).not.toContain('[Absatz');
+  });
+
+  it('lässt Mehrabsatz-Text unter 200 Zeichen unveraendert (kein LLM-Overhead)', () => {
+    const text = 'Absatz eins.\n\nAbsatz zwei.';
+    const out = nummeriereAbsaetze(text);
+    expect(out).toBe(text);
+  });
+
+  it('nummerierung erscheint in der User-Message unter "inhalt"', () => {
+    const inputMitAbsaetzen = {
+      ...input(),
+      quelltexte: [{
+        id: 'q1',
+        titel: 'T',
+        inhalt: 'Erster Absatz mit hinreichend vielen Worten, damit die 200-Zeichen-Schwelle sicher ueberschritten wird und der Test verwertbar ist.\n\n' +
+          'Zweiter Absatz, ebenfalls lang genug, um die Schwelle zu erreichen und die Nummerierung auszuloesen fuer den Test.',
+        herkunft: { typ: 'upload' as const, ref: 'a.pdf' },
+      }],
+    };
+    const messages = buildMessages(inputMitAbsaetzen);
+    const user = messages.find((m) => m.role === 'user')!;
+    expect(user.content).toContain('[Absatz 1]');
+    expect(user.content).toContain('[Absatz 2]');
   });
 });

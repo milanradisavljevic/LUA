@@ -1,4 +1,5 @@
-import type { Meta, Block } from '@lehrunterlagen/schema';
+import type { Meta, Block, Schwierigkeit } from '@lehrunterlagen/schema';
+import { BLOOM_TYP_ABGERATEN } from '@lehrunterlagen/schema';
 import type { LucideIcon } from 'lucide-react';
 import {
   Pencil, ArrowLeftRight, CircleDot, HelpCircle, PenLine, Highlighter,
@@ -44,6 +45,29 @@ export const STUFE_RULES = {
     wortbankAllowed: true,
   },
 } as const;
+
+// ---------------------------------------------------------------------------
+// Schwierigkeits-Gating für die UI (Step0_Absicht, Step2_Baukasten).
+// ABGELEITET aus der EINZIGEN Quelle der Wahrheit `BLOOM_TYP_ABGERATEN`
+// (packages/schema). NICHT hier hartkodieren — sonst driften UI-Gating und
+// Prompt-/Schema-Logik auseinander. Inhaltliche Justierung NUR im Schema.
+// ---------------------------------------------------------------------------
+
+const SCHWIERIGKEIT_HINWEISE: Record<Schwierigkeit, string> = {
+  leicht: 'Für "leicht" didaktisch zu anspruchsvoll — produktive/analytische Typen meiden.',
+  mittel: '',
+  schwer: 'Für "schwer" didaktisch ungeeignet — bevorzuge offene Typen.',
+};
+
+export const SCHWIERIGKEIT_RULES = Object.fromEntries(
+  (Object.keys(BLOOM_TYP_ABGERATEN) as Schwierigkeit[]).map((s) => [
+    s,
+    {
+      discouraged: BLOOM_TYP_ABGERATEN[s].map((e) => e.typ) as readonly string[],
+      hinweis: SCHWIERIGKEIT_HINWEISE[s],
+    },
+  ]),
+) as Record<Schwierigkeit, { discouraged: readonly string[]; hinweis: string }>;
 
 export function isWortbankEnabled(stufe: Meta['stufe']): boolean {
   return STUFE_RULES[stufe].wortbankAllowed;

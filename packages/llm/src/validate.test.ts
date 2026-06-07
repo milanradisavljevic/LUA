@@ -48,10 +48,10 @@ describe('parseAndValidate', () => {
     expect(res.fehler).toContain('nicht parsebar');
   });
 
-  it('lehnt wortbank=true bei oberstufe ab', async () => {
+  it('lehnt wortbank=true mit distraktoren=0 ab', async () => {
     const doc = JSON.parse(JSON.stringify(validDoc));
     doc.bloecke[0].config.wortbank = true;
-    doc.bloecke[0].config.distraktoren = 2;
+    doc.bloecke[0].config.distraktoren = 0;
     const res = await parseAndValidate(JSON.stringify(doc));
     expect(res.ok).toBe(false);
   });

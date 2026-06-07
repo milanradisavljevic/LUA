@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkGrounding, checkDuplicates, checkDuplicateQuestions, runQualityChecks, llmJudgeHook } from './quality.js';
+import { checkGrounding, checkDuplicates, checkDuplicateQuestions, runQualityChecks, llmJudgeHook, checkSchreibaufgabe, checkLernzielCoverage } from './quality.js';
 import type { DocumentV1, QuellText } from '@lehrunterlagen/schema';
 
 const mockMeta = {
@@ -494,6 +494,129 @@ describe('checkDuplicateQuestions', () => {
   });
 });
 
+describe('checkSchreibaufgabe', () => {
+  it('meldet Warning bei zu langer Musterloesung', () => {
+    const doc: DocumentV1 = {
+      schemaVersion: '0.1.0',
+      meta: mockMeta,
+      quelltexte: mockQuelltexte,
+      bloecke: [
+        {
+          id: 'b1',
+          typ: 'offeneSchreibaufgabe',
+          punkte: 20,
+          arbeitsanweisung: 'Schreibe einen Kommentar.',
+          config: { textsorte: 'Kommentar', situation: 'Zeitung', umfangWorte: { min: 50, max: 60 }, aspekte: ['Position', 'Argumente'] },
+          loesung: { musterloesung: 'Wort '.repeat(120), erwartungshorizont: { inhalt: 'OK', struktur: 'OK', ausdruck: 'OK', sprachrichtigkeit: 'OK' } },
+        },
+      ],
+    };
+    const issues = checkSchreibaufgabe(doc, mockQuelltexte);
+    expect(issues.length).toBeGreaterThanOrEqual(1);
+    expect(issues[0]!.severity).toBe('warning');
+    expect(issues[0]!.message).toContain('weicht vom vorgegebenen Umfang');
+  });
+
+  it('meldet Warning bei themenfremder Musterloesung', () => {
+    const doc: DocumentV1 = {
+      schemaVersion: '0.1.0',
+      meta: mockMeta,
+      quelltexte: mockQuelltexte,
+      bloecke: [
+        {
+          id: 'b1',
+          typ: 'offeneSchreibaufgabe',
+          punkte: 20,
+          arbeitsanweisung: 'Schreibe einen Kommentar.',
+          config: { textsorte: 'Kommentar', situation: 'Zeitung', umfangWorte: { min: 50, max: 60 }, aspekte: ['Position', 'Argumente'] },
+          loesung: { musterloesung: 'Quantenphysik '.repeat(55), erwartungshorizont: { inhalt: 'OK', struktur: 'OK', ausdruck: 'OK', sprachrichtigkeit: 'OK' } },
+        },
+      ],
+    };
+    const issues = checkSchreibaufgabe(doc, mockQuelltexte);
+    expect(issues.length).toBeGreaterThanOrEqual(1);
+    expect(issues[0]!.severity).toBe('warning');
+    expect(issues[0]!.message).toContain('kaum quellengestuetzt');
+  });
+
+  it('findet keine Issues bei passender Musterloesung', () => {
+    const doc: DocumentV1 = {
+      schemaVersion: '0.1.0',
+      meta: mockMeta,
+      quelltexte: mockQuelltexte,
+      bloecke: [
+        {
+          id: 'b1',
+          typ: 'offeneSchreibaufgabe',
+          punkte: 20,
+          arbeitsanweisung: 'Schreibe einen Kommentar.',
+          config: { textsorte: 'Kommentar', situation: 'Zeitung', umfangWorte: { min: 8, max: 15 }, aspekte: ['Position'] },
+          loesung: { musterloesung: 'Die Photosynthese wandelt Lichtenergie in Glucose um. Pflanzen nutzen diesen Prozess zur Ernaehrung.', erwartungshorizont: { inhalt: 'OK', struktur: 'OK', ausdruck: 'OK', sprachrichtigkeit: 'OK' } },
+        },
+      ],
+    };
+    const issues = checkSchreibaufgabe(doc, mockQuelltexte);
+    expect(issues).toHaveLength(0);
+  });
+});
+
+describe('checkLernzielCoverage', () => {
+  it('findet keine Issues wenn alle Lernziele abgedeckt sind', () => {
+    const doc: DocumentV1 = {
+      schemaVersion: '0.1.0',
+      meta: mockMeta,
+      quelltexte: mockQuelltexte,
+      bloecke: [
+        {
+          id: 'b1',
+          typ: 'multipleChoice',
+          punkte: 4,
+          arbeitsanweisung: 'Beantworte.',
+          config: { fragen: [{ nr: 1, frage: 'F?', optionen: [{ key: 'A', text: 'a' }, { key: 'B', text: 'b' }, { key: 'C', text: 'c' }, { key: 'D', text: 'd' }], mehrfach: false }] },
+          loesung: { antworten: { '1': ['A'] } },
+          lernziele: ['Hauptgedanke erfassen'],
+        },
+      ],
+    };
+    const issues = checkLernzielCoverage(doc, { lernziele: ['Hauptgedanke erfassen'] });
+    expect(issues).toHaveLength(0);
+  });
+
+  it('meldet Warning bei fehlenden Lernzielen', () => {
+    const doc: DocumentV1 = {
+      schemaVersion: '0.1.0',
+      meta: mockMeta,
+      quelltexte: mockQuelltexte,
+      bloecke: [
+        {
+          id: 'b1',
+          typ: 'multipleChoice',
+          punkte: 4,
+          arbeitsanweisung: 'Beantworte.',
+          config: { fragen: [{ nr: 1, frage: 'F?', optionen: [{ key: 'A', text: 'a' }, { key: 'B', text: 'b' }, { key: 'C', text: 'c' }, { key: 'D', text: 'd' }], mehrfach: false }] },
+          loesung: { antworten: { '1': ['A'] } },
+          lernziele: ['Hauptgedanke erfassen'],
+        },
+      ],
+    };
+    const issues = checkLernzielCoverage(doc, { lernziele: ['Hauptgedanke erfassen', 'Stilmittel erkennen'] });
+    expect(issues.length).toBe(1);
+    expect(issues[0]!.severity).toBe('warning');
+    expect(issues[0]!.message).toContain('Stilmittel erkennen');
+  });
+
+  it('liefert leeres Array wenn keine Lernziele definiert sind', () => {
+    const doc: DocumentV1 = {
+      schemaVersion: '0.1.0',
+      meta: mockMeta,
+      quelltexte: mockQuelltexte,
+      bloecke: [],
+    };
+    const issues = checkLernzielCoverage(doc, {});
+    expect(issues).toHaveLength(0);
+  });
+});
+
 describe('llmJudgeHook', () => {
   it('liefert Default-Score ohne Konfiguration', async () => {
     const doc: DocumentV1 = {
@@ -502,18 +625,18 @@ describe('llmJudgeHook', () => {
       quelltexte: mockQuelltexte,
       bloecke: [],
     };
-    const result = await llmJudgeHook(doc);
+    const result = await llmJudgeHook(doc, mockQuelltexte);
     expect(result).toEqual({ score: 1, issues: [] });
   });
 
-  it('ignoriert cfg in V1 (Stub)', async () => {
+  it('ignoriert cfg ohne complete-Funktion (Stub)', async () => {
     const doc: DocumentV1 = {
       schemaVersion: '0.1.0',
       meta: mockMeta,
       quelltexte: mockQuelltexte,
       bloecke: [],
     };
-    const result = await llmJudgeHook(doc, { provider: 'anthropic', model: 'claude-sonnet-4-6', apiKey: 'sk-test' });
+    const result = await llmJudgeHook(doc, mockQuelltexte, { provider: 'anthropic', model: 'claude-sonnet-4-6', apiKey: 'sk-test', enabled: true });
     expect(result.score).toBe(1);
   });
 });

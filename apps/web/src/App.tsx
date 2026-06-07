@@ -148,7 +148,7 @@ export default function App() {
   const renderStep = () => {
     switch (state.step) {
       case 'absicht':
-        return <Step0_Absicht state={state} dispatch={dispatch} />;
+        return <Step0_Absicht state={state} dispatch={dispatch} onNavigateToTemplates={() => setActiveView('templates')} />;
       case 'input':
         return <Step1_Input state={state} dispatch={dispatch} />;
       case 'baukasten':
