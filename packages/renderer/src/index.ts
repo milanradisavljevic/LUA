@@ -22,7 +22,7 @@ import {
   convertMillimetersToTwip,
 } from 'docx';
 import type { DocumentV1, Block, QuellText } from '@lehrunterlagen/schema';
-import { baueWortbank, shuffle, baueKreuzwortgitter, baueWortgitter } from '@lehrunterlagen/schema';
+import { baueWortbank, shuffle, baueKreuzwortgitter, baueWortgitter, bereinigeQuelltext } from '@lehrunterlagen/schema';
 
 // ---------------------------------------------------------------------------
 // House style constants (DESIGN.md §7, non-negotiable)
@@ -690,7 +690,9 @@ function buildQuelltexte(quelltexte: QuellText[]): (Paragraph | Table)[] {
         }),
       );
     }
-    result.push(...quelltextAbsaetze(qt.inhalt));
+    // Schutznetz: Website-Boilerplate aus dem angezeigten Quelltext entfernen
+    // (fängt auch eingefügten Text, der nicht durch den Import-Cleaner lief).
+    result.push(...quelltextAbsaetze(bereinigeQuelltext(qt.inhalt)));
   }
 
   return result;

@@ -48,6 +48,37 @@ describe('baueKreuzwortgitter', () => {
     expect(hatWaag && hatSenk).toBe(true);
   });
 
+  it('baut ein dichtes Gitter mit Mehrfachkreuzungen (nicht baumartig)', () => {
+    const woerter: KreuzwortEintrag[] = [
+      'PHOTOSYNTHESE', 'CHLOROPHYLL', 'SAUERSTOFF', 'ENERGIE',
+      'SONNE', 'WASSER', 'BLATT', 'ZUCKER',
+    ].map((wort) => ({ wort, hinweis: wort.toLowerCase() }));
+    const g = baueKreuzwortgitter(woerter);
+
+    // Kreuzungszellen zählen (Zellen, die zu mehr als einem Wort gehören).
+    const cellCount = new Map<string, number>();
+    for (const p of g.platzierungen) {
+      for (let k = 0; k < p.wort.length; k++) {
+        const r = p.zeile + (p.richtung === 'senkrecht' ? k : 0);
+        const c = p.spalte + (p.richtung === 'waagrecht' ? k : 0);
+        const key = `${r},${c}`;
+        cellCount.set(key, (cellCount.get(key) ?? 0) + 1);
+      }
+    }
+    // Wörter, die mindestens zweimal kreuzen (echtes Verzahnen, nicht nur angehängt).
+    let mehrfach = 0;
+    for (const p of g.platzierungen) {
+      let cr = 0;
+      for (let k = 0; k < p.wort.length; k++) {
+        const r = p.zeile + (p.richtung === 'senkrecht' ? k : 0);
+        const c = p.spalte + (p.richtung === 'waagrecht' ? k : 0);
+        if ((cellCount.get(`${r},${c}`) ?? 0) >= 2) cr++;
+      }
+      if (cr >= 2) mehrfach++;
+    }
+    expect(mehrfach).toBeGreaterThanOrEqual(3);
+  });
+
   it('normalisiert Wörter (Großschreibung, entfernt Nicht-Buchstaben) und Dubletten', () => {
     const g = baueKreuzwortgitter([
       { wort: 'haus', hinweis: 'a' },

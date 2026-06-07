@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { FileText, Upload } from 'lucide-react';
 import type { AppState, AppAction } from '../lib/types';
 import { extractHtmlText } from '../lib/importText';
+import { istUrlArtig, titelAusUrl } from '../lib/urlTitle';
+import { bereinigeQuelltext } from '@lehrunterlagen/schema';
 
 interface Props {
   state: AppState;
@@ -112,7 +114,7 @@ export function Step1_Input({ state, dispatch }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const inhalt = await readFileAsText(file);
+      const inhalt = bereinigeQuelltext(await readFileAsText(file));
       const titel = file.name.replace(/\.[^.]+$/, '');
       const id = `q${Date.now()}`;
       dispatch({
@@ -133,12 +135,18 @@ export function Step1_Input({ state, dispatch }: Props) {
     setUrlError(null);
     try {
       const { titel, inhalt } = await fetchUrlText(url);
+      // Echten Seitentitel bevorzugen; fiel fetch_url auf die URL zurück, einen
+      // lesbaren Titel aus der URL ableiten (statt "yougov.com/en-us/articles/…").
+      const titelSauber =
+        titel && titel.trim() !== url && !istUrlArtig(titel)
+          ? titel.trim().slice(0, 120)
+          : titelAusUrl(url);
       dispatch({
         type: 'ADD_QUELLTEXT',
         quelltext: {
           id: `q${Date.now()}`,
-          titel: titel.replace(/^https?:\/\//, '').slice(0, 120),
-          inhalt,
+          titel: titelSauber,
+          inhalt: bereinigeQuelltext(inhalt),
           herkunft: { typ: 'url', ref: url },
         },
       });

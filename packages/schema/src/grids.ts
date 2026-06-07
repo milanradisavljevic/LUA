@@ -43,23 +43,9 @@ export function normalisiereWort(w: string): string {
   return w.toUpperCase().replace(/[^A-ZÄÖÜß]/g, '');
 }
 
-export function baueKreuzwortgitter(eintraege: KreuzwortEintrag[]): Kreuzwortgitter {
-  // 1. normalisieren, zu kurze entfernen, Dubletten raus (deterministisch erste behalten)
-  const seen = new Set<string>();
-  const uniq: KreuzwortEintrag[] = [];
-  for (const e of eintraege) {
-    const wort = normalisiereWort(e.wort);
-    if (wort.length < 2 || seen.has(wort)) continue;
-    seen.add(wort);
-    uniq.push({ wort, hinweis: e.hinweis });
-  }
-  // 2. deterministische Reihenfolge: längste zuerst, dann alphabetisch
-  uniq.sort((a, b) => b.wort.length - a.wort.length || (a.wort < b.wort ? -1 : a.wort > b.wort ? 1 : 0));
-
-  if (uniq.length === 0) {
-    return { zeilen: 0, spalten: 0, belegung: [], nummern: [], platzierungen: [] };
-  }
-
+// Eine einzelne greedy Platzierung für eine gegebene Wort-Reihenfolge.
+// Startwort waagrecht bei (0,0); jedes weitere Wort kreuzt ein bereits platziertes.
+function platziereGitter(order: KreuzwortEintrag[]): Placed[] {
   const grid = new Map<string, string>();
   const key = (r: number, c: number) => `${r},${c}`;
   const at = (r: number, c: number) => grid.get(key(r, c));
@@ -93,12 +79,10 @@ export function baueKreuzwortgitter(eintraege: KreuzwortEintrag[]): Kreuzwortgit
     placed.push({ wort, hinweis, r, c, dir });
   }
 
-  doPlace(uniq[0]!.wort, uniq[0]!.hinweis, 0, 0, WAAG);
+  doPlace(order[0]!.wort, order[0]!.hinweis, 0, 0, WAAG);
 
-  for (let i = 1; i < uniq.length; i++) {
-    const { wort, hinweis } = uniq[i]!;
-    // Alle gültigen Kandidaten sammeln und nach Kreuzungsanzahl sortieren
-    // (absteigend), damit das Gitter möglichst dicht wird.
+  for (let i = 1; i < order.length; i++) {
+    const { wort, hinweis } = order[i]!;
     const kandidaten: { r: number; c: number; dir: Dir; crossings: number }[] = [];
     for (const p of placed) {
       for (let pk = 0; pk < p.wort.length; pk++) {
@@ -118,7 +102,24 @@ export function baueKreuzwortgitter(eintraege: KreuzwortEintrag[]): Kreuzwortgit
       }
     }
     if (kandidaten.length > 0) {
-      kandidaten.sort((a, b) => b.crossings - a.crossings);
+      // Bounding-Box des bisherigen Gitters für den Kompaktheits-Tie-Break.
+      let minR = Infinity, minC = Infinity, maxR = -Infinity, maxC = -Infinity;
+      for (const k of grid.keys()) {
+        const [r, c] = k.split(',').map(Number) as [number, number];
+        minR = Math.min(minR, r); minC = Math.min(minC, c);
+        maxR = Math.max(maxR, r); maxC = Math.max(maxC, c);
+      }
+      // Mehr Kreuzungen zuerst; bei Gleichstand kompakter (kleinere resultierende
+      // Fläche); dann deterministisch nach Position/Richtung.
+      kandidaten.sort((a, b) => {
+        if (b.crossings !== a.crossings) return b.crossings - a.crossings;
+        const fa = flaecheNachPlatzierung(a, wort.length, minR, minC, maxR, maxC);
+        const fb = flaecheNachPlatzierung(b, wort.length, minR, minC, maxR, maxC);
+        if (fa !== fb) return fa - fb;
+        if (a.r !== b.r) return a.r - b.r;
+        if (a.c !== b.c) return a.c - b.c;
+        return a.dir === b.dir ? 0 : a.dir === WAAG ? -1 : 1;
+      });
       const best = kandidaten[0]!;
       doPlace(wort, hinweis, best.r, best.c, best.dir);
     } else {
@@ -126,6 +127,86 @@ export function baueKreuzwortgitter(eintraege: KreuzwortEintrag[]): Kreuzwortgit
       let maxR = -Infinity;
       for (const k of grid.keys()) maxR = Math.max(maxR, Number(k.split(',')[0]));
       doPlace(wort, hinweis, maxR + 2, 0, WAAG);
+    }
+  }
+
+  return placed;
+}
+
+// Resultierende Bounding-Box-Fläche, wenn ein Kandidat platziert würde (Kompaktheit).
+function flaecheNachPlatzierung(
+  cand: { r: number; c: number; dir: Dir },
+  laenge: number,
+  minR: number, minC: number, maxR: number, maxC: number,
+): number {
+  const endR = cand.r + cand.dir.dr * (laenge - 1);
+  const endC = cand.c + cand.dir.dc * (laenge - 1);
+  const nMinR = Math.min(minR, cand.r, endR);
+  const nMinC = Math.min(minC, cand.c, endC);
+  const nMaxR = Math.max(maxR, cand.r, endR);
+  const nMaxC = Math.max(maxC, cand.c, endC);
+  return (nMaxR - nMinR + 1) * (nMaxC - nMinC + 1);
+}
+
+// Dichte-Score: primär Anzahl Kreuzungszellen (von ≥2 Wörtern belegt), sekundär kompakt.
+function bewerteDichte(placed: Placed[]): number {
+  const count = new Map<string, number>();
+  let minR = Infinity, minC = Infinity, maxR = -Infinity, maxC = -Infinity;
+  for (const p of placed) {
+    for (let k = 0; k < p.wort.length; k++) {
+      const r = p.r + p.dir.dr * k, c = p.c + p.dir.dc * k;
+      const kk = `${r},${c}`;
+      count.set(kk, (count.get(kk) ?? 0) + 1);
+      minR = Math.min(minR, r); minC = Math.min(minC, c);
+      maxR = Math.max(maxR, r); maxC = Math.max(maxC, c);
+    }
+  }
+  let kreuzungen = 0;
+  for (const v of count.values()) if (v >= 2) kreuzungen++;
+  const flaeche = (maxR - minR + 1) * (maxC - minC + 1);
+  return kreuzungen * 10000 - flaeche;
+}
+
+export function baueKreuzwortgitter(eintraege: KreuzwortEintrag[]): Kreuzwortgitter {
+  // 1. normalisieren, zu kurze entfernen, Dubletten raus (deterministisch erste behalten)
+  const seen = new Set<string>();
+  const uniq: KreuzwortEintrag[] = [];
+  for (const e of eintraege) {
+    const wort = normalisiereWort(e.wort);
+    if (wort.length < 2 || seen.has(wort)) continue;
+    seen.add(wort);
+    uniq.push({ wort, hinweis: e.hinweis });
+  }
+  if (uniq.length === 0) {
+    return { zeilen: 0, spalten: 0, belegung: [], nummern: [], platzierungen: [] };
+  }
+
+  // 2. deterministische Basis-Reihenfolge: längste zuerst, dann alphabetisch
+  const base = [...uniq].sort(
+    (a, b) => b.wort.length - a.wort.length || (a.wort < b.wort ? -1 : a.wort > b.wort ? 1 : 0),
+  );
+
+  // 3. Best-of-N: jede Reihenfolge mit anderem Startwort durchprobieren und das
+  //    dichteste Ergebnis behalten. Wortzahl ist klein (≤ ~12) → billig, deterministisch.
+  const N = Math.min(base.length, 8);
+  let placed: Placed[] = [];
+  let bestScore = -Infinity;
+  for (let s = 0; s < N; s++) {
+    const order = [base[s]!, ...base.filter((_, idx) => idx !== s)];
+    const versuch = platziereGitter(order);
+    const score = bewerteDichte(versuch);
+    if (score > bestScore) {
+      bestScore = score;
+      placed = versuch;
+    }
+  }
+
+  // 4. Gitter aus der besten Platzierung rekonstruieren
+  const grid = new Map<string, string>();
+  const key = (r: number, c: number) => `${r},${c}`;
+  for (const p of placed) {
+    for (let k = 0; k < p.wort.length; k++) {
+      grid.set(key(p.r + p.dir.dr * k, p.c + p.dir.dc * k), p.wort[k]!);
     }
   }
 

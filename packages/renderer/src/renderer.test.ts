@@ -412,16 +412,17 @@ describe('renderDocument: Dokument-Qualität (Layout)', () => {
     ],
   });
 
-  it('Quelltext-Zeilen werden als echte Umbrüche gerendert (nicht als eine TextRun)', async () => {
+  it('Quelltext-Zeilen werden als eigene nummerierte Absätze gerendert (nicht zu einer Zeile verschmolzen)', async () => {
     const { schueler } = await renderDocument(lyricsDoc());
     const xml = extractDocumentXml(schueler);
-    // 5 Zeilen verteilt auf 2 Absätze → 1 + 2 = 3 break-Runs innerhalb der Absätze
-    const breaks = (xml.match(/<w:br\/>/g) ?? []).length;
-    expect(breaks).toBeGreaterThanOrEqual(3);
-    // jede Zeile muss als eigener Text vorkommen
+    // Jede Zeile muss als eigener Text vorkommen (nicht zu einer TextRun zusammengezogen).
     for (const z of ['Zeile eins', 'Zeile zwei', 'Zeile drei', 'Strophe zwei A', 'Strophe zwei B']) {
       expect(xml).toContain(z);
     }
+    // Zeilennummerierung (Feature): jede Inhaltszeile trägt eine eigene Nummer in einem
+    // eigenen Absatz — daher >= 5 Nummern-Runs für 5 Inhaltszeilen.
+    const nummern = (xml.match(/<w:t[^>]*>\d+\.<\/w:t>/g) ?? []).length;
+    expect(nummern).toBeGreaterThanOrEqual(5);
   });
 
   it('Schülerkopf enthält Name/Klasse/Datum-Felder', async () => {
